@@ -1,16 +1,37 @@
-# React + Vite
+# Splurge
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Splurge** is a modern, mobile-first bill-splitting progressive web app (PWA) built with React and Vite. It allows you to easily track outings with friends, scan receipts using OCR, split costs proportionally, and log payments over time.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Receipt Scanner**: Built-in Tesseract.js OCR engine automatically scans receipts and extracts line items, prices, and fees.
+- **Smart Splitting**: Automatically calculates exact proportional dues including shared taxes and tip.
+- **Swipe-to-Reveal**: Premium, native-feeling swipe gestures for managing friends, groups, and bill items.
+- **Interactive Analytics**: Visual breakdowns of your spending trends and a leaderboard of who owes you the most using Recharts.
+- **Fluid Navigation**: Seamless, app-like view transitions between pages.
+- **PWA Ready**: Installable to your home screen with offline caching via service workers.
 
-## React Compiler
+## 💻 Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Framework:** React + Vite
+- **Routing:** React Router v6
+- **Styling:** Custom CSS with Glassmorphism UI
+- **Icons:** Lucide React
+- **Charts:** Recharts
+- **OCR Engine:** Tesseract.js
 
-## Expanding the ESLint configuration
+## 🛠️ Local Development
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 🌐 Deployment
+
+This project is configured to automatically deploy to GitHub Pages using GitHub Actions. Any push to the `main` branch will trigger a build and publish the latest version.
