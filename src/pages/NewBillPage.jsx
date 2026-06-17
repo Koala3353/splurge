@@ -464,8 +464,7 @@ export default function NewBillPage() {
         <button 
           className="btn btn-secondary flex-1" 
           style={{ borderRadius: 'var(--radius-lg)' }}
-          disabled={step === 1}
-          onClick={() => handleStepChange(step - 1)}
+          onClick={() => step > 1 ? handleStepChange(step - 1) : navigate('/')}
         >
           <ChevronLeft size={20} className="inline mr-1" /> Back
         </button>
