@@ -9,7 +9,7 @@ import StatsPage from './pages/StatsPage';
 function App() {
   return (
     <AppProvider>
-      <Router>
+      <Router basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/people" element={<PeoplePage />} />
