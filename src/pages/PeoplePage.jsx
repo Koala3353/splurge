@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { formatCurrency } from '../utils/format';
-import { CheckCircle, Circle, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle, Circle, ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
 import Navigation from '../components/Navigation';
 import SwipeableItem from '../components/SwipeableItem';
 
@@ -9,50 +9,47 @@ export default function PeoplePage() {
   const { people, addPerson, removePerson, groups, addGroup, removeGroup, balances, addPayment } = useAppContext();
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' | 'groups'
   const [expandedId, setExpandedId] = useState(null);
+  
+  const friendDialogRef = useRef(null);
+  const groupDialogRef = useRef(null);
 
   const handleAddFriend = (e) => {
-    e.preventDefault();
     const name = e.target.name.value.trim();
     if (name) { addPerson(name); e.target.reset(); }
   };
 
   const handleAddGroup = (e) => {
-    e.preventDefault();
     const name = e.target.groupName.value.trim();
     const selectedOptions = Array.from(e.target.peopleSelect.selectedOptions).map(opt => opt.value);
     if (name && selectedOptions.length > 0) {
       addGroup(name, selectedOptions);
       e.target.reset();
     } else {
+      e.preventDefault(); // Prevent closing if invalid
       alert("Please enter a group name and select at least one person.");
     }
   };
 
   return (
     <div className="app-shell animate-slide-in">
-      <main className="app-main">
-        <h1 className="text-xl mb-4">Network</h1>
+      <main className="app-main" style={{ paddingBottom: '6rem' }}>
+        <h1 className="text-xl mb-4 font-bold">Network</h1>
       
       <div className="flex gap-2 mb-6" style={{ background: 'var(--glass-bg)', padding: '4px', borderRadius: 'var(--radius-lg)' }}>
         <button 
           className={`btn ${activeTab === 'friends' ? 'btn-primary' : ''}`} 
-          style={{ flex: 1, border: 'none', background: activeTab === 'friends' ? 'var(--gradient-primary)' : 'transparent' }}
+          style={{ flex: 1, border: 'none', background: activeTab === 'friends' ? 'var(--gradient-primary)' : 'transparent', padding: '0.5rem' }}
           onClick={() => setActiveTab('friends')}
         >Friends</button>
         <button 
           className={`btn ${activeTab === 'groups' ? 'btn-primary' : ''}`} 
-          style={{ flex: 1, border: 'none', background: activeTab === 'groups' ? 'var(--gradient-primary)' : 'transparent' }}
+          style={{ flex: 1, border: 'none', background: activeTab === 'groups' ? 'var(--gradient-primary)' : 'transparent', padding: '0.5rem' }}
           onClick={() => setActiveTab('groups')}
         >Groups</button>
       </div>
 
       {activeTab === 'friends' && (
         <>
-          <form onSubmit={handleAddFriend} className="flex gap-2 mb-6">
-            <input name="name" type="text" placeholder="Friend's Name" required />
-            <button type="submit" className="btn btn-primary" style={{ borderRadius: 'var(--radius-full)' }}>Add</button>
-          </form>
-
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg">Who's paid?</h3>
             <span className="text-secondary">{people.length}</span>
@@ -107,13 +104,6 @@ export default function PeoplePage() {
                           <div className="bg-glass px-3 py-2 rounded-md font-bold">{formatCurrency(balance > 0 ? balance : 0)}</div>
                         </div>
                         
-                        <div className="flex justify-between items-center mb-6">
-                          <div className="text-secondary">
-                            <div className="font-medium text-primary">Paid</div>
-                          </div>
-                          <div className="bg-glass px-3 py-2 rounded-md font-bold">₱ 0.00</div>
-                        </div>
-                        
                         <div className="flex-col gap-2">
                           {!isSettled && (
                             <>
@@ -158,34 +148,67 @@ export default function PeoplePage() {
       )}
 
       {activeTab === 'groups' && (
-        <>
-          <form onSubmit={handleAddGroup} className="flex-col gap-3 mb-6 p-4 glass-panel" style={{ padding: '1rem' }}>
-            <h3 className="text-lg">Create New Group</h3>
-            <input name="groupName" type="text" placeholder="Group Name (e.g. Office, Family)" required />
-            <select name="peopleSelect" multiple size="4" style={{ height: 'auto' }}>
-              {people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <p className="text-sm text-secondary">Hold Ctrl/Cmd to select multiple people.</p>
-            <button type="submit" className="btn btn-primary mt-2">Create Group</button>
-          </form>
-
-          <ul className="SwipeableList">
-            {groups.length === 0 ? <p className="text-center text-secondary">No groups yet.</p> : groups.map(group => (
-              <SwipeableItem key={group.id} onDelete={() => removeGroup(group.id)}>
-                <div className="glass-panel flex justify-between items-center" style={{ padding: '1rem', border: 'none', marginBottom: 0 }}>
-                  <div>
-                    <h3 className="text-lg font-bold" style={{ color: 'var(--accent-color)' }}>{group.name}</h3>
-                    <p className="text-sm text-secondary mt-1">
-                      {group.peopleIds.map(id => people.find(p => p.id === id)?.name).filter(Boolean).join(', ')}
-                    </p>
-                  </div>
+        <ul className="SwipeableList">
+          {groups.length === 0 ? <p className="text-center text-secondary">No groups yet.</p> : groups.map(group => (
+            <SwipeableItem key={group.id} onDelete={() => removeGroup(group.id)}>
+              <div className="glass-panel flex justify-between items-center" style={{ padding: '1rem', border: 'none', marginBottom: 0 }}>
+                <div>
+                  <h3 className="text-lg font-bold" style={{ color: 'var(--accent-color)' }}>{group.name}</h3>
+                  <p className="text-sm text-secondary mt-1">
+                    {group.peopleIds.map(id => people.find(p => p.id === id)?.name).filter(Boolean).join(', ')}
+                  </p>
                 </div>
-              </SwipeableItem>
-            ))}
-          </ul>
-        </>
+              </div>
+            </SwipeableItem>
+          ))}
+        </ul>
       )}
       </main>
+
+      {/* Floating Action Button */}
+      <button 
+        className="fab" 
+        onClick={() => {
+          if(activeTab === 'friends') friendDialogRef.current?.showModal();
+          else groupDialogRef.current?.showModal();
+        }}
+      >
+        <Plus size={24} />
+      </button>
+
+      {/* Native Dialogs */}
+      <dialog ref={friendDialogRef} id="add-friend-dialog">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Add Friend</h2>
+          <form method="dialog"><button className="text-secondary"><X size={20} /></button></form>
+        </div>
+        <form method="dialog" onSubmit={handleAddFriend} className="flex-col gap-4">
+          <input name="name" type="text" placeholder="Friend's Name" required className="w-full mb-4" />
+          <div className="flex gap-2 justify-end">
+            <button type="button" className="btn" onClick={() => friendDialogRef.current?.close()}>Cancel</button>
+            <button type="submit" className="btn btn-primary">Save Friend</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog ref={groupDialogRef} id="add-group-dialog">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Create Group</h2>
+          <form method="dialog"><button className="text-secondary"><X size={20} /></button></form>
+        </div>
+        <form method="dialog" onSubmit={handleAddGroup} className="flex-col gap-4">
+          <input name="groupName" type="text" placeholder="Group Name (e.g. Office, Family)" required className="w-full mb-4" />
+          <p className="text-sm text-secondary mb-2">Select members:</p>
+          <select name="peopleSelect" multiple size="4" className="w-full mb-4" style={{ height: 'auto', minHeight: '120px' }}>
+            {people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <div className="flex gap-2 justify-end">
+            <button type="button" className="btn" onClick={() => groupDialogRef.current?.close()}>Cancel</button>
+            <button type="submit" className="btn btn-primary">Create Group</button>
+          </div>
+        </form>
+      </dialog>
+
       <Navigation />
     </div>
   );

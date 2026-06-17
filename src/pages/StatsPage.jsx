@@ -34,21 +34,21 @@ export default function StatsPage() {
   };
 
   return (
-    <div className="app-shell">
+    <div className="app-shell animate-slide-in">
       <main className="app-main">
         <h1 className="text-xl mb-6 font-bold flex items-center gap-2">
           <TrendingUp className="text-accent" /> Statistics
         </h1>
 
         <div className="flex gap-4 mb-6">
-          <div className="glass-panel flex-1" style={{ padding: '1.5rem 1rem' }}>
+          <div className="glass-panel flex-1 card-hover" style={{ padding: '1.5rem 1rem' }}>
             <div className="flex items-center gap-2 text-secondary mb-2">
               <Users size={16} /> <span className="text-sm font-medium uppercase tracking-wider">Outings</span>
             </div>
             <h2 style={{ fontSize: '2.5rem', fontWeight: '800' }}>{totalOutings}</h2>
           </div>
 
-          <div className="glass-panel flex-1 relative overflow-hidden" style={{ padding: '1.5rem 1rem', background: 'var(--gradient-primary)', border: 'none' }}>
+          <div className="glass-panel flex-1 relative overflow-hidden card-hover" style={{ padding: '1.5rem 1rem', background: 'var(--gradient-primary)', border: 'none' }}>
             <div className="absolute opacity-20 -right-4 -bottom-4">
               <DollarSign size={80} />
             </div>
@@ -83,24 +83,35 @@ export default function StatsPage() {
           {leaderboard.length === 0 ? (
             <p className="text-center text-secondary py-8 glass-panel border-dashed">No debts to show yet!</p>
           ) : (
-            leaderboard.map((item, index) => (
-              <div key={item.person.id} className="glass-panel flex justify-between items-center p-4">
-                <div className="flex items-center gap-4">
-                  <div className={`avatar ${index === 0 ? 'bg-danger' : index === 1 ? 'bg-warning' : 'bg-accent'}`} style={{ width: '48px', height: '48px', fontSize: '1.25rem' }}>
-                    {index === 0 ? <Award size={24} /> : item.person.name.charAt(0).toUpperCase()}
+            leaderboard.map((item, index) => {
+              const isTop = index === 0;
+              return (
+                <div 
+                  key={item.person.id} 
+                  className={`glass-panel flex justify-between items-center p-4 animate-slide-up ${isTop ? 'card-hover' : ''}`}
+                  style={{ 
+                    animationDelay: `${index * 0.1}s`,
+                    borderColor: isTop ? 'rgba(244, 63, 94, 0.5)' : 'var(--glass-border)',
+                    boxShadow: isTop ? '0 0 20px rgba(244, 63, 94, 0.2)' : 'var(--shadow-glass)'
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`avatar ${isTop ? 'bg-danger' : index === 1 ? 'bg-warning' : 'bg-accent'}`} style={{ width: '48px', height: '48px', fontSize: '1.25rem' }}>
+                      {isTop ? <Award size={24} /> : item.person.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{item.person.name}</h3>
+                      <p className="text-xs text-secondary mt-1 flex items-center gap-1">
+                        <ArrowUpRight size={12} className={isTop ? 'text-danger' : 'text-accent'} /> Needs to pay you
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{item.person.name}</h3>
-                    <p className="text-xs text-secondary mt-1 flex items-center gap-1">
-                      <ArrowUpRight size={12} className="text-danger" /> Needs to pay you
-                    </p>
+                  <div className="text-right">
+                    <div className="font-bold text-xl">{formatCurrency(item.bal)}</div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-bold text-xl">{formatCurrency(item.bal)}</div>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </main>

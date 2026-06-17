@@ -302,9 +302,16 @@ export default function NewBillPage() {
             )}
 
             {isProcessing && (
-               <div className="text-center my-10">
-                 <Loader2 size={48} className="animate-spin text-accent mx-auto" style={{ color: 'var(--accent-color)' }} />
-                 <p className="mt-4 text-lg">Extracting items...</p>
+               <div className="card my-6 relative overflow-hidden p-0 border-glass">
+                 {image && <img src={image} className="w-full h-40 object-cover opacity-30 blur-[2px]" style={{ filter: 'grayscale(50%)' }} alt="Receipt processing" />}
+                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-glass" style={{ background: 'rgba(11, 17, 32, 0.6)' }}>
+                   <div className="skeleton w-full h-8 mb-4" style={{ maxWidth: '80%' }}></div>
+                   <div className="skeleton w-full h-4 mb-3" style={{ maxWidth: '60%' }}></div>
+                   <div className="skeleton w-full h-4" style={{ maxWidth: '90%' }}></div>
+                   <p className="mt-6 text-accent font-bold tracking-wider uppercase text-sm flex items-center gap-2">
+                     <Loader2 size={16} className="animate-spin" /> Extracting line items
+                   </p>
+                 </div>
                </div>
             )}
 
@@ -330,18 +337,30 @@ export default function NewBillPage() {
                         </div>
                       </div>
                       
-                      <div className="p-4 bg-glass">
-                        <p className="text-sm text-secondary mb-3">Who shared this?</p>
-                        <div className="flex gap-2 flex-wrap">
-                          {selectedPeople.map(pId => {
-                            const person = people.find(p => p.id === pId);
-                            const isSel = item.people.includes(pId);
-                            return (
-                              <button key={pId} className={`pill ${isSel ? 'pill-active' : 'pill-inactive'}`} onClick={() => togglePersonForItem(item.id, pId)}>
-                                {person?.name}
-                              </button>
-                            );
-                          })}
+                      <div className="p-4 bg-glass flex justify-between items-center">
+                        <span className="text-sm text-secondary">Who shared this?</span>
+                        <button 
+                          popovertarget={`popover-${item.id}`} 
+                          className="btn text-xs px-3 py-1.5" 
+                          style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--radius-full)' }}
+                        >
+                          {item.people.length === selectedPeople.length ? 'Everyone' : `${item.people.length} people`} <ChevronDown size={14} className="inline ml-1" />
+                        </button>
+                        
+                        <div id={`popover-${item.id}`} popover="auto">
+                          <h4 className="font-bold mb-3">Who shared this?</h4>
+                          <div className="flex-col gap-2">
+                            {selectedPeople.map(pId => {
+                              const person = people.find(p => p.id === pId);
+                              const isSel = item.people.includes(pId);
+                              return (
+                                <button key={pId} className={`w-full text-left p-3 rounded-lg flex items-center justify-between mb-2 ${isSel ? 'bg-success text-bg font-bold' : 'bg-glass text-primary'}`} onClick={() => togglePersonForItem(item.id, pId)}>
+                                  {person?.name}
+                                  {isSel && <CheckCircle size={16} />}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     </div>
