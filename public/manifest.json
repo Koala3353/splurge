@@ -1,6 +1,6 @@
 {
-  "short_name": "Split",
-  "name": "Split Bill PWA",
+  "short_name": "splurge",
+  "name": "Split Bill Tool",
   "icons": [
     {
       "src": "/vite.svg",
