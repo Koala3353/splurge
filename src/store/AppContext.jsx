@@ -38,11 +38,17 @@ export function AppProvider({ children }) {
     setPayments([...payments, { id: crypto.randomUUID(), personId, amount, date: new Date().toISOString() }]);
   };
 
-  // Calculate debts
-  // Everyone owes the user for their share of the bills.
-  const balances = useMemo(() => {
+  // Calculate debts and detailed stats
+  const { balances, personBillShares, lifetimePayments } = useMemo(() => {
     const bals = {};
-    people.forEach(p => bals[p.id] = 0);
+    const shares = {}; // { [personId]: [{ bill, amount }] }
+    const lifePayments = {}; // { [personId]: totalAmount }
+
+    people.forEach(p => {
+      bals[p.id] = 0;
+      shares[p.id] = [];
+      lifePayments[p.id] = 0;
+    });
 
     // Add up what they owe from bills
     bills.forEach(bill => {
@@ -72,22 +78,31 @@ export function AppProvider({ children }) {
         participants.forEach(pId => billDues[pId] += split);
       }
 
-      // Add bill dues to global balances
+      // Add bill dues to global balances and person shares
       participants.forEach(pId => {
         if (bals[pId] !== undefined) {
           bals[pId] += billDues[pId];
         }
+        if (shares[pId] !== undefined && billDues[pId] > 0) {
+          shares[pId].push({
+            bill,
+            amount: billDues[pId]
+          });
+        }
       });
     });
 
-    // Subtract what they have paid
+    // Process lifetime payments and subtract what they have paid
     payments.forEach(payment => {
+      if (lifePayments[payment.personId] !== undefined) {
+        lifePayments[payment.personId] += payment.amount;
+      }
       if (bals[payment.personId] !== undefined) {
         bals[payment.personId] -= payment.amount;
       }
     });
 
-    return bals;
+    return { balances: bals, personBillShares: shares, lifetimePayments: lifePayments };
   }, [people, bills, payments]);
 
   return (
@@ -96,7 +111,9 @@ export function AppProvider({ children }) {
       groups, addGroup, removeGroup,
       bills, addBill,
       payments, addPayment,
-      balances
+      balances,
+      personBillShares,
+      lifetimePayments
     }}>
       {children}
     </AppContext.Provider>

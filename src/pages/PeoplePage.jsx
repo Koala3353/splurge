@@ -1,17 +1,18 @@
 import { useState, useRef } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { formatCurrency } from '../utils/format';
-import { CheckCircle, Circle, ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
+import { CheckCircle, Circle, ChevronRight, Plus, X } from 'lucide-react';
 import Navigation from '../components/Navigation';
 import SwipeableItem from '../components/SwipeableItem';
 
 export default function PeoplePage() {
-  const { people, addPerson, removePerson, groups, addGroup, removeGroup, balances, addPayment } = useAppContext();
+  const { people, addPerson, removePerson, groups, addGroup, removeGroup, balances, addPayment, personBillShares, lifetimePayments } = useAppContext();
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' | 'groups'
-  const [expandedId, setExpandedId] = useState(null);
   
   const friendDialogRef = useRef(null);
   const groupDialogRef = useRef(null);
+  const detailDialogRef = useRef(null);
+  const [detailPersonId, setDetailPersonId] = useState(null);
 
   const handleAddFriend = (e) => {
     const name = e.target.name.value.trim();
@@ -28,6 +29,12 @@ export default function PeoplePage() {
       e.preventDefault(); // Prevent closing if invalid
       alert("Please enter a group name and select at least one person.");
     }
+  };
+
+  const openDetail = (e, personId) => {
+    e.stopPropagation();
+    setDetailPersonId(personId);
+    detailDialogRef.current?.showModal();
   };
 
   return (
@@ -59,14 +66,13 @@ export default function PeoplePage() {
             {people.length === 0 ? <p className="text-center text-secondary">No friends yet.</p> : people.map(person => {
               const balance = balances[person.id] || 0;
               const isSettled = balance <= 0;
-              const isExpanded = expandedId === person.id;
 
               return (
                 <SwipeableItem key={person.id} onDelete={(e) => { if(e) e.stopPropagation(); removePerson(person.id); }}>
                   <div className="card p-0 overflow-hidden" style={{ padding: 0, marginBottom: 0 }}>
                     <div 
-                      className="flex justify-between items-center p-4 cursor-pointer"
-                      onClick={() => setExpandedId(isExpanded ? null : person.id)}
+                      className="flex justify-between items-center p-4 cursor-pointer card-hover"
+                      onClick={(e) => openDetail(e, person.id)}
                     >
                       <div className="flex items-center gap-3">
                         <div className="avatar bg-accent relative">
@@ -89,56 +95,10 @@ export default function PeoplePage() {
                           </div>
                         </div>
                         <div className="p-2 bg-glass rounded-full text-secondary">
-                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          <ChevronRight size={16} />
                         </div>
                       </div>
                     </div>
-
-                    {isExpanded && (
-                      <div className="p-4 bg-glass border-t border-glass" style={{ margin: '0 0.5rem 0.5rem 0.5rem', borderRadius: 'var(--radius-md)' }}>
-                        <div className="flex justify-between items-center mb-4">
-                          <div className="text-secondary">
-                            <div className="font-medium text-primary">Due</div>
-                            <div className="text-xs">Calculated {formatCurrency(balance > 0 ? balance : 0)}</div>
-                          </div>
-                          <div className="bg-glass px-3 py-2 rounded-md font-bold">{formatCurrency(balance > 0 ? balance : 0)}</div>
-                        </div>
-                        
-                        <div className="flex-col gap-2">
-                          {!isSettled && (
-                            <>
-                              <div className="flex gap-2">
-                                <button className="btn btn-secondary flex-1" style={{ color: 'var(--danger)', borderRadius: 'var(--radius-full)' }} onClick={(e) => { e.stopPropagation(); addPayment(person.id, balance / 2); }}>Half</button>
-                                <button className="btn btn-danger flex-1" style={{ borderRadius: 'var(--radius-full)' }} onClick={(e) => { e.stopPropagation(); addPayment(person.id, balance); }}>Paid full</button>
-                              </div>
-                              <form 
-                                className="flex gap-2 mt-2" 
-                                onSubmit={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  const amt = parseFloat(e.target.amount.value);
-                                  if(amt > 0) {
-                                    addPayment(person.id, amt);
-                                    e.target.reset();
-                                  }
-                                }}
-                              >
-                                <input 
-                                  type="number" 
-                                  name="amount" 
-                                  step="0.01" 
-                                  placeholder="Custom amount" 
-                                  required
-                                  className="input-ghost flex-1 border border-glass" 
-                                  style={{ borderRadius: 'var(--radius-full)', padding: '0.75rem 1rem' }}
-                                />
-                                <button type="submit" className="btn btn-secondary text-primary" style={{ borderRadius: 'var(--radius-full)' }}>Pay</button>
-                              </form>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </SwipeableItem>
               );
@@ -176,13 +136,100 @@ export default function PeoplePage() {
         <Plus size={24} />
       </button>
 
-      {/* Native Dialogs */}
+      {/* Detail Dialog */}
+      <dialog ref={detailDialogRef} id="detail-dialog" style={{ width: '95vw', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+        {(() => {
+          const person = people.find(p => p.id === detailPersonId);
+          if (!person) return null;
+          
+          const balance = balances[person.id] || 0;
+          const isSettled = balance <= 0;
+          const shares = personBillShares[person.id] || [];
+          const lifetime = lifetimePayments[person.id] || 0;
+
+          return (
+            <div className="flex flex-col" style={{ maxHeight: '80vh' }}>
+              <div className="p-4 border-b border-glass flex justify-between items-center bg-glass" style={{ position: 'sticky', top: 0, zIndex: 10, backdropFilter: 'blur(12px)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="avatar bg-accent">{person.name.charAt(0).toUpperCase()}</div>
+                  <h2 className="text-xl font-bold">{person.name}</h2>
+                </div>
+                <form method="dialog"><button className="btn bg-glass p-2 rounded-full" onClick={() => setDetailPersonId(null)}><X size={20} /></button></form>
+              </div>
+              
+              <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
+                <div className="flex gap-4 mb-6">
+                  <div className="glass-panel flex-1 text-center p-3">
+                    <p className="text-xs text-secondary uppercase tracking-wider mb-1">Current Balance</p>
+                    <p className="text-xl font-bold text-danger">{formatCurrency(balance > 0 ? balance : 0)}</p>
+                  </div>
+                  <div className="glass-panel flex-1 text-center p-3">
+                    <p className="text-xs text-secondary uppercase tracking-wider mb-1">Lifetime Paid</p>
+                    <p className="text-xl font-bold text-success">{formatCurrency(lifetime)}</p>
+                  </div>
+                </div>
+
+                <h3 className="font-bold text-lg mb-3">Bill History</h3>
+                {shares.length === 0 ? (
+                  <p className="text-secondary text-sm text-center py-4 glass-panel border-dashed">No bills yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-2 mb-6">
+                    {shares.map((share, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-3 glass-panel card-hover cursor-pointer">
+                        <div>
+                          <p className="font-bold">{share.bill.title}</p>
+                          <p className="text-xs text-secondary">{new Date(share.bill.date).toLocaleDateString()}</p>
+                        </div>
+                        <div className="font-bold text-accent">{formatCurrency(share.amount)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {!isSettled && (
+                  <div className="mt-4">
+                    <h3 className="font-bold text-lg mb-3">Record Payment</h3>
+                    <div className="flex gap-2 mb-3">
+                      <button className="btn btn-secondary flex-1" style={{ color: 'var(--danger)', borderRadius: 'var(--radius-full)' }} onClick={() => addPayment(person.id, balance / 2)}>Half</button>
+                      <button className="btn btn-danger flex-1" style={{ borderRadius: 'var(--radius-full)' }} onClick={() => addPayment(person.id, balance)}>Paid full</button>
+                    </div>
+                    <form 
+                      className="flex gap-2" 
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const amt = parseFloat(e.target.amount.value);
+                        if(amt > 0) {
+                          addPayment(person.id, amt);
+                          e.target.reset();
+                        }
+                      }}
+                    >
+                      <input 
+                        type="number" 
+                        name="amount" 
+                        step="0.01" 
+                        placeholder="Custom amount" 
+                        required
+                        className="input-ghost flex-1 border border-glass" 
+                        style={{ borderRadius: 'var(--radius-full)', padding: '0.75rem 1rem' }}
+                      />
+                      <button type="submit" className="btn btn-secondary text-primary" style={{ borderRadius: 'var(--radius-full)' }}>Pay</button>
+                    </form>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </dialog>
+
+      {/* Add Friend/Group Native Dialogs */}
       <dialog ref={friendDialogRef} id="add-friend-dialog">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Add Friend</h2>
           <form method="dialog"><button className="text-secondary"><X size={20} /></button></form>
         </div>
-        <form method="dialog" onSubmit={handleAddFriend} className="flex-col gap-4">
+        <form method="dialog" onSubmit={handleAddFriend} className="flex flex-col gap-4">
           <input name="name" type="text" placeholder="Friend's Name" required className="w-full mb-4" />
           <div className="flex gap-2 justify-end">
             <button type="button" className="btn" onClick={() => friendDialogRef.current?.close()}>Cancel</button>
@@ -196,7 +243,7 @@ export default function PeoplePage() {
           <h2 className="text-xl font-bold">Create Group</h2>
           <form method="dialog"><button className="text-secondary"><X size={20} /></button></form>
         </div>
-        <form method="dialog" onSubmit={handleAddGroup} className="flex-col gap-4">
+        <form method="dialog" onSubmit={handleAddGroup} className="flex flex-col gap-4">
           <input name="groupName" type="text" placeholder="Group Name (e.g. Office, Family)" required className="w-full mb-4" />
           <p className="text-sm text-secondary mb-2">Select members:</p>
           <select name="peopleSelect" multiple size="4" className="w-full mb-4" style={{ height: 'auto', minHeight: '120px' }}>
