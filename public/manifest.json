@@ -15,10 +15,10 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": ".",
   "background_color": "#121212",
   "display": "standalone",
-  "scope": "/",
+  "scope": ".",
   "theme_color": "#121212",
   "description": "A modern PWA to split bills and track expenses."
 }
