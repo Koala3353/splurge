@@ -141,27 +141,39 @@ export default function NewBillPage() {
       
       const lines = result.data.text.split('\n');
       const parsedItems = [];
-      const priceRegex = /-?\$?\d+\.\d{2}/;
-      const skipKeywords = ['total', 'subtotal', 'tax', 'tip', 'gratuity', 'payment', 'change', 'cash', 'card', 'visa', 'mastercard', 'amex', 'amount', 'due', 'balance', 'fee', 'service', 'gross', 'sales'];
+      const skipKeywords = [
+        'total', 'subtotal', 'tax', 'tip', 'gratuity', 'payment', 'change', 'cash', 'card', 
+        'visa', 'mastercard', 'amex', 'amount', 'due', 'balance', 'fee', 'service', 'gross', 
+        'sales', 'vat', 'tin', 'min', 'sn', 'inv', 'no.', 'date', 'time', 'customer', 
+        'address', 'signature', 'exempt', 'change', 'discount'
+      ];
       
       lines.forEach(line => {
         const lowerLine = line.toLowerCase();
         
-        // Skip lines that look like totals, taxes, or payments
+        // Skip lines that look like totals, taxes, payments, or receipt metadata
         if (skipKeywords.some(kw => lowerLine.includes(kw))) {
           return;
         }
 
-        const match = line.match(priceRegex);
-        if (match) {
-          const priceStr = match[0].replace('$', '');
+        // Match all numbers, including integers, decimals, and comma-separated
+        const numRegex = /(?:PHP\s*|Php\s*|₱\s*|\$\s*)?-?\d+(?:,\d{3})*(?:\.\d{2})?/gi;
+        const matches = line.match(numRegex);
+        
+        if (matches && matches.length > 0) {
+          // Assume the last number on the line is the total amount for that item
+          const lastMatch = matches[matches.length - 1];
+          const priceStr = lastMatch.replace(/[^0-9.-]/g, '');
           const price = parseFloat(priceStr);
           
-          let name = line.replace(match[0], '').replace(/[^a-zA-Z\s]/g, '').trim();
-          name = name || 'Item';
+          let name = line;
+          matches.forEach(m => {
+            name = name.replace(m, '');
+          });
+          name = name.replace(/[^a-zA-Z\s]/g, '').trim();
           
-          // Only add valid items with a price > 0
-          if (price > 0 && name.length > 1) {
+          // Only add valid items with a price > 0 and a meaningful name
+          if (price > 0 && name.length > 2) {
             parsedItems.push({ id: crypto.randomUUID(), name, price, people: [...selectedPeople] });
           }
         }
