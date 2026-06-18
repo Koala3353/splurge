@@ -4,7 +4,7 @@ import { useAppContext } from '../store/AppContext';
 import { formatCurrency } from '../utils/format';
 import Tesseract from 'tesseract.js';
 import { flushSync } from 'react-dom';
-import { Camera, Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft, Users, UserPlus, Sparkles, CheckCircle } from 'lucide-react';
+import { Camera, Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft, ChevronDown, Users, UserPlus, Sparkles, CheckCircle } from 'lucide-react';
 import SwipeableItem from '../components/SwipeableItem';
 
 export default function NewBillPage() {
