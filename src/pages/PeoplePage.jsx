@@ -128,6 +128,7 @@ export default function PeoplePage() {
       {/* Floating Action Button */}
       <button 
         className="fab" 
+        style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
         onClick={() => {
           if(activeTab === 'friends') friendDialogRef.current?.showModal();
           else groupDialogRef.current?.showModal();

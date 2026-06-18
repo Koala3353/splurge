@@ -4,6 +4,7 @@ import { useAppContext } from '../store/AppContext';
 import { formatCurrency } from '../utils/format';
 import Tesseract from 'tesseract.js';
 import { flushSync } from 'react-dom';
+import Navigation from '../components/Navigation';
 import { Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft, ChevronDown, Users, UserPlus, Sparkles, CheckCircle } from 'lucide-react';
 import SwipeableItem from '../components/SwipeableItem';
 
@@ -511,36 +512,39 @@ export default function NewBillPage() {
 
       </main>
 
-      {/* BOTTOM BAR */}
-      <footer className="app-footer">
-        <button 
-          className="btn btn-secondary flex-1" 
-          style={{ borderRadius: 'var(--radius-lg)' }}
-          onClick={() => step > 1 ? handleStepChange(step - 1) : navigate('/')}
-        >
-          <ChevronLeft size={20} className="inline mr-1" /> Back
-        </button>
+      {/* ACTION BUTTONS */}
+      <div className="p-4 bg-glass flex gap-4" style={{ flexShrink: 0, zIndex: 10, borderTop: '1px solid var(--glass-border)' }}>
+        {step > 1 && (
+          <button 
+            className="btn btn-secondary flex-1" 
+            style={{ borderRadius: 'var(--radius-lg)' }}
+            onClick={() => handleStepChange(step - 1)}
+          >
+            <ChevronLeft size={20} className="inline mr-1" /> Back
+          </button>
+        )}
         
         {step < 3 ? (
           <button 
-            className="btn btn-danger" 
+            className="btn btn-danger w-full" 
             style={{ borderRadius: 'var(--radius-lg)', flex: 2 }}
             disabled={(step === 1 && selectedPeople.length === 0) || (step === 2 && items.length === 0)}
             onClick={() => handleStepChange(step + 1)}
           >
-            {step === 1 ? 'Items' : 'Review'} <ChevronRight size={20} className="inline ml-1" />
+            {step === 1 ? 'Next: Items' : 'Next: Review'} <ChevronRight size={20} className="inline ml-1" />
           </button>
         ) : (
           <button 
-            className="btn btn-danger" 
+            className="btn btn-danger w-full" 
             style={{ borderRadius: 'var(--radius-lg)', flex: 2 }}
             onClick={handleSave}
           >
             Save split <Check size={20} className="inline ml-1" />
           </button>
         )}
-      </footer>
+      </div>
 
+      <Navigation />
     </div>
   );
 }
