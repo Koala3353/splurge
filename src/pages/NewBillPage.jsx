@@ -396,30 +396,23 @@ export default function NewBillPage() {
                         </div>
                       </div>
                       
-                      <div className="p-4 bg-glass flex justify-between items-center">
-                        <span className="text-sm text-secondary">Who shared this?</span>
-                        <button 
-                          popovertarget={`popover-${item.id}`} 
-                          className="btn text-xs px-3 py-1.5" 
-                          style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--radius-full)' }}
-                        >
-                          {item.people.length === selectedPeople.length ? 'Everyone' : `${item.people.length} people`} <ChevronDown size={14} className="inline ml-1" />
-                        </button>
-                        
-                        <div id={`popover-${item.id}`} popover="auto">
-                          <h4 className="font-bold mb-3">Who shared this?</h4>
-                          <div className="flex-col gap-2">
-                            {selectedPeople.map(pId => {
-                              const person = people.find(p => p.id === pId);
-                              const isSel = item.people.includes(pId);
-                              return (
-                                <button key={pId} className={`w-full text-left p-3 rounded-lg flex items-center justify-between mb-2 ${isSel ? 'bg-success text-bg font-bold' : 'bg-glass text-primary'}`} onClick={() => togglePersonForItem(item.id, pId)}>
-                                  {person?.name}
-                                  {isSel && <CheckCircle size={16} />}
-                                </button>
-                              );
-                            })}
-                          </div>
+                      <div className="p-3 bg-glass border-t border-glass/30">
+                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mb-2 px-1">Shared by</div>
+                        <div className="flex gap-2 overflow-x-auto pb-1 px-1 custom-scrollbar">
+                          {selectedPeople.map(pId => {
+                            const person = people.find(p => p.id === pId);
+                            const isSel = item.people.includes(pId);
+                            return (
+                              <button 
+                                key={pId} 
+                                className={`pill whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${isSel ? 'pill-active' : 'pill-inactive'}`} 
+                                onClick={() => togglePersonForItem(item.id, pId)}
+                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                              >
+                                {isSel ? <Check size={14} /> : <Plus size={14} />} {person?.name}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
