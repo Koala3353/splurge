@@ -137,7 +137,12 @@ export default function PeoplePage() {
       </button>
 
       {/* Detail Dialog */}
-      <dialog ref={detailDialogRef} id="detail-dialog" style={{ width: '95vw', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
+      <dialog 
+        ref={detailDialogRef} 
+        id="detail-dialog" 
+        onClose={() => setDetailPersonId(null)}
+        style={{ width: '95vw', maxWidth: '500px', padding: 0, overflow: 'hidden' }}
+      >
         {(() => {
           const person = people.find(p => p.id === detailPersonId);
           if (!person) return null;
@@ -154,7 +159,7 @@ export default function PeoplePage() {
                   <div className="avatar bg-accent">{person.name.charAt(0).toUpperCase()}</div>
                   <h2 className="text-xl font-bold">{person.name}</h2>
                 </div>
-                <form method="dialog"><button className="btn bg-glass p-2 rounded-full" onClick={() => setDetailPersonId(null)}><X size={20} /></button></form>
+                <form method="dialog"><button className="btn bg-glass p-2 rounded-full"><X size={20} /></button></form>
               </div>
               
               <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
