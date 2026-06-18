@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { formatCurrency } from '../utils/format';
 import Navigation from '../components/Navigation';
@@ -17,7 +18,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function StatsPage() {
-  const { bills, people, balances } = useAppContext();
+  const { bills, people, balances, personBillShares } = useAppContext();
+  const [expandedPersonId, setExpandedPersonId] = useState(null);
 
   const totalOutings = bills.length;
   const totalSpent = bills.reduce((sum, bill) => sum + bill.total, 0);
@@ -85,30 +87,59 @@ export default function StatsPage() {
           ) : (
             leaderboard.map((item, index) => {
               const isTop = index === 0;
+              const isExpanded = expandedPersonId === item.person.id;
+              
               return (
-                <div 
-                  key={item.person.id} 
-                  className={`glass-panel flex justify-between items-center p-4 animate-slide-up ${isTop ? 'card-hover' : ''}`}
-                  style={{ 
-                    animationDelay: `${index * 0.1}s`,
-                    borderColor: isTop ? 'rgba(244, 63, 94, 0.5)' : 'var(--glass-border)',
-                    boxShadow: isTop ? '0 0 20px rgba(244, 63, 94, 0.2)' : 'var(--shadow-glass)'
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`avatar ${isTop ? 'bg-danger' : index === 1 ? 'bg-warning' : 'bg-accent'}`} style={{ width: '48px', height: '48px', fontSize: '1.25rem' }}>
-                      {isTop ? <Award size={24} /> : item.person.name.charAt(0).toUpperCase()}
+                <div key={item.person.id} className="flex-col gap-2">
+                  <div 
+                    className={`glass-panel flex justify-between items-center p-4 animate-slide-up ${isTop ? 'card-hover' : 'cursor-pointer'} transition-all`}
+                    style={{ 
+                      animationDelay: `${index * 0.1}s`,
+                      borderColor: isTop ? 'rgba(244, 63, 94, 0.5)' : (isExpanded ? 'var(--accent-color)' : 'var(--glass-border)'),
+                      boxShadow: isTop ? '0 0 20px rgba(244, 63, 94, 0.2)' : 'var(--shadow-glass)',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setExpandedPersonId(isExpanded ? null : item.person.id)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`avatar ${isTop ? 'bg-danger' : index === 1 ? 'bg-warning' : 'bg-accent'}`} style={{ width: '48px', height: '48px', fontSize: '1.25rem' }}>
+                        {isTop ? <Award size={24} /> : item.person.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg">{item.person.name}</h3>
+                        <p className="text-xs text-secondary mt-1 flex items-center gap-1">
+                          <ArrowUpRight size={12} className={isTop ? 'text-danger' : 'text-accent'} /> Needs to pay you
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{item.person.name}</h3>
-                      <p className="text-xs text-secondary mt-1 flex items-center gap-1">
-                        <ArrowUpRight size={12} className={isTop ? 'text-danger' : 'text-accent'} /> Needs to pay you
-                      </p>
+                    <div className="text-right">
+                      <div className="font-bold text-xl">{formatCurrency(item.bal)}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-xl">{formatCurrency(item.bal)}</div>
-                  </div>
+                  
+                  {isExpanded && (
+                    <div className="glass-panel animate-slide-in ml-4" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderLeft: '2px solid var(--accent-color)' }}>
+                      <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Expense Breakdown</h4>
+                      {personBillShares[item.person.id]?.length > 0 ? (
+                        <div className="flex-col">
+                          {personBillShares[item.person.id].map((share, idx) => {
+                            const isLast = idx === personBillShares[item.person.id].length - 1;
+                            return (
+                              <div key={idx} className="flex justify-between items-center py-2" style={{ borderBottom: isLast ? 'none' : '1px solid var(--glass-border)' }}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-sm text-primary">{share.bill.title}</span>
+                                  <span className="text-xs text-secondary">{new Date(share.bill.date).toLocaleDateString()}</span>
+                                </div>
+                                <span className="font-bold text-accent text-sm">{formatCurrency(share.amount)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-secondary">No recorded bills yet.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })
