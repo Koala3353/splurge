@@ -37,6 +37,7 @@ export default function NewBillPage() {
   // Step 2 State
   const [image, setImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState('Loading scanner...');
   const [items, setItems] = useState([]);
   const fileInputRef = useRef(null);
 
@@ -94,12 +95,53 @@ export default function NewBillPage() {
 
     setImage(URL.createObjectURL(file));
     setIsProcessing(true);
+    setOcrProgress('Optimizing image...');
 
     try {
-      const result = await Tesseract.recognize(file, 'eng');
-      const lines = result.data.text.split('\n');
+      // Downscale image to prevent Out-Of-Memory crashes on mobile browsers
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise(resolve => { img.onload = resolve; });
+      
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 1200;
+      const MAX_HEIGHT = 1200;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height = Math.round((height *= MAX_WIDTH / width));
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width = Math.round((width *= MAX_HEIGHT / height));
+          height = MAX_HEIGHT;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+
+      setOcrProgress('Initializing OCR...');
+      const result = await Tesseract.recognize(blob, 'eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            setOcrProgress(`Scanning text: ${Math.round(m.progress * 100)}%`);
+          } else {
+            setOcrProgress('Loading language data...');
+          }
+        }
+      });
+      
+      const lines = result.data.text.split('\\n');
       const parsedItems = [];
-      const priceRegex = /-?\$?\d+\.\d{2}/;
+      const priceRegex = /-?\\$?\\d+\\.\\d{2}/;
       const skipKeywords = ['total', 'subtotal', 'tax', 'tip', 'gratuity', 'payment', 'change', 'cash', 'card', 'visa', 'mastercard', 'amex', 'amount', 'due', 'balance', 'fee', 'service', 'gross', 'sales'];
       
       lines.forEach(line => {
@@ -115,7 +157,7 @@ export default function NewBillPage() {
           const priceStr = match[0].replace('$', '');
           const price = parseFloat(priceStr);
           
-          let name = line.replace(match[0], '').replace(/[^a-zA-Z\s]/g, '').trim();
+          let name = line.replace(match[0], '').replace(/[^a-zA-Z\\s]/g, '').trim();
           name = name || 'Item';
           
           // Only add valid items with a price > 0
@@ -127,6 +169,7 @@ export default function NewBillPage() {
       
       setItems(parsedItems.length > 0 ? parsedItems : [{ id: crypto.randomUUID(), name: 'Item', price: 0, people: [...selectedPeople] }]);
     } catch (error) {
+      console.error(error);
       setItems([{ id: crypto.randomUUID(), name: 'Item', price: 0, people: [...selectedPeople] }]);
     } finally {
       setIsProcessing(false);
@@ -309,7 +352,7 @@ export default function NewBillPage() {
                    <div className="skeleton w-full h-4 mb-3" style={{ maxWidth: '60%' }}></div>
                    <div className="skeleton w-full h-4" style={{ maxWidth: '90%' }}></div>
                    <p className="mt-6 text-accent font-bold tracking-wider uppercase text-sm flex items-center gap-2">
-                     <Loader2 size={16} className="animate-spin" /> Extracting line items
+                     <Loader2 size={16} className="animate-spin" /> {ocrProgress}
                    </p>
                  </div>
                </div>
