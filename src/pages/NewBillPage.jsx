@@ -4,7 +4,7 @@ import { useAppContext } from '../store/AppContext';
 import { formatCurrency } from '../utils/format';
 import Tesseract from 'tesseract.js';
 import { flushSync } from 'react-dom';
-import { Camera, Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft, ChevronDown, Users, UserPlus, Sparkles, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft, ChevronDown, Users, UserPlus, Sparkles, CheckCircle } from 'lucide-react';
 import SwipeableItem from '../components/SwipeableItem';
 
 export default function NewBillPage() {
@@ -139,9 +139,9 @@ export default function NewBillPage() {
         }
       });
       
-      const lines = result.data.text.split('\\n');
+      const lines = result.data.text.split('\n');
       const parsedItems = [];
-      const priceRegex = /-?\\$?\\d+\\.\\d{2}/;
+      const priceRegex = /-?\$?\d+\.\d{2}/;
       const skipKeywords = ['total', 'subtotal', 'tax', 'tip', 'gratuity', 'payment', 'change', 'cash', 'card', 'visa', 'mastercard', 'amex', 'amount', 'due', 'balance', 'fee', 'service', 'gross', 'sales'];
       
       lines.forEach(line => {
@@ -157,7 +157,7 @@ export default function NewBillPage() {
           const priceStr = match[0].replace('$', '');
           const price = parseFloat(priceStr);
           
-          let name = line.replace(match[0], '').replace(/[^a-zA-Z\\s]/g, '').trim();
+          let name = line.replace(match[0], '').replace(/[^a-zA-Z\s]/g, '').trim();
           name = name || 'Item';
           
           // Only add valid items with a price > 0

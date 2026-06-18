@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './store/AppContext';
-import Navigation from './components/Navigation';
 import HomePage from './pages/HomePage';
 import PeoplePage from './pages/PeoplePage';
 import NewBillPage from './pages/NewBillPage';

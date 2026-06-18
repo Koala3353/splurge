@@ -1,4 +1,4 @@
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Receipt, PieChart, Users } from 'lucide-react';
 import { flushSync } from 'react-dom';
 

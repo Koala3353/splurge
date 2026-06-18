@@ -2,7 +2,19 @@ import { useAppContext } from '../store/AppContext';
 import { formatCurrency } from '../utils/format';
 import Navigation from '../components/Navigation';
 import { TrendingUp, Users, DollarSign, Award, ArrowUpRight } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="glass-panel" style={{ padding: '0.5rem 1rem', border: '1px solid var(--glass-border)' }}>
+        <p className="text-sm font-bold text-secondary">{label}</p>
+        <p className="font-bold text-accent">{formatCurrency(payload[0].value)}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function StatsPage() {
   const { bills, people, balances } = useAppContext();
@@ -20,18 +32,6 @@ export default function StatsPage() {
     name: item.person.name,
     amount: item.bal
   }));
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="glass-panel" style={{ padding: '0.5rem 1rem', border: '1px solid var(--glass-border)' }}>
-          <p className="text-sm font-bold text-secondary">{label}</p>
-          <p className="font-bold text-accent">{formatCurrency(payload[0].value)}</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="app-shell animate-slide-in">
