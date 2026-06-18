@@ -345,15 +345,19 @@ export default function NewBillPage() {
             )}
 
             {isProcessing && (
-               <div className="card my-6 relative overflow-hidden p-0 border-glass">
-                 {image && <img src={image} className="w-full h-40 object-cover opacity-30 blur-[2px]" style={{ filter: 'grayscale(50%)' }} alt="Receipt processing" />}
-                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-glass" style={{ background: 'rgba(11, 17, 32, 0.6)' }}>
-                   <div className="skeleton w-full h-8 mb-4" style={{ maxWidth: '80%' }}></div>
-                   <div className="skeleton w-full h-4 mb-3" style={{ maxWidth: '60%' }}></div>
-                   <div className="skeleton w-full h-4" style={{ maxWidth: '90%' }}></div>
-                   <p className="mt-6 text-accent font-bold tracking-wider uppercase text-sm flex items-center gap-2">
-                     <Loader2 size={16} className="animate-spin" /> {ocrProgress}
-                   </p>
+               <div className="scanner-overlay animate-slide-in">
+                 <h2 className="text-3xl font-black mb-2 text-center text-accent">Scanning Receipt</h2>
+                 <p className="text-secondary text-center mb-8">Please wait while we extract the line items.</p>
+                 
+                 <div className="scanner-laser-container">
+                   <div className="scanner-laser"></div>
+                   {image && <img src={image} className="scanner-image" alt="Receipt processing" />}
+                   {!image && <div className="w-full h-full bg-glass flex items-center justify-center"><Loader2 size={40} className="animate-spin text-secondary" /></div>}
+                 </div>
+                 
+                 <div className="card w-full max-w-[320px] border-glass p-4 text-center bg-glass flex flex-col items-center gap-3">
+                    <Loader2 size={24} className="animate-spin text-accent" />
+                    <p className="font-bold tracking-wider uppercase text-sm text-primary">{ocrProgress}</p>
                  </div>
                </div>
             )}
