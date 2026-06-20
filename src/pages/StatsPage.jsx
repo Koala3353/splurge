@@ -16,23 +16,19 @@ import {
 function StatCard({ icon, label, value, hero = false }) {
   return (
     <div
-      className={`glass-panel flex-col justify-between card-hover relative overflow-hidden min-w-0`}
-      style={{
-        padding: '1.25rem 1rem',
-        background: hero ? 'var(--gradient-primary)' : undefined,
-        border: hero ? 'none' : undefined,
-      }}
+      className={`glass-panel flex-col justify-between card-hover relative overflow-hidden min-w-0 ${hero ? 'feature-card' : ''}`}
+      style={{ padding: '1.25rem 1rem' }}
     >
       <div
         className={`flex items-center gap-2 mb-3 ${hero ? 'text-white' : 'text-secondary'}`}
-        style={{ opacity: hero ? 0.9 : 1 }}
+        style={{ opacity: hero ? 0.95 : 1, position: 'relative', zIndex: 1 }}
       >
         <span className="flex-shrink-0 flex items-center">{icon}</span>
         <span className="text-xs font-semibold uppercase tracking-wider truncate">{label}</span>
       </div>
       <div
-        className={`font-black tabular-nums truncate min-w-0 ${hero ? 'text-white' : 'text-primary'}`}
-        style={{ fontSize: 'clamp(1.35rem, 7vw, 2rem)', lineHeight: 1.1 }}
+        className={`font-display font-black tabular-nums truncate min-w-0 ${hero ? 'text-white' : 'text-primary'}`}
+        style={{ fontSize: 'clamp(1.35rem, 7vw, 2rem)', lineHeight: 1.1, position: 'relative', zIndex: 1 }}
       >
         {value}
       </div>
@@ -61,11 +57,12 @@ function OwesBar({ name, amount, pct }) {
       >
         <div
           style={{
-            width: `${pct}%`,
+            width: '100%',
             height: '100%',
-            borderRadius: 'var(--radius-full)',
             background: 'var(--gradient-danger)',
-            transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+            transformOrigin: 'left center',
+            transform: `scaleX(${Math.max(0, Math.min(pct, 100)) / 100})`,
+            transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
           }}
         />
       </div>

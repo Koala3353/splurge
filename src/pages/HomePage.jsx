@@ -39,10 +39,10 @@ export default function HomePage() {
         </div>
 
         {/* Balance hero */}
-        <div className="glass-panel text-center mb-6" style={{ padding: '2rem 1rem' }}>
+        <div className="balance-hero text-center mb-6" style={{ padding: '2.25rem 1rem' }}>
           <p className="text-secondary mb-2 uppercase tracking-wider text-xs font-bold">You&apos;re owed</p>
           <h2
-            className="font-black break-words"
+            className="font-black break-words balance-amount"
             style={{ fontSize: 'clamp(2.25rem, 12vw, 3.25rem)', lineHeight: 1.1, color: totalOwedToYou > 0.005 ? 'var(--success)' : 'var(--text-primary)' }}
           >
             {formatCurrency(totalOwedToYou)}

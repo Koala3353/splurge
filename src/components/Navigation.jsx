@@ -49,7 +49,7 @@ function NavItem({ to, icon, label }) {
       onClick={handleClick}
       aria-label={label}
       aria-current={isActive ? 'page' : undefined}
-      className="select-none"
+      className={`select-none ${isActive ? 'nav-item-active' : ''}`}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -59,8 +59,9 @@ function NavItem({ to, icon, label }) {
         textDecoration: 'none',
         fontSize: '0.75rem',
         fontWeight: isActive ? 600 : 400,
-        transition: 'color 0.2s',
-        padding: '0.25rem 0.75rem',
+        transition: 'color 0.2s, background 0.2s',
+        padding: '0.4rem 0.9rem',
+        borderRadius: 'var(--radius-md)',
         minWidth: '56px'
       }}
     >

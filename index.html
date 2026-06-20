@@ -16,6 +16,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Splurge" />
 
+    <!-- Display typeface for the wordmark, headings, and money figures.
+         Loaded with display=swap so it never blocks render; the service
+         worker caches it for offline use after the first visit. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" />
+
     <title>Splurge — Split Bills</title>
     <style>
       html, body, #root {
