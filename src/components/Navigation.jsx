@@ -6,12 +6,12 @@ const navOrder = { '/': 0, '/people': 1, '/new-bill': 2, '/stats': 3 };
 
 export default function Navigation() {
   return (
-    <footer className="app-footer" style={{ padding: '0.75rem', justifyContent: 'space-around' }}>
+    <nav className="app-footer" aria-label="Primary" style={{ padding: '0.75rem', justifyContent: 'space-around' }}>
       <NavItem to="/" icon={<Home size={24} />} label="Home" />
       <NavItem to="/people" icon={<Users size={24} />} label="People" />
       <NavItem to="/new-bill" icon={<Receipt size={24} />} label="New Bill" />
       <NavItem to="/stats" icon={<PieChart size={24} />} label="Stats" />
-    </footer>
+    </nav>
   );
 }
 
@@ -47,6 +47,9 @@ function NavItem({ to, icon, label }) {
     <a
       href={to}
       onClick={handleClick}
+      aria-label={label}
+      aria-current={isActive ? 'page' : undefined}
+      className="select-none"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -56,7 +59,9 @@ function NavItem({ to, icon, label }) {
         textDecoration: 'none',
         fontSize: '0.75rem',
         fontWeight: isActive ? 600 : 400,
-        transition: 'color 0.2s'
+        transition: 'color 0.2s',
+        padding: '0.25rem 0.75rem',
+        minWidth: '56px'
       }}
     >
       {icon}

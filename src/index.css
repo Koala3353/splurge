@@ -46,6 +46,33 @@ body {
   height: 100dvh;
   overflow: hidden; /* Prevent entire page from scrolling */
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Keyboard focus ring (mouse/touch users don't see it). */
+:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Visually-hidden but accessible to screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 #root {
@@ -94,6 +121,19 @@ button {
   border-radius: var(--radius-md);
   font-weight: 500;
   font-size: 1rem;
+}
+
+.btn:disabled,
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover,
+button:disabled:hover {
+  transform: none;
+  filter: none;
+  box-shadow: none;
 }
 
 .btn-primary {
@@ -676,4 +716,139 @@ dialog[open] {
   object-fit: cover;
   filter: grayscale(80%) contrast(1.2);
   opacity: 0.4;
+}
+
+/* ==========================================================================
+   Utility layer
+   Fills in the Tailwind-style classes the app markup relies on but that
+   weren't previously defined (positioning, sizing, color, spacing, etc.).
+   ========================================================================== */
+
+/* Display */
+.block { display: block; }
+.inline { display: inline; }
+.inline-block { display: inline-block; }
+.inline-flex { display: inline-flex; }
+.grid { display: grid; }
+.hidden { display: none; }
+
+/* Position */
+.relative { position: relative; }
+.absolute { position: absolute; }
+.fixed { position: fixed; }
+.sticky { position: sticky; }
+.inset-0 { inset: 0; }
+
+/* Flex helpers (complements the existing ones) */
+.flex-row { flex-direction: row; }
+.flex-shrink-0 { flex-shrink: 0; }
+.flex-grow { flex-grow: 1; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.items-stretch { align-items: stretch; }
+.justify-start { justify-content: flex-start; }
+.self-center { align-self: center; }
+.gap-6 { gap: 1.5rem; }
+
+/* Sizing */
+.min-w-0 { min-width: 0; }
+.w-auto { width: auto; }
+.w-half { width: 50%; }
+.max-w-full { max-width: 100%; }
+.h-auto { height: auto; }
+
+/* Spacing — margins */
+.mt-3 { margin-top: 0.75rem; }
+.mt-6 { margin-top: 1.5rem; }
+.mt-8 { margin-top: 2rem; }
+.mb-8 { margin-bottom: 2rem; }
+.ml-2 { margin-left: 0.5rem; }
+.ml-4 { margin-left: 1rem; }
+
+/* Spacing — padding */
+.p-0\.5 { padding: 0.125rem; }
+.p-3 { padding: 0.75rem; }
+.p-5 { padding: 1.25rem; }
+.p-6 { padding: 1.5rem; }
+.px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+.py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+.pb-1 { padding-bottom: 0.25rem; }
+.pb-4 { padding-bottom: 1rem; }
+.pt-2 { padding-top: 0.5rem; }
+
+/* Typography */
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+.text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+.font-semibold { font-weight: 600; }
+.lowercase { text-transform: lowercase; }
+.capitalize { text-transform: capitalize; }
+.italic { font-style: italic; }
+.leading-none { line-height: 1; }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+.break-words { overflow-wrap: anywhere; word-break: break-word; }
+
+/* Colors */
+.text-white { color: #ffffff; }
+.text-warning { color: var(--warning); }
+.bg-danger { background-color: var(--danger); }
+.bg-warning { background-color: var(--warning); }
+.bg-primary { background-color: var(--accent-color); }
+.bg-transparent { background-color: transparent; }
+.gradient-primary { background: var(--gradient-primary); }
+.gradient-danger { background: var(--gradient-danger); }
+.gradient-success { background: var(--gradient-success); }
+
+/* Borders & radius */
+.border { border-width: 1px; border-style: solid; border-color: var(--glass-border); }
+.border-2 { border-width: 2px; border-style: solid; border-color: var(--glass-border); }
+.border-bg { border-color: var(--bg-color); }
+.border-accent { border-color: var(--accent-color); }
+.border-none { border: none; }
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-2xl { border-radius: 1.25rem; }
+
+/* Effects */
+.opacity-20 { opacity: 0.2; }
+.opacity-60 { opacity: 0.6; }
+.opacity-90 { opacity: 0.9; }
+.shadow-glow { box-shadow: var(--shadow-glow); }
+
+/* Z-index */
+.z-10 { z-index: 10; }
+.z-20 { z-index: 20; }
+.z-50 { z-index: 50; }
+
+/* Overflow & scroll */
+.overflow-y-auto { overflow-y: auto; }
+.overflow-auto { overflow: auto; }
+.whitespace-nowrap { white-space: nowrap; }
+
+/* Interaction */
+.cursor-pointer { cursor: pointer; }
+.select-none { user-select: none; -webkit-user-select: none; }
+.transition-all { transition: all 0.2s ease; }
+.transition-transform { transition: transform 0.2s ease; }
+
+/* Thin scrollbar for horizontal pill rows */
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--glass-border) transparent; }
+.custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 999px; }
+
+/* Press feedback for any tappable surface */
+.pressable { transition: transform 0.12s ease, filter 0.12s ease; }
+.pressable:active { transform: scale(0.97); }
+
+/* Empty-state block */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.02);
 }

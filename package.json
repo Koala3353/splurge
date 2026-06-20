@@ -1,5 +1,5 @@
 {
-  "name": "serene-hubble",
+  "name": "splurge",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,7 +14,6 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.18.0",
-    "recharts": "^3.8.1",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {

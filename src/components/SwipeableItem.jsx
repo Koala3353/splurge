@@ -23,7 +23,7 @@ export default function SwipeableItem({ children, onDelete }) {
           {children}
         </div>
       </div>
-      <button className="SwipeableList-action" onClick={onDelete}>
+      <button className="SwipeableList-action" onClick={onDelete} aria-label="Delete">
         <Trash2 size={24} />
       </button>
     </div>

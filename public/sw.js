@@ -1,4 +1,4 @@
-const CACHE_NAME = 'split-store-v2';
+const CACHE_NAME = 'splurge-v3';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -27,7 +27,8 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   
   // Network-first for HTML pages so we always get the latest version
-  if (e.request.mode === 'navigate' || e.request.headers.get('accept').includes('text/html')) {
+  const accept = e.request.headers.get('accept') || '';
+  if (e.request.mode === 'navigate' || accept.includes('text/html')) {
     e.respondWith(
       fetch(e.request)
         .then((response) => {
