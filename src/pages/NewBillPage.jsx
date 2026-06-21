@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../store/AppContext';
 import { formatCurrency, initialsOf } from '../utils/format';
 import { computeBillDues } from '../utils/split';
+import { parseReceipt } from '../utils/receipt';
 import { flushSync } from 'react-dom';
 import Navigation from '../components/Navigation';
 import {
@@ -12,6 +13,46 @@ import {
 import SwipeableItem from '../components/SwipeableItem';
 
 const newItem = (people) => ({ id: crypto.randomUUID(), name: '', price: 0, people: [...people] });
+
+// Prepare a captured photo for OCR: size it into a legible range, then convert
+// to high-contrast grayscale (Tesseract reads clean monochrome far better than
+// a raw phone photo of a receipt).
+async function preprocessReceipt(file) {
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+  await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+
+  const TARGET = 1600; // longest side; balances legibility vs. mobile memory
+  let { width, height } = img;
+  const scale = TARGET / Math.max(width, height);
+  if (scale < 0.95 || scale > 1.1) {
+    width = Math.max(1, Math.round(width * scale));
+    height = Math.max(1, Math.round(height * scale));
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, width, height);
+
+  try {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const d = imageData.data;
+    const contrast = 1.45;
+    const intercept = 128 * (1 - contrast);
+    for (let i = 0; i < d.length; i += 4) {
+      let v = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      v = v * contrast + intercept;
+      d[i] = d[i + 1] = d[i + 2] = v < 0 ? 0 : v > 255 ? 255 : v;
+    }
+    ctx.putImageData(imageData, 0, 0);
+  } catch {
+    // getImageData can throw on a tainted canvas; fall back to the plain draw.
+  }
+
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+}
 
 export default function NewBillPage() {
   const { people, groups, addPerson, addBill, updateBill, bills, meId, setMeId } = useAppContext();
@@ -97,38 +138,32 @@ export default function NewBillPage() {
     setIsProcessing(true);
     setOcrProgress('Optimizing image...');
 
+    let worker;
     try {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
-
-      const canvas = document.createElement('canvas');
-      const MAX = 1200;
-      let { width, height } = img;
-      if (width > height && width > MAX) { height = Math.round(height * (MAX / width)); width = MAX; }
-      else if (height >= width && height > MAX) { width = Math.round(width * (MAX / height)); height = MAX; }
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+      const blob = await preprocessReceipt(file);
 
       setOcrProgress('Initializing OCR...');
       // Lazy-load the OCR engine — its code is fetched only when someone
       // actually scans a receipt, keeping it out of the initial app bundle.
-      const { default: Tesseract } = await import('tesseract.js');
-      const result = await Tesseract.recognize(blob, 'eng', {
+      const { createWorker } = await import('tesseract.js');
+      worker = await createWorker('eng', 1, {
         logger: (m) => {
           if (m.status === 'recognizing text') setOcrProgress(`Reading text: ${Math.round(m.progress * 100)}%`);
           else setOcrProgress('Loading language data...');
         },
       });
+      // PSM 4 = a single column of variable-size lines (a receipt). Keeping
+      // inter-word spaces helps the parser separate item names from amounts.
+      await worker.setParameters({ tessedit_pageseg_mode: '4', preserve_interword_spaces: '1' });
 
-      const parsed = parseReceipt(result.data.text, selectedPeople);
+      const { data } = await worker.recognize(blob);
+      const parsed = parseReceipt(data.text, selectedPeople);
       setItems(parsed.length > 0 ? parsed : [newItem(selectedPeople)]);
     } catch (error) {
       console.error('OCR failed', error);
       setItems([newItem(selectedPeople)]);
     } finally {
+      if (worker) worker.terminate();
       setIsProcessing(false);
     }
   };
@@ -504,41 +539,4 @@ export default function NewBillPage() {
       <Navigation />
     </div>
   );
-}
-
-// --- Receipt parsing -------------------------------------------------------
-const SKIP_KEYWORDS = [
-  'total', 'subtotal', 'tax', 'tip', 'gratuity', 'payment', 'change', 'cash', 'card',
-  'visa', 'mastercard', 'amex', 'amount', 'due', 'balance', 'fee', 'service', 'gross',
-  'sales', 'vat', 'tin', 'sn', 'inv', 'no.', 'date', 'time', 'customer',
-  'address', 'signature', 'exempt', 'discount', 'qty', 'receipt', 'order', 'table',
-];
-
-function parseReceipt(text, selectedPeople) {
-  const lines = text.split('\n');
-  const items = [];
-  const numRegex = /(?:PHP\s*|Php\s*|₱\s*|\$\s*)?-?\d+(?:,\d{3})*(?:\.\d{1,2})?/gi;
-
-  lines.forEach((line) => {
-    const lower = line.toLowerCase();
-    if (SKIP_KEYWORDS.some((kw) => lower.includes(kw))) return;
-
-    const matches = line.match(numRegex);
-    if (!matches || matches.length === 0) return;
-
-    const priceStr = matches[matches.length - 1].replace(/[^0-9.-]/g, '');
-    const price = parseFloat(priceStr);
-
-    // Strip the matched numbers, then keep letters/numbers/&/'.- (so "2x Latte"
-    // survives) and collapse whitespace.
-    let name = line;
-    matches.forEach((m) => { name = name.replace(m, ' '); });
-    name = name.replace(/[^\w\s&'.-]/g, ' ').replace(/\s+/g, ' ').trim();
-
-    if (price > 0 && name.replace(/[^a-zA-Z]/g, '').length >= 2) {
-      items.push({ id: crypto.randomUUID(), name, price, people: [...selectedPeople] });
-    }
-  });
-
-  return items;
 }
