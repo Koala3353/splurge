@@ -471,8 +471,16 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   overflow-y: auto;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
-  padding: 1.5rem;
+  /* Clear the status bar / notch on header-less pages (standalone PWA uses a
+     translucent status bar, so content would otherwise sit underneath it). */
+  padding: calc(1.5rem + env(safe-area-inset-top)) 1.5rem 1.5rem;
   scroll-timeline-name: --main-scroll;
+}
+
+/* When a header is present (e.g. New Bill) it already clears the safe area,
+   so the scroll body below it doesn't need the extra top inset. */
+.app-header + .app-main {
+  padding-top: 1.5rem;
 }
 
 .app-header {

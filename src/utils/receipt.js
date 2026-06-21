@@ -14,6 +14,7 @@ const SKIP_PHRASES = [
   'sc/pwd', 'sc / pwd', 'solo parent', 'official receipt', 'sales inv', 'order #', 'order no',
   'order#', 'dine in', 'dine-in', 'take out', 'take-out', 'come again', 'qty item',
   'round off', 'round-off', 'thank you',
+  'item(s)', 'number of item', 'no. of item', 'total due', 'total amount',
 ];
 
 // Single tokens — matched on WORD BOUNDARIES so real dishes survive
@@ -22,7 +23,7 @@ const SKIP_WORDS = [
   'subtotal', 'total', 'tax', 'vat', 'vatable', 'discount', 'pwd', 'scpwd', 'senior', 'naac',
   'cash', 'change', 'tender', 'card', 'visa', 'mastercard', 'amex', 'gcash', 'maya', 'paymaya',
   'debit', 'credit', 'tip', 'gratuity', 'rounding', 'balance', 'receipt', 'invoice',
-  'tin', 'trn', 'min', 'sn', 'bir', 'accr', 'permit', 'pos', 'or',
+  'tin', 'trn', 'min', 'sn', 'bir', 'accr', 'permit', 'pos', 'or', 'snr', 'ctzn', 'items',
   'date', 'time', 'cashier', 'cshr', 'server', 'served', 'table', 'guest', 'pax',
   'particulars', 'description', 'salamat', 'welcome', 'tel', 'telephone', 'contact',
   'www', 'branch', 'reprint', 'void',
@@ -46,17 +47,21 @@ const fixDigits = (s) => s
   .replace(/[Zz]/g, '2')
   .replace(/[,\s]/g, '');
 
+// Trailing tax-class flags that follow an amount on PH receipts:
+// V (VATable), E (VAT-exempt), Z (zero-rated), X/N (non-VAT), T/TX, "*".
+const TAXFLAG = '(?:\\s*(?:tx|vat|[veznxt]))?\\s*\\*?';
+
 // Find a money amount anchored at the END of the line (item amounts are
 // right-aligned). Returns { raw, value, money } or null.
 function detectTrailingAmount(line) {
-  // 1) decimals win: "1,234.56", "P 95.00", "-45.00", trailing "TX"/"*" flags ok
-  let m = line.match(new RegExp(`([-(]?\\s*${CURRENCY}?\\s*-?\\d[\\d.,]*\\.\\d{2})\\s*\\)?\\s*(?:tx|vat|t|\\*)?\\s*$`, 'i'));
+  // 1) decimals win: "1,234.56", "P 95.00", "-45.00", "135.00V", "82.00 V"
+  let m = line.match(new RegExp(`([-(]?\\s*${CURRENCY}?\\s*-?\\d[\\d.,]*\\.\\d{2})\\s*\\)?${TAXFLAG}\\s*$`, 'i'));
   if (m) return { raw: m[0], value: parseFloat(fixDigits(stripCurrency(m[1]))), money: true };
-  // 2) currency symbol + whole number: "P 95", "₱120"
-  m = line.match(new RegExp(`(${CURRENCY}\\s*-?\\d[\\d,]*)\\s*(?:tx|t|\\*)?\\s*$`, 'i'));
+  // 2) currency symbol + whole number: "P 95", "₱120", "₱120V"
+  m = line.match(new RegExp(`(${CURRENCY}\\s*-?\\d[\\d,]*)${TAXFLAG}\\s*$`, 'i'));
   if (m) return { raw: m[0], value: parseFloat(fixDigits(stripCurrency(m[1]))), money: true };
-  // 3) bare trailing integer with a space before it: "Coke 50"
-  m = line.match(/(\s-?\d[\d,]{0,6})\s*(?:tx|t|\*)?\s*$/);
+  // 3) bare trailing integer with a space before it: "Coke 50", "Coke 50V"
+  m = line.match(new RegExp(`(\\s-?\\d[\\d,]{0,6})${TAXFLAG}\\s*$`, 'i'));
   if (m) return { raw: m[1], value: parseFloat(fixDigits(m[1])), money: false };
   return null;
 }
@@ -67,6 +72,7 @@ function stripCurrency(s) {
 
 function cleanName(s) {
   return s
+    .replace(/@\s*\d[\d.,]*/g, ' ')         // "@89" unit-price markers
     .replace(/₱|php|\$/ig, ' ')
     .replace(/[^A-Za-z0-9&'./\- ]/g, ' ')   // keep alnum + a few item-y punctuations
     .replace(/\s{2,}/g, ' ')

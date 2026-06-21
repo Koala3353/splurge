@@ -55,29 +55,30 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Recent splits */}
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-lg font-bold">Recent splits</h3>
-          {bills.length > 0 && (
-            <button className="text-sm text-accent pressable" onClick={() => navigate('/new-bill')}>
-              New split
-            </button>
-          )}
-        </div>
-
         {bills.length === 0 ? (
-          <div className="empty-state">
-            <div className="avatar bg-glass mx-auto mb-3" style={{ width: 48, height: 48 }}>
-              <Receipt size={24} className="text-secondary" />
+          /* Center the call-to-action in the space below the hero so the
+             screen doesn't read as top-cramped with an empty bottom. */
+          <div className="flex flex-col justify-center" style={{ minHeight: '42vh' }}>
+            <div className="empty-state">
+              <div className="avatar bg-glass mx-auto mb-3" style={{ width: 48, height: 48 }}>
+                <Receipt size={24} className="text-secondary" />
+              </div>
+              <h4 className="font-bold text-primary mb-1">No splits yet</h4>
+              <p className="text-sm mb-4">Scan a receipt or start one by hand. We&apos;ll do the math.</p>
+              <button className="btn btn-primary pressable" onClick={() => navigate('/new-bill')}>
+                <Plus size={18} /> Start a split
+              </button>
             </div>
-            <h4 className="font-bold text-primary mb-1">No splits yet</h4>
-            <p className="text-sm mb-4">Scan a receipt or start one by hand. We&apos;ll do the math.</p>
-            <button className="btn btn-primary pressable" onClick={() => navigate('/new-bill')}>
-              <Plus size={18} /> Start a split
-            </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-bold">Recent splits</h3>
+              <button className="text-sm text-accent pressable" onClick={() => navigate('/new-bill')}>
+                New split
+              </button>
+            </div>
+            <div className="flex flex-col gap-3">
             {recent.map((bill) => (
               <button
                 key={bill.id}
@@ -100,7 +101,8 @@ export default function HomePage() {
                 </div>
               </button>
             ))}
-          </div>
+            </div>
+          </>
         )}
       </main>
 
