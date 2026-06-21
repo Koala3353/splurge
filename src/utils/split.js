@@ -8,10 +8,15 @@ const num = (v) => {
 };
 
 /**
- * Compute what each participant owes for a single bill, allocating shared
- * fees/tips/discounts proportionally to each person's item share.
+ * Compute what each participant owes for a single bill.
  *
- * @param {object} bill - { items:[{price, people:[id]}], fees:[{amount}], participants:[id] }
+ * Items are split evenly among the people assigned to them. Each fee/adjustment
+ * is then applied to the people it targets (default: everyone) — positive
+ * amounts (service charge, tip) add to their share, negative amounts (PWD/senior
+ * discounts) subtract — distributed proportionally to each target's item share,
+ * so the diner with the discount actually pays less.
+ *
+ * @param {object} bill - { items:[{price, people:[id]}], fees:[{amount, people?:[id]}], participants:[id] }
  * @returns {{ dues: Record<string, number>, itemsTotal, feesTotal, total }}
  */
 export function computeBillDues(bill) {
@@ -33,20 +38,26 @@ export function computeBillDues(bill) {
     sharers.forEach((pId) => { dues[pId] += split; });
   });
 
-  // Allocate fees (can be negative for discounts). Distribute by each person's
-  // share of the assigned item cost; fall back to an even split when no items
-  // are assigned yet.
-  if (feesTotal !== 0) {
-    const assigned = participants.reduce((sum, pId) => sum + dues[pId], 0);
-    if (assigned > 0) {
-      participants.forEach((pId) => {
-        dues[pId] += feesTotal * (dues[pId] / assigned);
-      });
-    } else if (participants.length > 0) {
-      const even = feesTotal / participants.length;
-      participants.forEach((pId) => { dues[pId] += even; });
+  // Allocate each fee to its target people, proportional to their item share
+  // (snapshot the item-only shares so multiple fees don't compound each other).
+  const itemShare = { ...dues };
+  fees.forEach((fee) => {
+    const amount = num(fee.amount);
+    if (amount === 0) return;
+    let targets = (fee.people && fee.people.length)
+      ? fee.people.filter((pId) => dues[pId] !== undefined)
+      : participants.slice();
+    if (targets.length === 0) targets = participants.slice();
+    if (targets.length === 0) return;
+
+    const base = targets.reduce((sum, pId) => sum + itemShare[pId], 0);
+    if (base > 0) {
+      targets.forEach((pId) => { dues[pId] += amount * (itemShare[pId] / base); });
+    } else {
+      const even = amount / targets.length;
+      targets.forEach((pId) => { dues[pId] += even; });
     }
-  }
+  });
 
   return { dues, itemsTotal, feesTotal, total: itemsTotal + feesTotal };
 }

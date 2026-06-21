@@ -30,8 +30,27 @@ const SKIP_WORDS = [
 ];
 const SKIP_WORDS_RE = new RegExp(`\\b(${SKIP_WORDS.join('|')})\\b`, 'i');
 
+// OCR-tolerant patterns for the metadata/total lines that thermal prints most
+// often garble (V↔U, W↔H, O↔0, S↔5, I↔T). Without these, lines like
+// "Sales PHD", "Less 12 UAT", "Appriode", "PHD ID" leak through as fake items.
+const SKIP_PATTERNS = [
+  /\b[vu]at(able)?\b/i,        // vat, uat, vatable, uatable
+  /\bp[wh]d\b/i,               // pwd, phd
+  /\bt[o0]tal\b/i,             // total, t0tal
+  /\bsub\s*t[o0]tal\b/i,       // subtotal
+  /\bch[a4]nge\b/i,            // change
+  /\bca[s5]h\b/i,              // cash, ca5h
+  /\b[ti]tems?\b/i,            // item, items, ttem
+  /\bappr/i,                   // approval / ApprCode (incl. "Appriode")
+  /\bdisc(ount)?\b/i,          // disc, discount
+  /\btender/i,                 // tender / tendered
+  /\bzero[\s-]?rated\b/i,      // zero-rated
+];
+
 function isSkippableLine(lower) {
-  return SKIP_PHRASES.some((p) => lower.includes(p)) || SKIP_WORDS_RE.test(lower);
+  return SKIP_PHRASES.some((p) => lower.includes(p))
+    || SKIP_WORDS_RE.test(lower)
+    || SKIP_PATTERNS.some((re) => re.test(lower));
 }
 
 // Peso "P" only counts as currency when it's a standalone token (so "Shrimp"

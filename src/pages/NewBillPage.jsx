@@ -71,7 +71,10 @@ export default function NewBillPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrProgress, setOcrProgress] = useState('Loading scanner...');
   const [items, setItems] = useState(() => (editBill?.items || []).map((it) => ({ ...it, people: [...(it.people || [])] })));
-  const [fees, setFees] = useState(() => (editBill?.fees || []).map((f) => ({ ...f })));
+  const [fees, setFees] = useState(() => (editBill?.fees || []).map((f) => ({
+    ...f,
+    people: f.people || [...(editBill?.participants || [])],
+  })));
   const fileInputRef = useRef(null);
   const discardRef = useRef(null);
 
@@ -189,9 +192,25 @@ export default function NewBillPage() {
   };
 
   // --- STEP 3: Fees ---
-  const addFee = () => setFees((prev) => [...prev, { id: crypto.randomUUID(), name: 'Service charge', amount: 0 }]);
+  const addFee = () => setFees((prev) => [...prev, { id: crypto.randomUUID(), name: 'Service charge', amount: 0, people: [...selectedPeople] }]);
   const updateFee = (id, field, val) => setFees((prev) => prev.map((f) => (f.id === id ? { ...f, [field]: val } : f)));
   const removeFee = (id) => setFees((prev) => prev.filter((f) => f.id !== id));
+
+  const togglePersonForFee = (feeId, personId) => {
+    setFees((prev) => prev.map((f) => {
+      if (f.id !== feeId) return f;
+      const has = (f.people || []).includes(personId);
+      return { ...f, people: has ? f.people.filter((p) => p !== personId) : [...(f.people || []), personId] };
+    }));
+  };
+
+  const toggleEveryoneForFee = (feeId) => {
+    setFees((prev) => prev.map((f) => {
+      if (f.id !== feeId) return f;
+      const all = selectedPeople.length > 0 && selectedPeople.every((p) => (f.people || []).includes(p));
+      return { ...f, people: all ? [] : [...selectedPeople] };
+    }));
+  };
 
   // --- Derived totals (shared math) ---
   const draftBill = { items, fees, participants: selectedPeople };
@@ -453,10 +472,39 @@ export default function NewBillPage() {
                       <div className="flex-col gap-3 p-4 bg-glass border border-glass rounded-lg">
                         <div className="text-xs text-secondary font-bold uppercase tracking-wider">Name</div>
                         <input type="text" className="input-ghost text-lg font-bold w-full border-b border-glass pb-2" value={fee.name} onChange={(e) => updateFee(fee.id, 'name', e.target.value)} />
-                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Amount <span className="lowercase font-medium">(use a minus for discounts)</span></div>
+                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Amount <span className="lowercase font-medium">(minus for a discount)</span></div>
                         <div className="flex gap-2 items-center">
                           <span className="text-secondary font-medium">₱</span>
                           <input type="number" inputMode="decimal" step="0.01" className="input-ghost text-xl font-bold flex-1" value={fee.amount || ''} onChange={(e) => updateFee(fee.id, 'amount', parseFloat(e.target.value) || 0)} />
+                        </div>
+
+                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Applies to</div>
+                        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                          {(() => {
+                            const everyone = selectedPeople.length > 0 && selectedPeople.every((p) => (fee.people || []).includes(p));
+                            return (
+                              <button
+                                className={`pill whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${everyone ? 'pill-active' : 'pill-inactive'}`}
+                                onClick={() => toggleEveryoneForFee(fee.id)}
+                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                              >
+                                <Users size={14} /> Everyone
+                              </button>
+                            );
+                          })()}
+                          {selectedPeople.map((pId) => {
+                            const isSel = (fee.people || []).includes(pId);
+                            return (
+                              <button
+                                key={pId}
+                                className={`pill whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${isSel ? 'pill-active' : 'pill-inactive'}`}
+                                onClick={() => togglePersonForFee(fee.id, pId)}
+                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                              >
+                                {isSel ? <Check size={14} /> : <Plus size={14} />} {personName(pId)}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     </SwipeableItem>
