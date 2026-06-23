@@ -4,55 +4,16 @@ import { useAppContext } from '../store/AppContext';
 import { formatCurrency, initialsOf } from '../utils/format';
 import { computeBillDues } from '../utils/split';
 import { parseReceipt } from '../utils/receipt';
+import { warmUpOcr, scanReceipt } from '../utils/ocr';
 import { flushSync } from 'react-dom';
 import Navigation from '../components/Navigation';
 import {
   Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft,
-  Users, UserPlus, Sparkles, CheckCircle, X,
+  Users, UserPlus, Sparkles, CheckCircle, X, RotateCcw,
 } from 'lucide-react';
 import SwipeableItem from '../components/SwipeableItem';
 
 const newItem = (people) => ({ id: crypto.randomUUID(), name: '', price: 0, people: [...people] });
-
-// Prepare a captured photo for OCR: size it into a legible range, then convert
-// to high-contrast grayscale (Tesseract reads clean monochrome far better than
-// a raw phone photo of a receipt).
-async function preprocessReceipt(file) {
-  const img = new Image();
-  img.src = URL.createObjectURL(file);
-  await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
-
-  const TARGET = 1600; // longest side; balances legibility vs. mobile memory
-  let { width, height } = img;
-  const scale = TARGET / Math.max(width, height);
-  if (scale < 0.95 || scale > 1.1) {
-    width = Math.max(1, Math.round(width * scale));
-    height = Math.max(1, Math.round(height * scale));
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(img, 0, 0, width, height);
-
-  try {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const d = imageData.data;
-    const contrast = 1.45;
-    const intercept = 128 * (1 - contrast);
-    for (let i = 0; i < d.length; i += 4) {
-      let v = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-      v = v * contrast + intercept;
-      d[i] = d[i + 1] = d[i + 2] = v < 0 ? 0 : v > 255 ? 255 : v;
-    }
-    ctx.putImageData(imageData, 0, 0);
-  } catch {
-    // getImageData can throw on a tainted canvas; fall back to the plain draw.
-  }
-
-  return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
-}
 
 export default function NewBillPage() {
   const { people, groups, addPerson, addBill, updateBill, bills, meId, setMeId } = useAppContext();
@@ -70,6 +31,7 @@ export default function NewBillPage() {
   const [image, setImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrProgress, setOcrProgress] = useState('Loading scanner...');
+  const [scanNote, setScanNote] = useState('');
   const [items, setItems] = useState(() => (editBill?.items || []).map((it) => ({ ...it, people: [...(it.people || [])] })));
   const [fees, setFees] = useState(() => (editBill?.fees || []).map((f) => ({
     ...f,
@@ -134,39 +96,35 @@ export default function NewBillPage() {
   };
 
   // --- STEP 2: Items & OCR ---
+  // Start the (cached) scan engine the moment the user taps Scan, so it warms
+  // up while they pick a photo — then open the file picker.
+  const handleScanTap = () => {
+    warmUpOcr().catch(() => {});
+    fileInputRef.current?.click();
+  };
+
   const handleImageCapture = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setImage(URL.createObjectURL(file));
+    setScanNote('');
     setIsProcessing(true);
-    setOcrProgress('Optimizing image...');
+    setOcrProgress('Optimizing image…');
 
-    let worker;
     try {
-      const blob = await preprocessReceipt(file);
-
-      setOcrProgress('Initializing OCR...');
-      // Lazy-load the OCR engine — its code is fetched only when someone
-      // actually scans a receipt, keeping it out of the initial app bundle.
-      const { createWorker } = await import('tesseract.js');
-      worker = await createWorker('eng', 1, {
-        logger: (m) => {
-          if (m.status === 'recognizing text') setOcrProgress(`Reading text: ${Math.round(m.progress * 100)}%`);
-          else setOcrProgress('Loading language data...');
-        },
-      });
-      // PSM 4 = a single column of variable-size lines (a receipt). Keeping
-      // inter-word spaces helps the parser separate item names from amounts.
-      await worker.setParameters({ tessedit_pageseg_mode: '4', preserve_interword_spaces: '1' });
-
-      const { data } = await worker.recognize(blob);
-      const parsed = parseReceipt(data.text, selectedPeople);
-      setItems(parsed.length > 0 ? parsed : [newItem(selectedPeople)]);
+      const text = await scanReceipt(file, setOcrProgress);
+      const parsed = parseReceipt(text, selectedPeople);
+      if (parsed.length > 0) {
+        setItems(parsed);
+      } else {
+        setItems([newItem(selectedPeople)]);
+        setScanNote("Couldn't read that one clearly — add items below, or rescan a flatter, well-lit shot.");
+      }
     } catch (error) {
       console.error('OCR failed', error);
       setItems([newItem(selectedPeople)]);
+      setScanNote('Scan failed — add items manually or try again.');
     } finally {
-      if (worker) worker.terminate();
       setIsProcessing(false);
     }
   };
@@ -352,17 +310,18 @@ export default function NewBillPage() {
         {/* STEP 2 */}
         {step === 2 && (
           <>
+            {/* Always mounted so "Rescan" works once items exist, too. */}
+            <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleImageCapture} style={{ display: 'none' }} />
             {items.length === 0 && !isProcessing && (
               <div className="card text-center py-8">
                 <h3 className="font-bold text-xl mb-2">What&apos;d everyone get?</h3>
                 <p className="text-sm text-secondary mb-6">Snap the receipt and we&apos;ll pull out the lines, or add them yourself.</p>
-                <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleImageCapture} style={{ display: 'none' }} />
                 <div className="flex gap-4 justify-center">
                   <button className="btn btn-secondary flex-col items-center p-4 rounded-xl flex-1 pressable" onClick={() => setItems([newItem(selectedPeople)])}>
                     <Plus size={32} className="mb-2 text-primary" />
                     <span>Add manually</span>
                   </button>
-                  <button className="btn flex-col items-center pressable" style={{ background: 'rgba(236,72,153,0.12)', color: 'var(--accent-color)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={() => fileInputRef.current?.click()}>
+                  <button className="btn flex-col items-center pressable" style={{ background: 'rgba(236,72,153,0.12)', color: 'var(--accent-color)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={handleScanTap}>
                     <Sparkles size={32} className="mb-2" />
                     <span>Scan receipt</span>
                   </button>
@@ -389,9 +348,19 @@ export default function NewBillPage() {
 
             {!isProcessing && items.length > 0 && (
               <div className="flex-col gap-4">
+                {scanNote && (
+                  <div className="glass-panel p-3 text-sm text-secondary" style={{ borderColor: 'rgba(251,191,36,0.35)' }}>
+                    {scanNote}
+                  </div>
+                )}
                 <div className="flex justify-between items-center mb-2 px-2">
                   <span className="text-sm text-secondary font-bold uppercase">Subtotal</span>
-                  <span className="font-bold tabular-nums">{formatCurrency(itemsTotal)}</span>
+                  <div className="flex items-center gap-3">
+                    <button className="text-xs text-accent pressable flex items-center gap-1" onClick={handleScanTap} aria-label="Rescan receipt">
+                      <RotateCcw size={13} /> Rescan
+                    </button>
+                    <span className="font-bold tabular-nums">{formatCurrency(itemsTotal)}</span>
+                  </div>
                 </div>
 
                 <ul className="SwipeableList">

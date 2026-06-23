@@ -15,6 +15,8 @@ const SKIP_PHRASES = [
   'order#', 'dine in', 'dine-in', 'take out', 'take-out', 'come again', 'qty item',
   'round off', 'round-off', 'thank you',
   'item(s)', 'number of item', 'no. of item', 'total due', 'total amount',
+  // address / location lines (substrings — these don't appear in dish names)
+  'street', 'avenue', 'boulevard', 'barangay', 'shopping center', 'bldg',
 ];
 
 // Single tokens — matched on WORD BOUNDARIES so real dishes survive
@@ -38,8 +40,9 @@ const SKIP_PATTERNS = [
   /\bp[wh]d\b/i,               // pwd, phd
   /\bt[o0]tal\b/i,             // total, t0tal
   /\bsub\s*t[o0]tal\b/i,       // subtotal
-  /\bch[a4]nge\b/i,            // change
+  /\b[ch]+ange\b/i,            // change, hange (C dropped/garbled by OCR)
   /\bca[s5]h\b/i,              // cash, ca5h
+  /\b(ave|blvd|brgy|cor|rd)\b/i, // address abbreviations
   /\b[ti]tems?\b/i,            // item, items, ttem
   /\bappr/i,                   // approval / ApprCode (incl. "Appriode")
   /\bdisc(ount)?\b/i,          // disc, discount
@@ -111,29 +114,48 @@ function looksLikeMetadata(line) {
 
 export function parseReceipt(text, selectedPeople = []) {
   const items = [];
+  let runningSum = 0;   // sum of item amounts so far
+  let largestItem = 0;
+
   for (const rawLine of (text || '').split('\n')) {
     const line = rawLine.replace(/\t/g, ' ').trim();
     if (line.length < 3) continue;
 
+    const amount = detectTrailingAmount(line);
+
+    // Structural boundary: a receipt's subtotal/total equals the sum of its
+    // items. Once we hit a line whose amount matches the running item total
+    // (and it's at least as large as any single item), everything below is the
+    // summary block (subtotal, VAT, discounts, payment) — stop. This catches
+    // garbled summary lines that keyword matching misses (e.g. "4 Ttemts 402").
+    if (amount && Number.isFinite(amount.value) && items.length >= 2
+        && Math.abs(amount.value - runningSum) < 0.6 && amount.value >= largestItem - 0.01) {
+      break;
+    }
+
     const lower = line.toLowerCase();
     if (isSkippableLine(lower)) continue;
     if (looksLikeMetadata(line)) continue;
-
-    const amount = detectTrailingAmount(line);
     if (!amount) continue;
 
     const { value, money } = amount;
     if (!Number.isFinite(value) || value <= 0) continue;
     // Bare integers (no decimals / no currency symbol) must be a sane menu
     // price — this rejects ZIPs, check numbers, table numbers, years, etc.
-    if (!money && (value < 10 || value > 9999)) continue;
+    if (!money) {
+      if (value < 10 || value > 9999) continue;
+      if (/^\s*0\d/.test(amount.raw)) continue; // leading zero -> code/ID/ZIP, not a price
+    }
     if (value > 100000) continue;
 
     const name = cleanName(line.slice(0, line.length - amount.raw.length));
     if (name.replace(/[^A-Za-z]/g, '').length < 2) continue; // needs a real name
     if (name.length > 48) continue;                          // probably a sentence, not an item
 
-    items.push({ id: uid(), name, price: Math.round(value * 100) / 100, people: [...selectedPeople] });
+    const price = Math.round(value * 100) / 100;
+    items.push({ id: uid(), name, price, people: [...selectedPeople] });
+    runningSum += price;
+    if (price > largestItem) largestItem = price;
   }
   return items;
 }
