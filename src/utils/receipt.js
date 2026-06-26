@@ -44,10 +44,18 @@ const SKIP_PATTERNS = [
   /\bca[s5]h\b/i,              // cash, ca5h
   /\b(ave|blvd|brgy|cor|rd)\b/i, // address abbreviations
   /\b[ti]tems?\b/i,            // item, items, ttem
+  /n[uo]nber/i,                // number, nunber (garbled)
   /\bappr/i,                   // approval / ApprCode (incl. "Appriode")
   /\bdisc(ount)?\b/i,          // disc, discount
-  /\btender/i,                 // tender / tendered
+  /\btend|tndr/i,              // tender / tendered / tndrd
   /\bzero[\s-]?rated\b/i,      // zero-rated
+  /\bexe?mpt\b/i,              // exempt / exmpt
+  /\bnet\s*(amount|amt|sales|total|of)\b/i, // net amount / net sales / net of vat
+  /\bto\s*pay\b/i,             // amount to pay
+  /am[o0]unt\s*[bd]ue/i,       // amount due / amount bue
+  /\bamt\s*[bd]ue/i,           // amt due / amtbue
+  /harge\b/i,                  // charge / service charge / stharge / sharge
+  /\bs[.\s]*[i1][.\s0o]+no\b/i, // S.I. No / SI No / S10 No (invoice number)
 ];
 
 function isSkippableLine(lower) {
@@ -103,12 +111,15 @@ function cleanName(s) {
     .trim();
 }
 
+const MONTHS = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}\b/i;
+
 // Date / time / phone / long-ID lines that sometimes end in digits but aren't items.
 function looksLikeMetadata(line) {
   if (/\d{1,2}\s*[/.-]\s*\d{1,2}\s*[/.-]\s*\d{2,4}/.test(line)) return true; // 06/21/2026
   if (/\d{1,2}:\d{2}\s*(a\.?m\.?|p\.?m\.?)?/i.test(line)) return true;       // 7:42 PM
   if (/\d{3}[-\s]\d{3}[-\s]\d{3,}/.test(line)) return true;                  // TIN / phone
   if (/\(\d{2,4}\)\s*\d{3}/.test(line)) return true;                        // (415) 543-...
+  if (MONTHS.test(line)) return true;                                       // "May 12, 2025"
   return false;
 }
 
