@@ -2,7 +2,7 @@
 // document-grade image preprocessing (adaptive threshold + auto-orient +
 // deskew) tuned for phone photos of thermal receipts.
 
-import { parseReceipt } from './receipt';
+import { scoreReceiptText } from './receipt';
 
 let workerPromise = null;
 let progressCb = null;
@@ -41,9 +41,9 @@ export async function scanReceipt(file, onProgress) {
       let canvas;
       try { canvas = candidates[i](); } catch { continue; }
       const { data } = await worker.recognize(canvas);
-      const score = parseReceipt(data.text).length; // # of valid line items found
+      const score = scoreReceiptText(data.text); // money items = 2 pts, bare = 1
       if (score > best.score) best = { text: data.text, score };
-      if (best.score >= 2) break; // confidently good — stop early
+      if (best.score >= 4) break; // ≥2 real-money items — confidently good
     }
     return best.text;
   } finally {
