@@ -37,8 +37,10 @@ function StatCard({ icon, label, value, hero = false }) {
 }
 
 // Custom horizontal bar built from plain divs. Width animates via CSS
-// transition; fill uses the danger gradient.
-function OwesBar({ name, amount, pct }) {
+// transition; fill defaults to the danger gradient (debts) but can be
+// overridden (e.g. neutral platinum for all-time totals). `sub` renders a
+// quiet caption under the bar.
+function OwesBar({ name, amount, pct, fill, sub }) {
   return (
     <div className="flex-col gap-1 min-w-0">
       <div className="flex items-center justify-between gap-3 min-w-0">
@@ -59,13 +61,14 @@ function OwesBar({ name, amount, pct }) {
           style={{
             width: '100%',
             height: '100%',
-            background: 'var(--gradient-danger)',
+            background: fill || 'var(--gradient-danger)',
             transformOrigin: 'left center',
             transform: `scaleX(${Math.max(0, Math.min(pct, 100)) / 100})`,
             transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
           }}
         />
       </div>
+      {sub && <span className="text-xs text-secondary truncate">{sub}</span>}
     </div>
   );
 }
@@ -111,6 +114,21 @@ export default function StatsPage() {
 
   const topOwers = owers.slice(0, 6);
   const maxOwed = topOwers.length > 0 ? topOwers[0].amount : 0;
+
+  // All-time spending: everything each person has ever been billed across all
+  // splits — settled or not — including yourself. "Who spent the most overall."
+  const allTime = useMemo(() => (
+    people
+      .map((p) => ({
+        person: p,
+        total: (personBillShares[p.id] || []).reduce((sum, s) => sum + s.amount, 0),
+        paid: lifetimePayments[p.id] || 0,
+      }))
+      .filter((r) => r.total > 0.005)
+      .sort((a, b) => b.total - a.total)
+  ), [people, personBillShares, lifetimePayments]);
+
+  const maxAllTime = allTime.length > 0 ? allTime[0].total : 0;
 
   // Designed empty state — nothing to compute until the first split exists.
   if (bills.length === 0) {
@@ -330,6 +348,30 @@ export default function StatsPage() {
             </div>
           )}
         </section>
+
+        {/* All-time spending — settled or not, yourself included. */}
+        {allTime.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-lg mb-1 font-bold">All-time spending</h2>
+            <p className="text-sm text-secondary mb-3">
+              Everything ever billed — paid or not — so you can see who splurges hardest.
+            </p>
+            <div className="glass-panel flex-col gap-4" style={{ padding: '1.25rem 1rem' }}>
+              {allTime.map((r) => (
+                <OwesBar
+                  key={r.person.id}
+                  name={r.person.id === meId ? `${r.person.name} (you)` : r.person.name}
+                  amount={r.total}
+                  pct={maxAllTime > 0 ? (r.total / maxAllTime) * 100 : 0}
+                  fill="linear-gradient(90deg, #cfc9b8, #8f897a)"
+                  sub={r.person.id !== meId && r.paid > 0.005
+                    ? `${formatCompact(r.paid)} settled back`
+                    : undefined}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <Navigation />
     </div>

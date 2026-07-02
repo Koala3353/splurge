@@ -259,7 +259,7 @@ export default function NewBillPage() {
                     <button
                       key={g.id}
                       className="cursor-pointer pressable text-left"
-                      style={{ background: 'rgba(16,185,129,0.1)', borderRadius: 'var(--radius-lg)', padding: '1rem', minWidth: '160px', border: 'none' }}
+                      style={{ background: 'rgba(62,207,142,0.09)', borderRadius: 'var(--radius-lg)', padding: '1rem', minWidth: '160px', border: 'none' }}
                       onClick={() => handleGroupSelect(g.id)}
                     >
                       <Users size={24} className="text-success mb-2" />
@@ -286,7 +286,7 @@ export default function NewBillPage() {
 
               <button
                 className="btn w-full flex items-center gap-2 mb-6 pressable"
-                style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--text-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)' }}
+                style={{ background: 'rgba(62,207,142,0.09)', color: 'var(--text-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)' }}
                 onClick={handleAddMe}
               >
                 <div className="bg-success text-bg rounded-full p-1"><Plus size={14} /></div>
@@ -328,7 +328,7 @@ export default function NewBillPage() {
                     <Plus size={32} className="mb-2 text-primary" />
                     <span>Add manually</span>
                   </button>
-                  <button className="btn flex-col items-center pressable" style={{ background: 'rgba(236,72,153,0.12)', color: 'var(--accent-color)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={handleScanTap}>
+                  <button className="btn flex-col items-center pressable" style={{ background: 'rgba(244,244,242,0.08)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={handleScanTap}>
                     <Sparkles size={32} className="mb-2" />
                     <span>Scan receipt</span>
                   </button>
@@ -432,7 +432,7 @@ export default function NewBillPage() {
             <div className="card mb-6 p-0" style={{ padding: 0 }}>
               <div className="p-4 border-b border-glass flex justify-between items-center cursor-pointer pressable" onClick={addFee}>
                 <div className="flex items-center gap-3">
-                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.5rem', borderRadius: '50%' }}><Plus size={20} /></div>
+                  <div style={{ background: 'rgba(62,207,142,0.09)', color: 'var(--success)', padding: '0.5rem', borderRadius: '50%' }}><Plus size={20} /></div>
                   <div>
                     <h3 className="font-bold text-lg">Fees &amp; tips</h3>
                     <p className="text-sm text-secondary">Catch service charge or discounts before you send.</p>

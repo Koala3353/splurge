@@ -1,31 +1,32 @@
 :root {
-  /* Base — near-black with a faint violet cast for depth */
-  --bg-color: #08080f;
-  --bg-elevated: #12121d;
-  --text-primary: #f6f7fb;
-  --text-secondary: #aab2cb;   /* dimmer for clear hierarchy */
-  --text-tertiary: #6f7691;    /* quiet labels */
+  /* Graphite & platinum — sleek, neutral, professional. Color is reserved
+     for meaning: green = money in, rose = debts. Everything else is tonal. */
+  --bg-color: #0a0a0c;
+  --bg-elevated: #141417;
+  --text-primary: #f4f4f2;
+  --text-secondary: #a3a3ad;   /* dimmer for clear hierarchy */
+  --text-tertiary: #6e6e78;    /* quiet labels */
 
-  /* Accents — electric sky + cyan glow, violet companion */
-  --accent-color: #38bdf8;
-  --accent-bright: #22d3ee;
-  --accent-2: #8b5cf6;
-  --accent-hover: #0ea5e9;
-  --success: #34d399;          /* money coming back to you */
-  --danger: #fb7185;
-  --warning: #fbbf24;
+  /* Accent — warm platinum; used sparingly for interactive emphasis */
+  --accent-color: #d8d3c4;
+  --accent-bright: #efeadb;
+  --accent-2: #b8ab8a;         /* champagne hairline */
+  --accent-hover: #c6c0b0;
+  --success: #3ecf8e;          /* money coming back to you */
+  --danger: #f0647c;
+  --warning: #e2b53e;
 
-  /* Surfaces — more opaque + violet-tinted so cards read as elevated glass */
-  --glass-bg: rgba(31, 31, 51, 0.55);
-  --glass-bg-strong: rgba(22, 22, 38, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.07);
+  /* Surfaces — neutral smoked glass */
+  --glass-bg: rgba(34, 34, 39, 0.55);
+  --glass-bg-strong: rgba(24, 24, 28, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
-  --gradient-danger: linear-gradient(135deg, #fb7185, #e11d48);
-  --gradient-success: linear-gradient(135deg, #34d399, #10b981);
-  --gradient-violet: linear-gradient(135deg, #a78bfa, #6366f1);
+  /* Gradients — tonal gunmetal (dark enough that white text always works) */
+  --gradient-primary: linear-gradient(150deg, #3a3a42 0%, #1a1a1f 100%);
+  --gradient-danger: linear-gradient(135deg, #f0647c, #d23253);
+  --gradient-success: linear-gradient(135deg, #3ecf8e, #21a06b);
+  --gradient-violet: linear-gradient(150deg, #2c2c33, #17171b);
 
   /* Typography — native system stack for body (fast + offline-safe), a
      characterful display face for the wordmark, headings, and money figures. */
@@ -48,11 +49,11 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
 
-  /* Shadows & glows */
+  /* Shadows — depth from darkness, not colored glow */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
   --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
-  --shadow-glow: 0 0 24px rgba(56, 189, 248, 0.5);
-  --shadow-glow-violet: 0 0 28px rgba(139, 92, 246, 0.45);
+  --shadow-glow: 0 0 20px rgba(216, 211, 196, 0.18);
+  --shadow-glow-violet: 0 10px 30px rgba(0, 0, 0, 0.55);
   --shadow-glass: 0 14px 40px rgba(0, 0, 0, 0.5);
 }
 
@@ -175,7 +176,7 @@ button:disabled:hover {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 30px rgba(56, 189, 248, 0.6);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(216, 211, 196, 0.12);
   filter: brightness(1.08);
 }
 
@@ -228,7 +229,7 @@ input, select {
 input:focus, select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22);
+  box-shadow: 0 0 0 3px rgba(216, 211, 196, 0.18);
 }
 
 /* Animations */
@@ -274,10 +275,10 @@ input:focus, select:focus {
 }
 
 .pill-active {
-  background: rgba(56, 189, 248, 0.18);
-  color: #e6f6ff;
-  border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+  background: rgba(244, 244, 242, 0.12);
+  color: var(--text-primary);
+  border-color: rgba(244, 244, 242, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .pill-inactive {
@@ -460,9 +461,8 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   /* Aurora: soft indigo/cyan/violet glow so the backdrop has depth, not a
      flat black void. Painted on the (static) shell; content scrolls over it. */
   background-image:
-    radial-gradient(78% 42% at 50% -8%, rgba(99, 102, 241, 0.30), transparent 72%),
-    radial-gradient(55% 30% at 104% 4%, rgba(34, 211, 238, 0.16), transparent 70%),
-    radial-gradient(72% 44% at -4% 102%, rgba(139, 92, 246, 0.18), transparent 72%);
+    radial-gradient(85% 40% at 50% -10%, rgba(214, 210, 196, 0.10), transparent 70%),
+    radial-gradient(70% 45% at 50% 115%, rgba(120, 118, 110, 0.07), transparent 72%);
   background-repeat: no-repeat;
 }
 
@@ -486,7 +486,7 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
 .app-header {
   flex-shrink: 0;
   padding: calc(1rem + env(safe-area-inset-top)) 1.5rem 1rem 1.5rem;
-  background-color: rgba(8, 8, 15, 0.6);
+  background-color: rgba(10, 10, 12, 0.6);
   backdrop-filter: blur(16px) saturate(1.3);
   -webkit-backdrop-filter: blur(16px) saturate(1.3);
   z-index: 10;
@@ -508,7 +508,7 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   }
   to {
     box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-    background-color: rgba(8, 8, 15, 0.82);
+    background-color: rgba(10, 10, 12, 0.82);
     backdrop-filter: blur(16px) saturate(1.3);
   }
 }
@@ -612,14 +612,14 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.14) inset;
   z-index: 50;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .fab:active {
   transform: scale(0.94);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* Native Dialog */
@@ -709,13 +709,13 @@ dialog[open] {
 
 .card-hover:active, .card-hover:hover {
   transform: scale(1.015);
-  background: rgba(124, 130, 200, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.16);
 }
 
 /* Sticky Footer Polish */
 .app-footer {
-  background-color: rgba(8, 8, 15, 0.72) !important;
+  background-color: rgba(10, 10, 12, 0.72) !important;
   backdrop-filter: blur(18px) saturate(1.3);
   -webkit-backdrop-filter: blur(18px) saturate(1.3);
 }
@@ -725,7 +725,7 @@ dialog[open] {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background-color: rgba(8, 8, 15, 0.97);
+  background-color: rgba(10, 10, 12, 0.97);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
@@ -918,7 +918,7 @@ dialog[open] {
   border-radius: var(--radius-xl);
   border: 1px solid var(--glass-border);
   background:
-    radial-gradient(120% 130% at 50% -10%, rgba(52, 211, 153, 0.16), transparent 62%),
+    radial-gradient(120% 130% at 50% -10%, rgba(62, 207, 142, 0.09), transparent 60%),
     var(--glass-bg);
   backdrop-filter: blur(16px) saturate(1.3);
   -webkit-backdrop-filter: blur(16px) saturate(1.3);
@@ -926,7 +926,7 @@ dialog[open] {
 }
 
 .balance-hero .balance-amount {
-  text-shadow: 0 0 32px rgba(52, 211, 153, 0.35);
+  text-shadow: 0 0 28px rgba(62, 207, 142, 0.25);
 }
 
 /* Gradient feature card (e.g. the Stats "You're owed" hero). */
@@ -935,7 +935,7 @@ dialog[open] {
   overflow: hidden;
   border: none !important;
   background: var(--gradient-primary);
-  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(184, 171, 138, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .feature-card::after {
@@ -945,12 +945,12 @@ dialog[open] {
   right: -20%;
   width: 70%;
   height: 160%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 65%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.07), transparent 65%);
   pointer-events: none;
 }
 
 /* Active bottom-nav item gets a soft accent chip behind it. */
 .nav-item-active {
-  background: rgba(56, 189, 248, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.22);
+  background: rgba(244, 244, 242, 0.10);
+  box-shadow: inset 0 0 0 1px rgba(244, 244, 242, 0.16);
 }
