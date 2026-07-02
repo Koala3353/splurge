@@ -191,6 +191,14 @@ export function parseReceipt(text, selectedPeople = []) {
   return parseCore(text, selectedPeople).items;
 }
 
+// Items PLUS the shared adjustments printed on the receipt: service charge /
+// tip lines as positive fees, PWD/senior/discount lines as negative fees —
+// ready to prefill the app's fees list.
+export function parseReceiptFull(text, selectedPeople = []) {
+  const { items, fees } = parseCore(text, selectedPeople);
+  return { items, fees };
+}
+
 // Quality score for OCR-orientation racing: decimal/currency-formatted amounts
 // are strong evidence of a correctly-read receipt (2 pts) while bare integers
 // are weak (1 pt) — so a rotation that reads real prices always beats one
@@ -199,29 +207,68 @@ export function scoreReceiptText(text) {
   return parseCore(text, []).score;
 }
 
+// --- Fee/adjustment line detection ----------------------------------------
+// "Sales PWD 301.50" is a sales-class subtotal, NOT a discount — so negative
+// detection requires an explicit discount word, not just pwd/sc.
+const FEE_NEGATIVE = /disc|\bsnr\b|\bctzn\b|\bsc\s*per\s*share/i;
+const FEE_POSITIVE = /harge\b|harge\+|\bchrg\b|\btip\b|gratuity/i;
+const FEE_EXCLUDE = /[vu]at|\btax\b|sales(?!\s*disc)/i;
+
+function detectFeeLine(line, lower, amount) {
+  if (!amount || !amount.money) return null;            // decimals required
+  const value = amount.value;
+  if (!Number.isFinite(value) || Math.abs(value) < 0.01 || Math.abs(value) > 99999) return null;
+  if (FEE_EXCLUDE.test(lower)) return null;
+  const neg = FEE_NEGATIVE.test(lower);
+  const pos = FEE_POSITIVE.test(lower);
+  if (!neg && !pos) return null;
+  if (neg) {
+    const name = /\bpwd\b/i.test(lower) ? 'PWD discount'
+      : /\bsnr\b|\bctzn\b|senior/i.test(lower) ? 'Senior discount'
+      : /\bsc\b/i.test(lower) ? 'SC discount' : 'Discount';
+    return { name, amount: -Math.abs(value) };
+  }
+  const name = /\btip\b|gratuity/i.test(lower) ? 'Tip' : 'Service charge';
+  return { name, amount: Math.abs(value) };
+}
+
 function parseCore(text, selectedPeople) {
   const items = [];
+  const fees = [];
   let score = 0;
   let runningSum = 0;   // sum of item amounts so far
   let largestItem = 0;
+  let summaryStarted = false;
 
   for (const rawLine of (text || '').split('\n')) {
     const line = rawLine.replace(/\t/g, ' ').trim();
     if (line.length < 3) continue;
 
     const amount = detectTrailingAmount(line);
+    const lower = line.toLowerCase();
 
     // Structural boundary: a receipt's subtotal/total equals the sum of its
     // items. Once we hit a line whose amount matches the running item total
     // (and it's at least as large as any single item), everything below is the
-    // summary block (subtotal, VAT, discounts, payment) — stop. This catches
-    // garbled summary lines that keyword matching misses (e.g. "4 Ttemts 402").
+    // summary block (subtotal, VAT, discounts, payment) — stop collecting
+    // items but keep scanning it for fee/discount lines.
     if (amount && Number.isFinite(amount.value) && items.length >= 2
         && Math.abs(amount.value - runningSum) < 0.6 && amount.value >= largestItem - 0.01) {
-      break;
+      summaryStarted = true;
     }
 
-    const lower = line.toLowerCase();
+    // Shared adjustments (service charge, PWD/senior discounts) live among
+    // the skippable summary lines — capture them before skipping. Dedupe by
+    // magnitude ("PWD Discount 46" + "Total Discount 46" print the same value).
+    const fee = detectFeeLine(line, lower, amount);
+    if (fee) {
+      if (fees.length < 3 && !fees.some((f) => Math.abs(Math.abs(f.amount) - Math.abs(fee.amount)) < 0.01)) {
+        fees.push({ id: uid(), ...fee, people: [...selectedPeople] });
+      }
+      continue;
+    }
+
+    if (summaryStarted) continue;
     if (isSkippableLine(lower)) continue;
     if (looksLikeMetadata(line)) continue;
     if (!amount) continue;
@@ -246,5 +293,5 @@ function parseCore(text, selectedPeople) {
     runningSum += price;
     if (price > largestItem) largestItem = price;
   }
-  return { items, score };
+  return { items, fees, score };
 }

@@ -5,7 +5,7 @@ import { useAppContext } from '../store/AppContext';
 import { formatCurrency, formatDate, initialsOf } from '../utils/format';
 
 // Builds a plain-text summary of the whole split for sharing.
-function buildBillSummary(bill, dues, people) {
+function buildBillSummary(bill, dues, people, payInfo) {
   const nameOf = (id) => people.find((p) => p.id === id)?.name || 'Someone';
   const lines = (bill.participants || [])
     .map((pId) => ({ name: nameOf(pId), amt: dues[pId] || 0 }))
@@ -13,13 +13,14 @@ function buildBillSummary(bill, dues, people) {
     .sort((a, b) => b.amt - a.amt)
     .map((r) => `• ${r.name}: ${formatCurrency(r.amt)}`);
   const body = lines.length ? `\n${lines.join('\n')}` : '';
-  return `${bill.title} — ${formatCurrency(bill.total || 0)}${body}\n\nSplit with Splurge.`;
+  const payLine = payInfo?.number ? `\nPay via ${payInfo.method || 'GCash'}: ${payInfo.number}` : '';
+  return `${bill.title} — ${formatCurrency(bill.total || 0)}${body}\n${payLine}\nSplit with Splurge.`;
 }
 
 export default function BillDetailModal({ billId, onClose }) {
   const dialogRef = useRef(null);
   const navigate = useNavigate();
-  const { bills, billDuesById, people, removeBill } = useAppContext();
+  const { bills, billDuesById, people, removeBill, payInfo } = useAppContext();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared] = useState(false);
 
@@ -51,7 +52,7 @@ export default function BillDetailModal({ billId, onClose }) {
   };
 
   const handleShare = async () => {
-    const text = buildBillSummary(bill, dues, people);
+    const text = buildBillSummary(bill, dues, people, payInfo);
     try {
       if (navigator.share) {
         await navigator.share({ text });

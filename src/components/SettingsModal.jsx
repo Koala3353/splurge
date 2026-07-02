@@ -1,17 +1,40 @@
 import { useRef, useEffect, useState } from 'react';
-import { X, UserCheck, Download, Upload, Trash2, Check } from 'lucide-react';
+import { X, UserCheck, Download, Upload, Trash2, Check, Wallet, QrCode } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
+
+const PAY_METHODS = ['GCash', 'Maya', 'Bank'];
+
+// Shrink an uploaded QR image to a compact data URL (localStorage-friendly).
+async function imageToDataUrl(file, max = 512) {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.src = url;
+  try {
+    await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 export default function SettingsModal({ open, onClose }) {
   const dialogRef = useRef(null);
   const fileRef = useRef(null);
+  const qrFileRef = useRef(null);
   const {
     people, meId, setMeId,
+    payInfo, setPayInfo,
     exportData, importData, clearAll,
     bills, payments,
   } = useAppContext();
   const [confirmClear, setConfirmClear] = useState(false);
   const [toast, setToast] = useState('');
+  const [qrOpen, setQrOpen] = useState(false);
 
   useEffect(() => {
     const d = dialogRef.current;
@@ -42,6 +65,19 @@ export default function SettingsModal({ open, onClose }) {
       flash('Backup downloaded.');
     } catch {
       flash('Couldn’t export. Try again.');
+    }
+  };
+
+  const handleQrFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const qr = await imageToDataUrl(file);
+      setPayInfo({ method: 'GCash', ...(payInfo || {}), qr });
+      flash('QR saved.');
+    } catch {
+      flash('Couldn’t read that image.');
     }
   };
 
@@ -101,6 +137,79 @@ export default function SettingsModal({ open, onClose }) {
                 );
               })}
             </div>
+          )}
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border)', margin: '1.25rem 0' }} />
+
+          {/* Getting paid */}
+          <div className="flex items-center gap-2 mb-1">
+            <Wallet size={16} className="text-accent" />
+            <h3 className="font-bold">Getting paid</h3>
+          </div>
+          <p className="text-sm text-secondary mb-3">
+            Added to every &quot;Send request&quot; message so friends know where to send it.
+          </p>
+          <div className="flex gap-2 flex-wrap mb-3">
+            {PAY_METHODS.map((m) => {
+              const active = (payInfo?.method || 'GCash') === m;
+              return (
+                <button
+                  key={m}
+                  className={`pill ${active ? 'pill-active' : 'pill-inactive'}`}
+                  onClick={() => setPayInfo({ ...(payInfo || {}), method: m })}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+          <input
+            type="text"
+            inputMode="tel"
+            placeholder="Number or account (e.g. 0917 123 4567)"
+            value={payInfo?.number || ''}
+            onChange={(e) => setPayInfo({ method: 'GCash', ...(payInfo || {}), number: e.target.value })}
+            className="mb-3"
+            aria-label="Payment number or account"
+          />
+          <div className="flex gap-2 items-center mb-2">
+            <button className="btn btn-secondary flex-1 pressable" onClick={() => qrFileRef.current?.click()}>
+              <QrCode size={18} /> {payInfo?.qr ? 'Replace QR' : 'Add payment QR'}
+            </button>
+            {payInfo?.qr && (
+              <>
+                <button className="btn btn-secondary pressable" onClick={() => setQrOpen(true)}>Show</button>
+                <button
+                  className="btn btn-secondary pressable text-danger"
+                  onClick={() => setPayInfo({ ...(payInfo || {}), qr: null })}
+                  aria-label="Remove QR"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </>
+            )}
+            <input
+              ref={qrFileRef}
+              type="file"
+              accept="image/*"
+              onChange={handleQrFile}
+              style={{ display: 'none' }}
+            />
+          </div>
+          {qrOpen && payInfo?.qr && (
+            <button
+              className="w-full mb-2 pressable"
+              style={{ border: 'none', background: 'transparent', padding: 0 }}
+              onClick={() => setQrOpen(false)}
+              aria-label="Hide QR"
+            >
+              <img
+                src={payInfo.qr}
+                alt="Your payment QR code"
+                className="w-full rounded-lg"
+                style={{ background: '#fff', padding: '0.5rem' }}
+              />
+            </button>
           )}
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border)', margin: '1.25rem 0' }} />

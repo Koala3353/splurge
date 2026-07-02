@@ -20,6 +20,8 @@ export function AppProvider({ children }) {
   const [payments, setPayments] = useLocalStorage('split-payments', []);
   // Which person represents "you" — excluded from "owes you" totals.
   const [meId, setMeId] = useLocalStorage('split-me', null);
+  // How friends pay you back: { method: 'GCash'|'Maya'|'Bank'|…, number, qr (data URL) }
+  const [payInfo, setPayInfo] = useLocalStorage('split-payinfo', null);
 
   // --- People ---
   const addPerson = useCallback((name) => {
@@ -135,15 +137,18 @@ export function AppProvider({ children }) {
     const lines = (personBillShares[personId] || [])
       .map((s) => `• ${s.bill.title} — ${formatCurrency(s.amount)}`);
     const body = lines.length ? `\n${lines.join('\n')}` : '';
-    return `Hey ${person.name} — your share comes to ${formatCurrency(Math.max(bal, 0))}:${body}\n\nNo rush, settle up whenever. Sent with Splurge.`;
-  }, [people, balances, personBillShares]);
+    const payLine = payInfo?.number
+      ? `\nPay via ${payInfo.method || 'GCash'}: ${payInfo.number}`
+      : '';
+    return `Hey ${person.name} — your share comes to ${formatCurrency(Math.max(bal, 0))}:${body}\n${payLine}\nNo rush, settle up whenever. Sent with Splurge.`;
+  }, [people, balances, personBillShares, payInfo]);
 
   // --- Backup / restore ---
   const exportData = useCallback(() => JSON.stringify(
-    { version: 1, exportedAt: new Date().toISOString(), people, groups, bills, payments, meId },
+    { version: 1, exportedAt: new Date().toISOString(), people, groups, bills, payments, meId, payInfo },
     null,
     2,
-  ), [people, groups, bills, payments, meId]);
+  ), [people, groups, bills, payments, meId, payInfo]);
 
   const importData = useCallback((json) => {
     const data = typeof json === 'string' ? JSON.parse(json) : json;
@@ -154,7 +159,8 @@ export function AppProvider({ children }) {
     setBills(arr(data.bills));
     setPayments(arr(data.payments));
     setMeId(typeof data.meId === 'string' ? data.meId : null);
-  }, [setPeople, setGroups, setBills, setPayments, setMeId]);
+    setPayInfo(data.payInfo && typeof data.payInfo === 'object' ? data.payInfo : null);
+  }, [setPeople, setGroups, setBills, setPayments, setMeId, setPayInfo]);
 
   const clearAll = useCallback(() => {
     setPeople([]);
@@ -162,7 +168,8 @@ export function AppProvider({ children }) {
     setBills([]);
     setPayments([]);
     setMeId(null);
-  }, [setPeople, setGroups, setBills, setPayments, setMeId]);
+    setPayInfo(null);
+  }, [setPeople, setGroups, setBills, setPayments, setMeId, setPayInfo]);
 
   const value = useMemo(() => ({
     people, addPerson, removePerson, renamePerson,
@@ -170,6 +177,7 @@ export function AppProvider({ children }) {
     bills, addBill, updateBill, removeBill,
     payments, addPayment, removePayment,
     meId, setMeId,
+    payInfo, setPayInfo,
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
     totalOwedToYou,
     buildShareText, exportData, importData, clearAll,
@@ -179,6 +187,7 @@ export function AppProvider({ children }) {
     bills, addBill, updateBill, removeBill,
     payments, addPayment, removePayment,
     meId, setMeId,
+    payInfo, setPayInfo,
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
     totalOwedToYou,
     buildShareText, exportData, importData, clearAll,

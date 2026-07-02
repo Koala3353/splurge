@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../store/AppContext';
 import { formatCurrency, initialsOf } from '../utils/format';
 import { computeBillDues } from '../utils/split';
-import { parseReceipt } from '../utils/receipt';
+import { parseReceiptFull } from '../utils/receipt';
 import { warmUpOcr, scanReceipt } from '../utils/ocr';
 import { flushSync } from 'react-dom';
 import Navigation from '../components/Navigation';
@@ -113,9 +113,16 @@ export default function NewBillPage() {
 
     try {
       const text = await scanReceipt(file, setOcrProgress);
-      const parsed = parseReceipt(text, selectedPeople);
+      const { items: parsed, fees: scannedFees } = parseReceiptFull(text, selectedPeople);
       if (parsed.length > 0) {
         setItems(parsed);
+        if (scannedFees.length > 0) {
+          setFees(scannedFees);
+          const summary = scannedFees
+            .map((f) => `${f.name} ${f.amount < 0 ? '−' : '+'}${formatCurrency(Math.abs(f.amount))}`)
+            .join(', ');
+          setScanNote(`Also caught: ${summary}. Review them in step 3 — assign any discount to whoever owns it.`);
+        }
       } else {
         setItems([newItem(selectedPeople)]);
         setScanNote("Couldn't read that one clearly — add items below, or rescan a flatter, well-lit shot.");
