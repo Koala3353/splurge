@@ -37,6 +37,7 @@ const SKIP_WORDS_RE = new RegExp(`\\b(${SKIP_WORDS.join('|')})\\b`, 'i');
 // "Sales PHD", "Less 12 UAT", "Appriode", "PHD ID" leak through as fake items.
 const SKIP_PATTERNS = [
   /\b[vu]at(able)?\b/i,        // vat, uat, vatable, uatable
+  /\b(vat|val|vaт)\s*reg\b/i,  // VAT REG (TIN) — incl. garbled "VAL REG"
   /\bp[wh]d\b/i,               // pwd, phd
   /\bt[o0]tal\b/i,             // total, t0tal
   /\bsub\s*t[o0]tal\b/i,       // subtotal
@@ -136,6 +137,11 @@ const TAXFLAG = '(?:\\s*(?:tx|vat|[veznxta]{1,2}))?\\s*\\*?';
 // Find a money amount anchored at the END of the line (item amounts are
 // right-aligned). Returns { raw, value, money } or null.
 function detectTrailingAmount(line) {
+  // OCR sometimes reads the decimal point as a comma ("82,00 V"). Normalize
+  // comma + exactly-two-digits to a dot when not followed by more digits
+  // (which would be a thousands separator). Same length, so downstream
+  // slice-by-length name extraction stays aligned.
+  line = line.replace(/,(\d{2})(?=[^\d.,]|$)/g, '.$1');
   // 1) decimals win: "1,234.56", "P 95.00", "-45.00", "135.00V", "82.00 V"
   let m = line.match(new RegExp(`([-(]?\\s*${CURRENCY}?\\s*-?\\d[\\d.,]*\\.\\d{2})\\s*\\)?${TAXFLAG}\\s*$`, 'i'));
   if (m) return { raw: m[0], value: parseFloat(fixDigits(stripCurrency(m[1]))), money: true };
@@ -199,12 +205,14 @@ export function parseReceiptFull(text, selectedPeople = []) {
   return { items, fees };
 }
 
-// Quality score for OCR-orientation racing: decimal/currency-formatted amounts
-// are strong evidence of a correctly-read receipt (2 pts) while bare integers
-// are weak (1 pt) — so a rotation that reads real prices always beats one
-// whose garbage happens to end in digits.
-export function scoreReceiptText(text) {
-  return parseCore(text, []).score;
+// Quality rating for OCR candidate racing. Decimal/currency-formatted item
+// amounts and recognized fee lines are strong evidence of a correctly-read
+// receipt; bare trailing integers are weak evidence (background noise on a
+// busy surface often produces name-plus-integer garbage), so callers should
+// cap their influence rather than let them outvote a clean read.
+export function rateReceiptText(text) {
+  const { items, fees, moneyCount } = parseCore(text, []);
+  return { money: moneyCount, bare: items.length - moneyCount, fees: fees.length };
 }
 
 // --- Fee/adjustment line detection ----------------------------------------
@@ -235,7 +243,7 @@ function detectFeeLine(line, lower, amount) {
 function parseCore(text, selectedPeople) {
   const items = [];
   const fees = [];
-  let score = 0;
+  let moneyCount = 0;   // items whose amount was decimal/currency-formatted
   let runningSum = 0;   // sum of item amounts so far
   let largestItem = 0;
   let summaryStarted = false;
@@ -284,14 +292,14 @@ function parseCore(text, selectedPeople) {
     if (value > 100000) continue;
 
     const name = cleanName(line.slice(0, line.length - amount.raw.length));
-    if (name.replace(/[^A-Za-z]/g, '').length < 2) continue; // needs a real name
+    if (name.replace(/[^A-Za-z]/g, '').length < 3) continue; // needs a real name
     if (name.length > 48) continue;                          // probably a sentence, not an item
 
     const price = Math.round(value * 100) / 100;
     items.push({ id: uid(), name, price, people: [...selectedPeople] });
-    score += money ? 2 : 1;
+    if (money) moneyCount += 1;
     runningSum += price;
     if (price > largestItem) largestItem = price;
   }
-  return { items, fees, score };
+  return { items, fees, moneyCount };
 }

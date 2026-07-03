@@ -2,7 +2,7 @@
 // document-grade image preprocessing (adaptive threshold + auto-orient +
 // deskew) tuned for phone photos of thermal receipts.
 
-import { scoreReceiptText } from './receipt';
+import { rateReceiptText } from './receipt';
 
 let workerPromise = null;
 let progressCb = null;
@@ -32,18 +32,40 @@ export async function scanReceipt(file, onProgress) {
   progressCb = onProgress || null;
   try {
     onProgress?.('Optimizing image…');
-    const candidates = await buildCandidates(file); // lazy thunks, best-orientation first
+    const candidates = await buildCandidates(file); // lazy thunks, best-first
     const worker = await warmUpOcr();
 
-    let best = { text: '', score: -1 };
+    // Race key, most important first:
+    //  1. money items + fee lines (×2) — strong evidence of a real read
+    //  2. bare-integer items, CAPPED at 1 — name+integer garbage is exactly
+    //     what busy backgrounds hallucinate, so more of them isn't better
+    //  3. thresholded variant over raw — cleaner when both are equal
+    //  4. word count — only as a final tie-break (never lets noise outvote)
+    const keyOf = (rate, variant, words) => [
+      2 * (rate.money + rate.fees),
+      Math.min(rate.bare, 1),
+      variant === 'thresh' ? 1 : 0,
+      words,
+    ];
+    const gt = (a, b) => {
+      for (let k = 0; k < a.length; k++) {
+        if (a[k] !== b[k]) return a[k] > b[k];
+      }
+      return false;
+    };
+
+    let best = { text: '', key: [-1, 0, 0, 0] };
     for (let i = 0; i < candidates.length; i++) {
-      onProgress?.(i === 0 ? 'Reading the receipt…' : 'Trying another angle…');
+      onProgress?.(i === 0 ? 'Reading the receipt…' : 'Trying another read…');
       let canvas;
-      try { canvas = candidates[i](); } catch { continue; }
+      try { canvas = candidates[i].run(); } catch { continue; }
       const { data } = await worker.recognize(canvas);
-      const score = scoreReceiptText(data.text); // money items = 2 pts, bare = 1
-      if (score > best.score) best = { text: data.text, score };
-      if (best.score >= 4) break; // ≥2 real-money items — confidently good
+      const rate = rateReceiptText(data.text);
+      const words = data.text.split(/\s+/).filter(Boolean).length;
+      const key = keyOf(rate, candidates[i].variant, words);
+      if (gt(key, best.key)) best = { text: data.text, key };
+      if (best.key[0] >= 4) break;            // ≥2 strong signals — done
+      if (best.key[0] >= 2 && i >= 1) break;  // 1 strong signal + both variants tried
     }
     return best.text;
   } finally {
@@ -53,7 +75,10 @@ export async function scanReceipt(file, onProgress) {
 
 // --- Preprocessing --------------------------------------------------------
 
-// Resize + adaptively binarize a photo into a base canvas. No rotation yet.
+// Load + resize the photo, returning BOTH preprocessing variants: an
+// adaptively-binarized canvas (rescues dark/low-contrast surfaces) and the
+// plain resized photo (rescues washed-out prints that binarization erases).
+// Neither wins universally, so scanReceipt races both and keeps the best.
 async function preprocessBase(file) {
   const img = new Image();
   const url = URL.createObjectURL(file);
@@ -67,37 +92,66 @@ async function preprocessBase(file) {
       width = Math.max(1, Math.round(width * scale));
       height = Math.max(1, Math.round(height * scale));
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(img, 0, 0, width, height);
+    const raw = document.createElement('canvas');
+    raw.width = width;
+    raw.height = height;
+    raw.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0, width, height);
+
+    const thresh = document.createElement('canvas');
+    thresh.width = width;
+    thresh.height = height;
+    const tctx = thresh.getContext('2d', { willReadFrequently: true });
+    tctx.drawImage(img, 0, 0, width, height);
     try {
-      const imageData = ctx.getImageData(0, 0, width, height);
+      const imageData = tctx.getImageData(0, 0, width, height);
       adaptiveThreshold(imageData.data, width, height);
-      ctx.putImageData(imageData, 0, 0);
+      tctx.putImageData(imageData, 0, 0);
     } catch { /* tainted canvas — leave the plain draw */ }
-    return canvas;
+    return { raw, thresh };
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
-// Decide a likely orientation order, then return lazy thunks that rotate +
-// deskew on demand (so we don't pay for orientations we never OCR). Receipts
-// are tall: if the text runs vertically (sideways photo) we try the 90°
-// rotations first; otherwise we try upright first.
+// Decide a likely orientation order, then return lazy thunks over BOTH
+// preprocessing variants per orientation (thresholded first — it wins more
+// often — then raw). Receipts are tall: if the text runs vertically
+// (sideways photo) we try the 90° rotations first; otherwise upright first.
 async function buildCandidates(file) {
-  const base = await preprocessBase(file);
+  const { raw, thresh } = await preprocessBase(file);
   let vertical = false;
   try {
-    const d = base.getContext('2d').getImageData(0, 0, base.width, base.height).data;
-    const { varH, varV } = projectionVariances(d, base.width, base.height);
+    const d = thresh.getContext('2d').getImageData(0, 0, thresh.width, thresh.height).data;
+    const { varH, varV } = projectionVariances(d, thresh.width, thresh.height);
     vertical = varV > varH * 1.15;
   } catch { /* ignore */ }
 
-  const mk = (deg) => () => deskewCanvas(deg === 0 ? base : rotate90(base, deg));
-  return vertical ? [mk(90), mk(-90), mk(0)] : [mk(0), mk(90), mk(-90)];
+  // The skew angle is estimated on the binarized rotation (the estimator
+  // needs clean black-on-white) and applied to whichever variant is OCRed.
+  const rotCache = {};
+  const rotated = (deg, base) => (deg === 0 ? base : rotate90(base, deg));
+  const mk = (deg, variant) => () => {
+    if (!(deg in rotCache)) {
+      const t = rotated(deg, thresh);
+      let angle = 0;
+      try {
+        const d = t.getContext('2d').getImageData(0, 0, t.width, t.height).data;
+        angle = estimateSkew(d, t.width, t.height);
+      } catch { /* ignore */ }
+      rotCache[deg] = { t, angle };
+    }
+    const { t, angle } = rotCache[deg];
+    const canvas = variant === 'thresh' ? t : rotated(deg, raw);
+    return Math.abs(angle) >= 1 ? deskew(canvas, angle) : canvas;
+  };
+
+  const order = vertical ? [90, -90, 0] : [0, 90, -90];
+  const out = [];
+  for (const deg of order) {
+    out.push({ run: mk(deg, 'thresh'), variant: 'thresh' });
+    out.push({ run: mk(deg, 'raw'), variant: 'raw' });
+  }
+  return out;
 }
 
 // Horizontal vs. vertical text energy, from a downscaled binary sample. Text
@@ -139,17 +193,6 @@ function rotate90(src, dir) {
   c.rotate((dir >= 0 ? 1 : -1) * Math.PI / 2);
   c.drawImage(src, -w / 2, -h / 2);
   return out;
-}
-
-// Estimate residual skew on a (portrait) canvas and level it if needed.
-function deskewCanvas(canvas) {
-  try {
-    const { width, height } = canvas;
-    const d = canvas.getContext('2d').getImageData(0, 0, width, height).data;
-    const angle = estimateSkew(d, width, height);
-    if (Math.abs(angle) >= 1) return deskew(canvas, angle);
-  } catch { /* ignore */ }
-  return canvas;
 }
 
 // Estimate the skew angle (degrees) via projection-profile variance: the angle
