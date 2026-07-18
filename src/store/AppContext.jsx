@@ -177,6 +177,27 @@ export function AppProvider({ children }) {
     return `Hey ${person.name} — your share comes to ${formatCurrency(Math.max(bal, 0))}:${body}\n${payLine}\nNo rush, settle up whenever. Sent with Splurge.`;
   }, [people, balances, unpaidBillShares, payInfo]);
 
+  // One combined message listing every current outstanding balance — meant
+  // to be posted ONCE into a shared group chat, rather than sent 1:1 to each
+  // person like buildShareText.
+  const buildGroupReminderText = useCallback(() => {
+    const owing = people
+      .filter((p) => p.id !== meId)
+      .map((p) => ({ name: p.name, amount: balances[p.id] || 0 }))
+      .filter((r) => r.amount > 0.005)
+      .sort((a, b) => b.amount - a.amount);
+
+    if (owing.length === 0) {
+      return "Everyone's settled up — nothing to remind anyone about. Sent with Splurge.";
+    }
+
+    const lines = owing.map((r) => `• ${r.name} — ${formatCurrency(r.amount)}`);
+    const total = owing.reduce((sum, r) => sum + r.amount, 0);
+    const payLine = payInfo?.number ? `\nPay via ${payInfo.method || 'GCash'}: ${payInfo.number}` : '';
+
+    return `Friendly reminder — here's where we're at:\n${lines.join('\n')}\n\nTotal: ${formatCurrency(total)}${payLine}\n\nNo rush, settle up whenever. Sent with Splurge.`;
+  }, [people, meId, balances, payInfo]);
+
   // --- Backup / restore ---
   const exportData = useCallback(() => JSON.stringify(
     { version: 1, exportedAt: new Date().toISOString(), people, groups, bills, payments, meId, payInfo },
@@ -215,7 +236,7 @@ export function AppProvider({ children }) {
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
     billPersonStatus, unpaidBillShares,
     totalOwedToYou,
-    buildShareText, exportData, importData, clearAll,
+    buildShareText, buildGroupReminderText, exportData, importData, clearAll,
   }), [
     people, addPerson, removePerson, renamePerson,
     groups, addGroup, removeGroup,
@@ -226,7 +247,7 @@ export function AppProvider({ children }) {
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
     billPersonStatus, unpaidBillShares,
     totalOwedToYou,
-    buildShareText, exportData, importData, clearAll,
+    buildShareText, buildGroupReminderText, exportData, importData, clearAll,
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

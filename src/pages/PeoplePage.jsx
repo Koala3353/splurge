@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Trash2,
   Share2,
+  Send,
   Users,
   Search,
   Pencil,
@@ -39,11 +40,13 @@ export default function PeoplePage() {
     addPayment,
     removePayment,
     buildShareText,
+    buildGroupReminderText,
   } = useAppContext();
 
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' | 'groups'
   const [search, setSearch] = useState('');
   const [detailPersonId, setDetailPersonId] = useState(null);
+  const [remindCopied, setRemindCopied] = useState(false);
 
   const friendDialogRef = useRef(null);
   const groupDialogRef = useRef(null);
@@ -89,6 +92,27 @@ export default function PeoplePage() {
     addPerson(name);
     e.target.reset();
     friendDialogRef.current?.close();
+  };
+
+  // One combined nudge for everyone still owing — meant to be posted once
+  // into a group chat, not sent 1:1 like the per-person "Send request".
+  const handleRemindAll = async () => {
+    const text = buildGroupReminderText();
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+      } catch {
+        // User cancelled or share failed — nothing to do.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setRemindCopied(true);
+      setTimeout(() => setRemindCopied(false), 1800);
+    } catch {
+      // Clipboard unavailable — fail quietly.
+    }
   };
 
   return (
@@ -149,9 +173,21 @@ export default function PeoplePage() {
           <>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Who&apos;s paid?</h3>
-              <span className="text-secondary text-sm">
-                {owingCount} {owingCount === 1 ? 'owes you' : 'owe you'}
-              </span>
+              <div className="flex items-center gap-3">
+                {owingCount > 0 && (
+                  <button
+                    type="button"
+                    className="text-accent text-xs font-medium flex items-center gap-1"
+                    onClick={handleRemindAll}
+                    aria-label="Remind everyone who still owes you, in one message"
+                  >
+                    <Send size={13} /> {remindCopied ? 'Copied' : 'Remind all'}
+                  </button>
+                )}
+                <span className="text-secondary text-sm">
+                  {owingCount} {owingCount === 1 ? 'owes you' : 'owe you'}
+                </span>
+              </div>
             </div>
 
             {friends.length >= 5 && (
