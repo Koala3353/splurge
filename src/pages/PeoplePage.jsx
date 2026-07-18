@@ -51,6 +51,7 @@ export default function PeoplePage() {
   const friendDialogRef = useRef(null);
   const groupDialogRef = useRef(null);
   const detailDialogRef = useRef(null);
+  const remindDialogRef = useRef(null);
 
   // The person who is "you" — never owes themselves, so never listed.
   const me = meId ? people.find((p) => p.id === meId) : null;
@@ -94,10 +95,12 @@ export default function PeoplePage() {
     friendDialogRef.current?.close();
   };
 
-  // One combined nudge for everyone still owing — meant to be posted once
-  // into a group chat, not sent 1:1 like the per-person "Send request".
-  const handleRemindAll = async () => {
-    const text = buildGroupReminderText();
+  // One combined nudge for everyone still owing (optionally scoped to one
+  // saved group) — meant to be posted once into a group chat, not sent 1:1
+  // like the per-person "Send request".
+  const shareReminder = async (scope) => {
+    remindDialogRef.current?.close();
+    const text = buildGroupReminderText(scope);
     if (navigator.share) {
       try {
         await navigator.share({ text });
@@ -112,6 +115,16 @@ export default function PeoplePage() {
       setTimeout(() => setRemindCopied(false), 1800);
     } catch {
       // Clipboard unavailable — fail quietly.
+    }
+  };
+
+  // Tapping "Remind" goes straight to everyone if there's nothing to filter
+  // by; with saved groups, it opens a quick chooser first.
+  const handleRemindTap = () => {
+    if (groups.length === 0) {
+      shareReminder();
+    } else {
+      remindDialogRef.current?.showModal();
     }
   };
 
@@ -178,10 +191,10 @@ export default function PeoplePage() {
                   <button
                     type="button"
                     className="text-accent text-xs font-medium flex items-center gap-1"
-                    onClick={handleRemindAll}
-                    aria-label="Remind everyone who still owes you, in one message"
+                    onClick={handleRemindTap}
+                    aria-label="Remind people who still owe you, in one message"
                   >
-                    <Send size={13} /> {remindCopied ? 'Copied' : 'Remind all'}
+                    <Send size={13} /> {remindCopied ? 'Copied' : 'Remind'}
                   </button>
                 )}
                 <span className="text-secondary text-sm">
@@ -379,6 +392,54 @@ export default function PeoplePage() {
           buildShareText={buildShareText}
           onClose={() => detailDialogRef.current?.close()}
         />
+      </dialog>
+
+      {/* Remind chooser — only opened when there's at least one saved group
+          to filter by; otherwise "Remind" goes straight to everyone. */}
+      <dialog ref={remindDialogRef}>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Remind who?</h2>
+          <form method="dialog">
+            <button className="text-secondary" aria-label="Close">
+              <X size={20} />
+            </button>
+          </form>
+        </div>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            className="btn btn-secondary w-full"
+            style={{ justifyContent: 'space-between' }}
+            onClick={() => shareReminder()}
+          >
+            <span className="flex items-center gap-2">
+              <Users size={16} /> Everyone who owes you
+            </span>
+            <span className="text-xs text-secondary">{owingCount}</span>
+          </button>
+          {groups.map((g) => {
+            const groupOwingCount = g.peopleIds.filter(
+              (id) => (balances[id] || 0) > 0.005,
+            ).length;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                className="btn btn-secondary w-full"
+                style={{ justifyContent: 'space-between' }}
+                disabled={groupOwingCount === 0}
+                onClick={() => shareReminder({ peopleIds: g.peopleIds, label: g.name })}
+              >
+                <span className="flex items-center gap-2 min-w-0 truncate">
+                  <Users size={16} /> {g.name}
+                </span>
+                <span className="text-xs text-secondary flex-shrink-0 ml-2">
+                  {groupOwingCount === 0 ? 'settled' : groupOwingCount}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </dialog>
 
       {/* Add friend */}

@@ -179,23 +179,33 @@ export function AppProvider({ children }) {
 
   // One combined message listing every current outstanding balance — meant
   // to be posted ONCE into a shared group chat, rather than sent 1:1 to each
-  // person like buildShareText.
-  const buildGroupReminderText = useCallback(() => {
+  // person like buildShareText. Pass { peopleIds, label } to scope it to one
+  // saved group instead of everyone (e.g. only your "Barkada").
+  const buildGroupReminderText = useCallback((options = {}) => {
+    const { peopleIds, label } = options;
+    const scope = peopleIds ? new Set(peopleIds) : null;
+
     const owing = people
       .filter((p) => p.id !== meId)
+      .filter((p) => !scope || scope.has(p.id))
       .map((p) => ({ name: p.name, amount: balances[p.id] || 0 }))
       .filter((r) => r.amount > 0.005)
       .sort((a, b) => b.amount - a.amount);
 
     if (owing.length === 0) {
-      return "Everyone's settled up — nothing to remind anyone about. Sent with Splurge.";
+      return label
+        ? `Everyone in ${label} is settled up — nothing to remind. Sent with Splurge.`
+        : "Everyone's settled up — nothing to remind anyone about. Sent with Splurge.";
     }
 
     const lines = owing.map((r) => `• ${r.name} — ${formatCurrency(r.amount)}`);
     const total = owing.reduce((sum, r) => sum + r.amount, 0);
     const payLine = payInfo?.number ? `\nPay via ${payInfo.method || 'GCash'}: ${payInfo.number}` : '';
+    const header = label
+      ? `Friendly reminder for ${label} — here's where we're at:`
+      : "Friendly reminder — here's where we're at:";
 
-    return `Friendly reminder — here's where we're at:\n${lines.join('\n')}\n\nTotal: ${formatCurrency(total)}${payLine}\n\nNo rush, settle up whenever. Sent with Splurge.`;
+    return `${header}\n${lines.join('\n')}\n\nTotal: ${formatCurrency(total)}${payLine}\n\nNo rush, settle up whenever. Sent with Splurge.`;
   }, [people, meId, balances, payInfo]);
 
   // --- Backup / restore ---
