@@ -82,18 +82,23 @@ export function AppProvider({ children }) {
   }, [setPayments]);
 
   // --- Derived settlement data ---
-  const { balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById } = useMemo(() => {
+  const {
+    balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
+    billPersonStatus, unpaidBillShares,
+  } = useMemo(() => {
     const bals = {};
     const shares = {};
     const life = {};
     const payByPerson = {};
     const duesById = {};
+    const duesByPerson = {}; // { [personId]: [{bill, amount}] } — every share, incl. zero, for FIFO allocation
 
     people.forEach((p) => {
       bals[p.id] = 0;
       shares[p.id] = [];
       life[p.id] = 0;
       payByPerson[p.id] = [];
+      duesByPerson[p.id] = [];
     });
 
     bills.forEach((bill) => {
@@ -102,6 +107,7 @@ export function AppProvider({ children }) {
       Object.entries(dues).forEach(([pId, amt]) => {
         if (bals[pId] !== undefined) bals[pId] += amt;
         if (shares[pId] && amt > 0.005) shares[pId].push({ bill, amount: amt });
+        if (duesByPerson[pId]) duesByPerson[pId].push({ bill, amount: amt });
       });
     });
 
@@ -111,12 +117,37 @@ export function AppProvider({ children }) {
       if (payByPerson[pm.personId]) payByPerson[pm.personId].push(pm);
     });
 
+    // Payments aren't earmarked to a specific bill — a person just pays you a
+    // lump sum. To know which particular bills are actually settled (for the
+    // per-bill "who's paid" view and to keep outbound messages from listing
+    // stale bills someone already covered), allocate each person's lifetime
+    // payments against their bills oldest-first (FIFO): the natural reading
+    // of "pay off what you've owed longest."
+    const billStatus = {};        // { [billId]: { [personId]: { due, paid, remaining } } }
+    const unpaidShares = {};      // { [personId]: [{ bill, amount, remaining }] } — remaining > 0 only
+
+    people.forEach((p) => {
+      unpaidShares[p.id] = [];
+      let pool = life[p.id] || 0;
+      const ordered = [...duesByPerson[p.id]].sort((a, b) => new Date(a.bill.date) - new Date(b.bill.date));
+      ordered.forEach(({ bill, amount }) => {
+        const applied = amount > 0 ? Math.min(pool, amount) : 0;
+        pool = Math.max(0, pool - applied);
+        const remaining = Math.max(0, Math.round((amount - applied) * 100) / 100);
+        if (!billStatus[bill.id]) billStatus[bill.id] = {};
+        billStatus[bill.id][p.id] = { due: amount, paid: applied, remaining };
+        if (remaining > 0.005) unpaidShares[p.id].push({ bill, amount, remaining });
+      });
+    });
+
     return {
       balances: bals,
       personBillShares: shares,
       lifetimePayments: life,
       paymentsByPerson: payByPerson,
       billDuesById: duesById,
+      billPersonStatus: billStatus,
+      unpaidBillShares: unpaidShares,
     };
   }, [people, bills, payments]);
 
@@ -130,18 +161,21 @@ export function AppProvider({ children }) {
   ), [people, balances, meId]);
 
   // --- Sharing: a message you can send to a friend to collect ---
+  // Only the CURRENTLY unpaid bills — anything they've already settled (via
+  // the oldest-first payment allocation above) is left out, so the message
+  // never re-lists old, already-covered bills.
   const buildShareText = useCallback((personId) => {
     const person = people.find((p) => p.id === personId);
     if (!person) return '';
     const bal = balances[personId] || 0;
-    const lines = (personBillShares[personId] || [])
-      .map((s) => `• ${s.bill.title} — ${formatCurrency(s.amount)}`);
+    const lines = (unpaidBillShares[personId] || [])
+      .map((s) => `• ${s.bill.title} — ${formatCurrency(s.remaining)}`);
     const body = lines.length ? `\n${lines.join('\n')}` : '';
     const payLine = payInfo?.number
       ? `\nPay via ${payInfo.method || 'GCash'}: ${payInfo.number}`
       : '';
     return `Hey ${person.name} — your share comes to ${formatCurrency(Math.max(bal, 0))}:${body}\n${payLine}\nNo rush, settle up whenever. Sent with Splurge.`;
-  }, [people, balances, personBillShares, payInfo]);
+  }, [people, balances, unpaidBillShares, payInfo]);
 
   // --- Backup / restore ---
   const exportData = useCallback(() => JSON.stringify(
@@ -179,6 +213,7 @@ export function AppProvider({ children }) {
     meId, setMeId,
     payInfo, setPayInfo,
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
+    billPersonStatus, unpaidBillShares,
     totalOwedToYou,
     buildShareText, exportData, importData, clearAll,
   }), [
@@ -189,6 +224,7 @@ export function AppProvider({ children }) {
     meId, setMeId,
     payInfo, setPayInfo,
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
+    billPersonStatus, unpaidBillShares,
     totalOwedToYou,
     buildShareText, exportData, importData, clearAll,
   ]);

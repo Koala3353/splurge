@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Pencil, Trash2, Share2, Receipt, Check } from 'lucide-react';
+import { X, Pencil, Trash2, Share2, Receipt, Check, Users, ChevronLeft } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
 import { formatCurrency, formatDate, initialsOf } from '../utils/format';
 
@@ -17,11 +17,47 @@ function buildBillSummary(bill, dues, people, payInfo) {
   return `${bill.title} — ${formatCurrency(bill.total || 0)}${body}\n${payLine}\nSplit with Splurge.`;
 }
 
+// Builds a plain-text "who's paid / who hasn't" status summary for a bill.
+// Payment status here comes from an oldest-bill-first allocation of each
+// person's lifetime payments (payments aren't tied to a specific bill), so it
+// reflects the same "have they settled this one yet" logic as the rest of
+// the app rather than a literal per-bill receipt. The account owner (meId)
+// is left out — like every other outward-facing share in this app, a message
+// meant for the group shouldn't list the organizer as someone who "owes."
+function buildPaymentStatusSummary(bill, statusByPerson, people, payInfo, meId) {
+  const nameOf = (id) => people.find((p) => p.id === id)?.name || 'Someone';
+  const rows = (bill.participants || [])
+    .filter((pId) => pId !== meId)
+    .map((pId) => {
+      const st = statusByPerson[pId];
+      const due = st?.due ?? 0;
+      const remaining = Math.max(0, st?.remaining ?? due);
+      return { name: nameOf(pId), due, remaining, isPaid: remaining <= 0.005 };
+    })
+    .filter((r) => r.due > 0.005);
+
+  const paid = rows.filter((r) => r.isPaid);
+  const unpaid = rows.filter((r) => !r.isPaid).sort((a, b) => b.remaining - a.remaining);
+  const totalUnpaid = unpaid.reduce((sum, r) => sum + r.remaining, 0);
+
+  const summary = unpaid.length === 0
+    ? "Everyone's settled up."
+    : `${unpaid.length} of ${rows.length} still owe ${formatCurrency(totalUnpaid)}.`;
+
+  const lines = [];
+  if (paid.length) lines.push(...paid.map((r) => `✓ ${r.name} — paid`));
+  if (unpaid.length) lines.push(...unpaid.map((r) => `• ${r.name} — ${formatCurrency(r.remaining)}`));
+
+  const payLine = unpaid.length && payInfo?.number ? `\nPay via ${payInfo.method || 'GCash'}: ${payInfo.number}` : '';
+  return `${bill.title} — payment status\n${summary}\n\n${lines.join('\n')}\n${payLine}\nSent with Splurge.`;
+}
+
 export default function BillDetailModal({ billId, onClose }) {
   const dialogRef = useRef(null);
   const navigate = useNavigate();
-  const { bills, billDuesById, people, removeBill, payInfo } = useAppContext();
+  const { bills, billDuesById, billPersonStatus, people, removeBill, payInfo, meId } = useAppContext();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [shared, setShared] = useState(false);
 
   useEffect(() => {
@@ -33,12 +69,14 @@ export default function BillDetailModal({ billId, onClose }) {
 
   const handleClose = () => {
     setConfirmDelete(false);
+    setShareMenuOpen(false);
     setShared(false);
     onClose();
   };
 
   const bill = bills.find((b) => b.id === billId);
   const dues = (billId && billDuesById[billId]) || {};
+  const statusByPerson = (billId && billPersonStatus[billId]) || {};
   const nameOf = (id) => people.find((p) => p.id === id)?.name || '—';
 
   const handleEdit = () => {
@@ -51,8 +89,8 @@ export default function BillDetailModal({ billId, onClose }) {
     dialogRef.current?.close();
   };
 
-  const handleShare = async () => {
-    const text = buildBillSummary(bill, dues, people, payInfo);
+  const share = async (text) => {
+    setShareMenuOpen(false);
     try {
       if (navigator.share) {
         await navigator.share({ text });
@@ -67,6 +105,9 @@ export default function BillDetailModal({ billId, onClose }) {
       setTimeout(() => setShared(false), 1800);
     } catch { /* clipboard unavailable */ }
   };
+
+  const handleShareBreakdown = () => share(buildBillSummary(bill, dues, people, payInfo));
+  const handleSharePaymentStatus = () => share(buildPaymentStatusSummary(bill, statusByPerson, people, payInfo, meId));
 
   return (
     <dialog
@@ -144,17 +185,30 @@ export default function BillDetailModal({ billId, onClose }) {
             {/* Who owes what */}
             <div className="text-xs text-secondary font-bold uppercase tracking-wider mb-2">The split</div>
             <div className="flex flex-col gap-1 mb-2">
-              {(bill.participants || []).map((pId) => (
-                <div key={pId} className="flex justify-between items-center py-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="avatar bg-accent flex-shrink-0" style={{ width: 36, height: 36, fontSize: '0.85rem' }}>
-                      {initialsOf(nameOf(pId))}
+              {(bill.participants || []).map((pId) => {
+                const due = dues[pId] || 0;
+                const remaining = Math.max(0, statusByPerson[pId]?.remaining ?? due);
+                const isPaid = due > 0.005 && remaining <= 0.005;
+                return (
+                  <div key={pId} className="flex justify-between items-center py-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="avatar bg-accent flex-shrink-0" style={{ width: 36, height: 36, fontSize: '0.85rem' }}>
+                        {initialsOf(nameOf(pId))}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-semibold truncate block">{nameOf(pId)}</span>
+                        {/* Paid/owes framing doesn't apply to your own row — you fronted the bill. */}
+                        {pId !== meId && due > 0.005 && (
+                          <span className={isPaid ? 'text-xs text-success' : 'text-xs text-secondary'}>
+                            {isPaid ? 'Paid' : `Owes ${formatCurrency(remaining)}`}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="font-semibold truncate">{nameOf(pId)}</span>
+                    <span className="font-bold tabular-nums flex-shrink-0">{formatCurrency(due)}</span>
                   </div>
-                  <span className="font-bold tabular-nums flex-shrink-0">{formatCurrency(dues[pId] || 0)}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -168,9 +222,21 @@ export default function BillDetailModal({ billId, onClose }) {
                   <button className="btn btn-danger flex-1" onClick={handleDelete}>Delete</button>
                 </div>
               </div>
+            ) : shareMenuOpen ? (
+              <div className="flex flex-col gap-2">
+                <button className="btn btn-secondary pressable" onClick={handleShareBreakdown}>
+                  <Receipt size={18} /> Share full breakdown
+                </button>
+                <button className="btn btn-secondary pressable" onClick={handleSharePaymentStatus}>
+                  <Users size={18} /> Share who&apos;s paid
+                </button>
+                <button className="btn text-secondary pressable" onClick={() => setShareMenuOpen(false)}>
+                  <ChevronLeft size={18} /> Back
+                </button>
+              </div>
             ) : (
               <div className="flex gap-2">
-                <button className="btn btn-secondary flex-1 pressable" onClick={handleShare} aria-label="Share split">
+                <button className="btn btn-secondary flex-1 pressable" onClick={() => setShareMenuOpen(true)} aria-label="Share split">
                   {shared ? <><Check size={18} /> Copied</> : <><Share2 size={18} /> Share</>}
                 </button>
                 <button className="btn btn-secondary flex-1 pressable" onClick={handleEdit} aria-label="Edit split">
