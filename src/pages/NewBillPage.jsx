@@ -448,10 +448,60 @@ export default function NewBillPage() {
                       <div className="flex-col gap-3 p-4 bg-glass border border-glass rounded-lg">
                         <div className="text-xs text-secondary font-bold uppercase tracking-wider">Name</div>
                         <input type="text" className="input-ghost text-lg font-bold w-full border-b border-glass pb-2" value={fee.name} onChange={(e) => updateFee(fee.id, 'name', e.target.value)} />
-                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Amount <span className="lowercase font-medium">(minus for a discount)</span></div>
+
+                        {/* Sign as an explicit choice, not a typed "-": iOS/Android's
+                            decimal numeric keypad has no minus key, so a fee amount
+                            input alone can never actually go negative on a phone. The
+                            number field below only ever holds the magnitude. */}
+                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Type</div>
+                        <div className="flex gap-2">
+                          {(() => {
+                            const isDiscount = fee.amount < 0 || Object.is(fee.amount, -0);
+                            return (
+                              <>
+                                <button
+                                  type="button"
+                                  className="pill flex-1 flex items-center justify-center gap-1"
+                                  style={!isDiscount
+                                    ? { background: 'rgba(62,207,142,0.16)', color: 'var(--success)', borderColor: 'rgba(62,207,142,0.5)' }
+                                    : null}
+                                  onClick={() => updateFee(fee.id, 'amount', Math.abs(fee.amount || 0))}
+                                >
+                                  + Charge
+                                </button>
+                                <button
+                                  type="button"
+                                  className="pill flex-1 flex items-center justify-center gap-1"
+                                  style={isDiscount
+                                    ? { background: 'rgba(240,100,124,0.16)', color: 'var(--danger)', borderColor: 'rgba(240,100,124,0.5)' }
+                                    : null}
+                                  onClick={() => updateFee(fee.id, 'amount', -Math.abs(fee.amount || 0))}
+                                >
+                                  − Discount
+                                </button>
+                              </>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Amount</div>
                         <div className="flex gap-2 items-center">
-                          <span className="text-secondary font-medium">₱</span>
-                          <input type="number" inputMode="decimal" step="0.01" className="input-ghost text-xl font-bold flex-1" value={fee.amount || ''} onChange={(e) => updateFee(fee.id, 'amount', parseFloat(e.target.value) || 0)} />
+                          <span className="text-secondary font-medium">
+                            {(fee.amount < 0 || Object.is(fee.amount, -0)) ? '−₱' : '₱'}
+                          </span>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            className="input-ghost text-xl font-bold flex-1"
+                            value={fee.amount ? Math.abs(fee.amount) : ''}
+                            onChange={(e) => {
+                              const magnitude = parseFloat(e.target.value) || 0;
+                              const isDiscount = fee.amount < 0 || Object.is(fee.amount, -0);
+                              updateFee(fee.id, 'amount', isDiscount ? -magnitude : magnitude);
+                            }}
+                          />
                         </div>
 
                         <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Applies to</div>
