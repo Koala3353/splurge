@@ -75,9 +75,16 @@ export default function HomePage() {
           <>
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-lg font-bold">Recent splits</h3>
-              <button className="text-sm text-accent pressable" onClick={() => navigate('/new-bill')}>
-                New split
-              </button>
+              <div className="flex items-center gap-3">
+                {bills.length > 6 && (
+                  <button className="text-sm text-secondary pressable" onClick={() => navigate('/history')}>
+                    See all
+                  </button>
+                )}
+                <button className="text-sm text-accent pressable" onClick={() => navigate('/new-bill')}>
+                  New split
+                </button>
+              </div>
             </div>
             <div className="flex flex-col gap-3">
             {recent.map((bill) => (
