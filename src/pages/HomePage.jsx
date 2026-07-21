@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../store/AppContext';
+import { useCountUp } from '../hooks/useCountUp';
 import { formatCurrency, formatRelativeDate } from '../utils/format';
 import { Settings, Plus, ChevronRight, Receipt, Wallet } from 'lucide-react';
-import Navigation from '../components/Navigation';
 import BillDetailModal from '../components/BillDetailModal';
 import SettingsModal from '../components/SettingsModal';
 
@@ -12,6 +12,7 @@ export default function HomePage() {
   const { bills, people, balances, meId, totalOwedToYou, lifetimePayments } = useAppContext();
   const [detailBillId, setDetailBillId] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const animatedOwed = useCountUp(totalOwedToYou);
 
   const owingCount = people.filter((p) => p.id !== meId && (balances[p.id] || 0) > 0.005).length;
   const collected = Object.entries(lifetimePayments)
@@ -19,7 +20,7 @@ export default function HomePage() {
   const recent = [...bills].reverse().slice(0, 6);
 
   return (
-    <div className="app-shell animate-slide-in">
+    <>
       <main className="app-main">
         {/* Brand bar */}
         <div className="flex justify-between items-center mb-6">
@@ -45,7 +46,7 @@ export default function HomePage() {
             className="font-black break-words balance-amount"
             style={{ fontSize: 'clamp(2.25rem, 12vw, 3.25rem)', lineHeight: 1.1, color: totalOwedToYou > 0.005 ? 'var(--success)' : 'var(--text-primary)' }}
           >
-            {formatCurrency(totalOwedToYou)}
+            {formatCurrency(animatedOwed)}
           </h2>
           <p className="text-sm text-secondary mt-2">
             {owingCount > 0
@@ -108,7 +109,6 @@ export default function HomePage() {
 
       <BillDetailModal billId={detailBillId} onClose={() => setDetailBillId(null)} />
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <Navigation />
-    </div>
+    </>
   );
 }

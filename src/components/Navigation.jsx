@@ -2,8 +2,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Receipt, PieChart, Users } from 'lucide-react';
 import { flushSync } from 'react-dom';
 
-const navOrder = { '/': 0, '/people': 1, '/new-bill': 2, '/stats': 3 };
-
 export default function Navigation() {
   return (
     <nav className="app-footer" aria-label="Primary" style={{ padding: '0.75rem', justifyContent: 'space-around' }}>
@@ -24,22 +22,15 @@ function NavItem({ to, icon, label }) {
     e.preventDefault();
     if (isActive) return;
 
-    const currentOrder = navOrder[location.pathname] ?? 0;
-    const targetOrder = navOrder[to] ?? 0;
-    const direction = targetOrder > currentOrder ? 'forward' : 'backward';
-
     if (!document.startViewTransition) {
       navigate(to);
       return;
     }
 
-    document.startViewTransition({
-      update: () => {
-        flushSync(() => {
-          navigate(to);
-        });
-      },
-      types: [direction]
+    document.startViewTransition(() => {
+      flushSync(() => {
+        navigate(to);
+      });
     });
   };
 
@@ -70,4 +61,3 @@ function NavItem({ to, icon, label }) {
     </a>
   );
 }
-

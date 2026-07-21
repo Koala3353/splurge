@@ -6,7 +6,6 @@ import { computeBillDues } from '../utils/split';
 import { parseReceiptFull } from '../utils/receipt';
 import { warmUpOcr, scanReceipt } from '../utils/ocr';
 import { flushSync } from 'react-dom';
-import Navigation from '../components/Navigation';
 import {
   Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft,
   Users, UserPlus, Sparkles, CheckCircle, X, RotateCcw,
@@ -197,7 +196,7 @@ export default function NewBillPage() {
   const personName = (id) => people.find((p) => p.id === id)?.name || '';
 
   return (
-    <div className="app-shell animate-slide-in">
+    <>
       {/* HEADER */}
       <header className="app-header">
         <div className="flex justify-between items-center mb-4">
@@ -212,7 +211,7 @@ export default function NewBillPage() {
           <div className="flex gap-3 items-center">
             <button
               className="btn p-2 text-danger pressable"
-              style={{ background: 'rgba(244,63,94,0.1)', borderRadius: '50%' }}
+              style={{ background: 'rgba(251,113,133,0.1)', borderRadius: '50%' }}
               onClick={() => discardRef.current?.showModal()}
               aria-label="Discard split"
             >
@@ -302,7 +301,7 @@ export default function NewBillPage() {
                     {people.map((p) => {
                       const isSel = selectedPeople.includes(p.id);
                       return (
-                        <button key={p.id} className={`pill ${isSel ? 'pill-active' : 'pill-inactive'} flex items-center gap-1`} onClick={() => togglePerson(p.id)}>
+                        <button key={p.id} className={`pill ${isSel ? 'pill-active' : 'pill-inactive'} pressable flex items-center gap-1`} onClick={() => togglePerson(p.id)}>
                           {isSel ? <Check size={14} /> : <Plus size={14} />} {p.name}{p.id === meId ? ' (you)' : ''}
                         </button>
                       );
@@ -328,7 +327,7 @@ export default function NewBillPage() {
                     <Plus size={32} className="mb-2 text-primary" />
                     <span>Add manually</span>
                   </button>
-                  <button className="btn flex-col items-center pressable" style={{ background: 'rgba(244,244,242,0.08)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={handleScanTap}>
+                  <button className="btn flex-col items-center pressable" style={{ background: 'rgba(34,197,94,0.1)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={handleScanTap}>
                     <Sparkles size={32} className="mb-2" />
                     <span>Scan receipt</span>
                   </button>
@@ -391,7 +390,7 @@ export default function NewBillPage() {
                             <div className="text-xs text-secondary font-bold uppercase tracking-wider mb-2 px-1">Shared by</div>
                             <div className="flex gap-2 overflow-x-auto pb-1 px-1 custom-scrollbar">
                               <button
-                                className={`pill whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${everyone ? 'pill-active' : 'pill-inactive'}`}
+                                className={`pill whitespace-nowrap pressable flex items-center gap-1 flex-shrink-0 ${everyone ? 'pill-active' : 'pill-inactive'}`}
                                 onClick={() => toggleEveryoneForItem(item.id)}
                                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                               >
@@ -402,7 +401,7 @@ export default function NewBillPage() {
                                 return (
                                   <button
                                     key={pId}
-                                    className={`pill whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${isSel ? 'pill-active' : 'pill-inactive'}`}
+                                    className={`pill whitespace-nowrap pressable flex items-center gap-1 flex-shrink-0 ${isSel ? 'pill-active' : 'pill-inactive'}`}
                                     onClick={() => togglePersonForItem(item.id, pId)}
                                     style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                                   >
@@ -461,7 +460,7 @@ export default function NewBillPage() {
                               <>
                                 <button
                                   type="button"
-                                  className="pill flex-1 flex items-center justify-center gap-1"
+                                  className="pill pressable flex-1 flex items-center justify-center gap-1"
                                   style={!isDiscount
                                     ? { background: 'rgba(62,207,142,0.16)', color: 'var(--success)', borderColor: 'rgba(62,207,142,0.5)' }
                                     : null}
@@ -471,9 +470,9 @@ export default function NewBillPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  className="pill flex-1 flex items-center justify-center gap-1"
+                                  className="pill pressable flex-1 flex items-center justify-center gap-1"
                                   style={isDiscount
-                                    ? { background: 'rgba(240,100,124,0.16)', color: 'var(--danger)', borderColor: 'rgba(240,100,124,0.5)' }
+                                    ? { background: 'rgba(251,113,133,0.16)', color: 'var(--danger)', borderColor: 'rgba(251,113,133,0.5)' }
                                     : null}
                                   onClick={() => updateFee(fee.id, 'amount', -Math.abs(fee.amount || 0))}
                                 >
@@ -510,7 +509,7 @@ export default function NewBillPage() {
                             const everyone = selectedPeople.length > 0 && selectedPeople.every((p) => (fee.people || []).includes(p));
                             return (
                               <button
-                                className={`pill whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${everyone ? 'pill-active' : 'pill-inactive'}`}
+                                className={`pill whitespace-nowrap pressable flex items-center gap-1 flex-shrink-0 ${everyone ? 'pill-active' : 'pill-inactive'}`}
                                 onClick={() => toggleEveryoneForFee(fee.id)}
                                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                               >
@@ -523,7 +522,7 @@ export default function NewBillPage() {
                             return (
                               <button
                                 key={pId}
-                                className={`pill whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${isSel ? 'pill-active' : 'pill-inactive'}`}
+                                className={`pill whitespace-nowrap pressable flex items-center gap-1 flex-shrink-0 ${isSel ? 'pill-active' : 'pill-inactive'}`}
                                 onClick={() => togglePersonForFee(fee.id, pId)}
                                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                               >
@@ -535,7 +534,7 @@ export default function NewBillPage() {
                       </div>
                     </SwipeableItem>
                   ))}
-                  <button className="btn btn-secondary w-full mt-2" style={{ borderRadius: 'var(--radius-lg)' }} onClick={addFee}>+ Add another</button>
+                  <button className="btn btn-secondary w-full mt-2 pressable" style={{ borderRadius: 'var(--radius-lg)' }} onClick={addFee}>+ Add another</button>
                 </ul>
               )}
             </div>
@@ -598,19 +597,17 @@ export default function NewBillPage() {
       </div>
 
       {/* Discard confirm */}
-      <dialog ref={discardRef}>
+      <dialog ref={discardRef} onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-xl font-bold">Discard this split?</h2>
-          <form method="dialog"><button className="text-secondary" aria-label="Close"><X size={20} /></button></form>
+          <form method="dialog"><button className="text-secondary pressable" aria-label="Close"><X size={20} /></button></form>
         </div>
         <p className="text-sm text-secondary mb-4">Your changes won&apos;t be saved.</p>
         <div className="flex gap-2 justify-end">
-          <button type="button" className="btn btn-secondary" onClick={() => discardRef.current?.close()}>Keep editing</button>
-          <button type="button" className="btn btn-danger" onClick={() => { discardRef.current?.close(); navigate('/'); }}>Discard</button>
+          <button type="button" className="btn btn-secondary pressable" onClick={() => discardRef.current?.close()}>Keep editing</button>
+          <button type="button" className="btn btn-danger pressable" onClick={() => { discardRef.current?.close(); navigate('/'); }}>Discard</button>
         </div>
       </dialog>
-
-      <Navigation />
-    </div>
+    </>
   );
 }

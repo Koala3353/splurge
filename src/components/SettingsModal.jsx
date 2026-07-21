@@ -101,13 +101,14 @@ export default function SettingsModal({ open, onClose }) {
     <dialog
       ref={dialogRef}
       onClose={handleClose}
+      onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
       style={{ width: '95vw', maxWidth: '460px', padding: 0, overflow: 'hidden' }}
     >
       <div className="flex flex-col" style={{ maxHeight: '85vh' }}>
         <div className="p-4 border-b border-glass flex justify-between items-center">
           <h2 className="text-xl font-bold">Settings</h2>
           <form method="dialog">
-            <button className="btn bg-glass p-2 rounded-full" aria-label="Close"><X size={20} /></button>
+            <button className="btn bg-glass p-2 rounded-full pressable" aria-label="Close"><X size={20} /></button>
           </form>
         </div>
 
@@ -129,7 +130,7 @@ export default function SettingsModal({ open, onClose }) {
                 return (
                   <button
                     key={p.id}
-                    className={`pill ${isMe ? 'pill-active' : 'pill-inactive'} flex items-center gap-1`}
+                    className={`pill ${isMe ? 'pill-active' : 'pill-inactive'} pressable flex items-center gap-1`}
                     onClick={() => setMeId(isMe ? null : p.id)}
                   >
                     {isMe && <Check size={14} />} {p.name}
@@ -155,7 +156,7 @@ export default function SettingsModal({ open, onClose }) {
               return (
                 <button
                   key={m}
-                  className={`pill ${active ? 'pill-active' : 'pill-inactive'}`}
+                  className={`pill ${active ? 'pill-active' : 'pill-inactive'} pressable`}
                   onClick={() => setPayInfo({ ...(payInfo || {}), method: m })}
                 >
                   {m}
@@ -242,12 +243,12 @@ export default function SettingsModal({ open, onClose }) {
 
           {/* Danger zone */}
           {confirmClear ? (
-            <div className="glass-panel p-3 flex flex-col gap-2" style={{ borderColor: 'rgba(244,63,94,0.4)' }}>
+            <div className="glass-panel p-3 flex flex-col gap-2" style={{ borderColor: 'rgba(251,113,133,0.4)' }}>
               <p className="text-sm text-center">Delete everything — people, splits, payments? This can’t be undone.</p>
               <div className="flex gap-2">
-                <button className="btn btn-secondary flex-1" onClick={() => setConfirmClear(false)}>Keep my data</button>
+                <button className="btn btn-secondary flex-1 pressable" onClick={() => setConfirmClear(false)}>Keep my data</button>
                 <button
-                  className="btn btn-danger flex-1"
+                  className="btn btn-danger flex-1 pressable"
                   onClick={() => { clearAll(); setConfirmClear(false); flash('All data cleared.'); }}
                 >
                   Delete all

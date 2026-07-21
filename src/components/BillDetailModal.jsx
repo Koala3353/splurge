@@ -113,6 +113,7 @@ export default function BillDetailModal({ billId, onClose }) {
     <dialog
       ref={dialogRef}
       onClose={handleClose}
+      onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
       style={{ width: '95vw', maxWidth: '500px', padding: 0, overflow: 'hidden' }}
     >
       {bill && (
@@ -130,7 +131,7 @@ export default function BillDetailModal({ billId, onClose }) {
               </div>
             </div>
             <form method="dialog">
-              <button className="btn bg-glass p-2 rounded-full" aria-label="Close"><X size={20} /></button>
+              <button className="btn bg-glass p-2 rounded-full pressable" aria-label="Close"><X size={20} /></button>
             </form>
           </div>
 
@@ -218,8 +219,8 @@ export default function BillDetailModal({ billId, onClose }) {
               <div className="flex flex-col gap-2">
                 <p className="text-sm text-center text-secondary">Delete this split? This can&apos;t be undone.</p>
                 <div className="flex gap-2">
-                  <button className="btn btn-secondary flex-1" onClick={() => setConfirmDelete(false)}>Keep</button>
-                  <button className="btn btn-danger flex-1" onClick={handleDelete}>Delete</button>
+                  <button className="btn btn-secondary flex-1 pressable" onClick={() => setConfirmDelete(false)}>Keep</button>
+                  <button className="btn btn-danger flex-1 pressable" onClick={handleDelete}>Delete</button>
                 </div>
               </div>
             ) : shareMenuOpen ? (

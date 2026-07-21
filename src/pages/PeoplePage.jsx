@@ -19,7 +19,6 @@ import {
   Search,
   Pencil,
 } from 'lucide-react';
-import Navigation from '../components/Navigation';
 import SwipeableItem from '../components/SwipeableItem';
 
 export default function PeoplePage() {
@@ -129,7 +128,7 @@ export default function PeoplePage() {
   };
 
   return (
-    <div className="app-shell animate-slide-in">
+    <>
       <main className="app-main" style={{ paddingBottom: '6rem' }}>
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">People</h1>
@@ -153,7 +152,7 @@ export default function PeoplePage() {
           }}
         >
           <button
-            className="btn"
+            className="btn pressable"
             style={{
               flex: 1,
               border: 'none',
@@ -167,7 +166,7 @@ export default function PeoplePage() {
             Friends
           </button>
           <button
-            className="btn"
+            className="btn pressable"
             style={{
               flex: 1,
               border: 'none',
@@ -190,7 +189,7 @@ export default function PeoplePage() {
                 {owingCount > 0 && (
                   <button
                     type="button"
-                    className="text-accent text-xs font-medium flex items-center gap-1"
+                    className="text-accent text-xs font-medium flex items-center gap-1 pressable"
                     onClick={handleRemindTap}
                     aria-label="Remind people who still owe you, in one message"
                   >
@@ -221,7 +220,7 @@ export default function PeoplePage() {
                   <button
                     type="button"
                     aria-label="Clear search"
-                    className="text-secondary flex-shrink-0"
+                    className="text-secondary flex-shrink-0 pressable"
                     onClick={() => setSearch('')}
                   >
                     <X size={16} />
@@ -256,7 +255,7 @@ export default function PeoplePage() {
                         style={{ padding: 0, marginBottom: 0 }}
                       >
                         <div
-                          className="flex justify-between items-center p-4 cursor-pointer card-hover"
+                          className="flex justify-between items-center p-4 cursor-pointer card-hover pressable"
                           style={{ opacity: isSettled ? 0.6 : 1 }}
                           onClick={() => openDetail(person.id)}
                         >
@@ -375,6 +374,7 @@ export default function PeoplePage() {
       <dialog
         ref={detailDialogRef}
         onClose={() => setDetailPersonId(null)}
+        onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
         style={{ width: '95vw', maxWidth: '500px', padding: 0, overflow: 'hidden' }}
       >
         <PersonDetail
@@ -396,11 +396,11 @@ export default function PeoplePage() {
 
       {/* Remind chooser — only opened when there's at least one saved group
           to filter by; otherwise "Remind" goes straight to everyone. */}
-      <dialog ref={remindDialogRef}>
+      <dialog ref={remindDialogRef} onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Remind who?</h2>
           <form method="dialog">
-            <button className="text-secondary" aria-label="Close">
+            <button className="text-secondary pressable" aria-label="Close">
               <X size={20} />
             </button>
           </form>
@@ -408,7 +408,7 @@ export default function PeoplePage() {
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            className="btn btn-secondary w-full"
+            className="btn btn-secondary w-full pressable"
             style={{ justifyContent: 'space-between' }}
             onClick={() => shareReminder()}
           >
@@ -425,7 +425,7 @@ export default function PeoplePage() {
               <button
                 key={g.id}
                 type="button"
-                className="btn btn-secondary w-full"
+                className="btn btn-secondary w-full pressable"
                 style={{ justifyContent: 'space-between' }}
                 disabled={groupOwingCount === 0}
                 onClick={() => shareReminder({ peopleIds: g.peopleIds, label: g.name })}
@@ -443,11 +443,11 @@ export default function PeoplePage() {
       </dialog>
 
       {/* Add friend */}
-      <dialog ref={friendDialogRef}>
+      <dialog ref={friendDialogRef} onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Add friend</h2>
           <form method="dialog">
-            <button className="text-secondary" aria-label="Close">
+            <button className="text-secondary pressable" aria-label="Close">
               <X size={20} />
             </button>
           </form>
@@ -463,12 +463,12 @@ export default function PeoplePage() {
           <div className="flex gap-2 justify-end">
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-secondary pressable"
               onClick={() => friendDialogRef.current?.close()}
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary pressable">
               Add
             </button>
           </div>
@@ -476,7 +476,7 @@ export default function PeoplePage() {
       </dialog>
 
       {/* New group */}
-      <dialog ref={groupDialogRef} onClose={() => setSearch('')}>
+      <dialog ref={groupDialogRef} onClose={() => setSearch('')} onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
         <NewGroupForm
           people={people}
           meId={meId}
@@ -485,8 +485,7 @@ export default function PeoplePage() {
         />
       </dialog>
 
-      <Navigation />
-    </div>
+    </>
   );
 }
 
@@ -525,7 +524,7 @@ function NewGroupForm({ people, meId, addGroup, onClose }) {
         <form method="dialog">
           <button
             type="button"
-            className="text-secondary"
+            className="text-secondary pressable"
             aria-label="Close"
             onClick={() => {
               reset();
@@ -560,7 +559,7 @@ function NewGroupForm({ people, meId, addGroup, onClose }) {
                   <button
                     key={p.id}
                     type="button"
-                    className={`pill ${isSel ? 'pill-active' : 'pill-inactive'} flex items-center gap-1`}
+                    className={`pill ${isSel ? 'pill-active' : 'pill-inactive'} pressable flex items-center gap-1`}
                     onClick={() => toggle(p.id)}
                   >
                     {isSel ? <Check size={14} /> : <Plus size={14} />} {p.name}
@@ -574,7 +573,7 @@ function NewGroupForm({ people, meId, addGroup, onClose }) {
         <div className="flex gap-2 justify-end">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-secondary pressable"
             onClick={() => {
               reset();
               onClose();
@@ -584,7 +583,7 @@ function NewGroupForm({ people, meId, addGroup, onClose }) {
           </button>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary pressable"
             style={canCreate ? null : { opacity: 0.45 }}
             disabled={!canCreate}
           >
@@ -700,7 +699,7 @@ function PersonDetail({
               />
               <button
                 type="submit"
-                className="text-success flex-shrink-0"
+                className="text-success flex-shrink-0 pressable"
                 aria-label="Save name"
               >
                 <Check size={20} />
@@ -712,7 +711,7 @@ function PersonDetail({
               <button
                 type="button"
                 onClick={startEdit}
-                className="text-secondary flex-shrink-0"
+                className="text-secondary flex-shrink-0 pressable"
                 aria-label="Rename"
               >
                 <Pencil size={16} />
@@ -722,7 +721,7 @@ function PersonDetail({
         </div>
         <button
           type="button"
-          className="bg-glass p-2 rounded-full flex-shrink-0"
+          className="bg-glass p-2 rounded-full flex-shrink-0 pressable"
           aria-label="Close"
           onClick={onClose}
         >
@@ -787,7 +786,7 @@ function PersonDetail({
         <div className="flex gap-2 mb-3">
           <button
             type="button"
-            className="btn btn-secondary flex-1"
+            className="btn btn-secondary flex-1 pressable"
             style={{ borderRadius: 'var(--radius-full)', ...dimStyle(!canPayQuick) }}
             disabled={!canPayQuick}
             onClick={() => addPayment(person.id, owed / 2)}
@@ -796,7 +795,7 @@ function PersonDetail({
           </button>
           <button
             type="button"
-            className="btn btn-success flex-1"
+            className="btn btn-success flex-1 pressable"
             style={{ borderRadius: 'var(--radius-full)', ...dimStyle(!canPayQuick) }}
             disabled={!canPayQuick}
             onClick={() => addPayment(person.id, owed)}
@@ -819,7 +818,7 @@ function PersonDetail({
           />
           <button
             type="submit"
-            className="btn btn-secondary flex-shrink-0"
+            className="btn btn-secondary flex-shrink-0 pressable"
             style={{ borderRadius: 'var(--radius-full)', ...dimStyle(!customValid) }}
             disabled={!customValid}
           >
@@ -852,7 +851,7 @@ function PersonDetail({
                   </div>
                   <button
                     type="button"
-                    className="text-secondary flex-shrink-0 p-2"
+                    className="text-secondary flex-shrink-0 p-2 pressable"
                     aria-label="Undo payment"
                     onClick={() => removePayment(pm.id)}
                   >
@@ -867,7 +866,7 @@ function PersonDetail({
         {/* Send request */}
         <button
           type="button"
-          className="btn btn-primary w-full"
+          className="btn btn-primary w-full pressable"
           style={{ borderRadius: 'var(--radius-full)' }}
           onClick={sendRequest}
         >
@@ -879,7 +878,7 @@ function PersonDetail({
         {!isMe && (
           <button
             type="button"
-            className="text-xs text-secondary mt-4 mx-auto block"
+            className="text-xs text-secondary mt-4 mx-auto block pressable"
             onClick={() => setMeId(person.id)}
           >
             This is me

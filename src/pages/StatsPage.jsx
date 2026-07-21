@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
+import { useCountUp } from '../hooks/useCountUp';
 import { formatCurrency, formatCompact, formatDate, initialsOf } from '../utils/format';
-import Navigation from '../components/Navigation';
 import {
   Wallet,
   ArrowUpRight,
@@ -12,8 +12,11 @@ import {
 } from 'lucide-react';
 
 // A single headline stat. `hero` flips it to the gradient treatment.
+// `value` is the raw number; `format` renders each animated frame, so the
+// count-up plays against the real magnitude instead of a formatted string.
 // min-w-0 + truncate on the value guarantees no horizontal clipping at 375px.
-function StatCard({ icon, label, value, hero = false }) {
+function StatCard({ icon, label, value, format = (n) => n, hero = false }) {
+  const animated = useCountUp(value);
   return (
     <div
       className={`glass-panel flex-col justify-between card-hover relative overflow-hidden min-w-0 ${hero ? 'feature-card' : ''}`}
@@ -30,7 +33,7 @@ function StatCard({ icon, label, value, hero = false }) {
         className={`font-display font-black tabular-nums truncate min-w-0 ${hero ? 'text-white' : 'text-primary'}`}
         style={{ fontSize: 'clamp(1.35rem, 7vw, 2rem)', lineHeight: 1.1, position: 'relative', zIndex: 1 }}
       >
-        {value}
+        {format(animated)}
       </div>
     </div>
   );
@@ -133,7 +136,7 @@ export default function StatsPage() {
   // Designed empty state — nothing to compute until the first split exists.
   if (bills.length === 0) {
     return (
-      <div className="app-shell animate-slide-in">
+      <>
         <main className="app-main">
           <h1 className="text-2xl mb-6 font-black">Stats</h1>
           <div className="empty-state">
@@ -144,13 +147,12 @@ export default function StatsPage() {
             <p className="text-sm text-secondary">Numbers show up after your first split.</p>
           </div>
         </main>
-        <Navigation />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="app-shell animate-slide-in">
+    <>
       <main className="app-main">
         <h1 className="text-2xl mb-5 font-black">Stats</h1>
 
@@ -167,22 +169,26 @@ export default function StatsPage() {
             hero
             icon={<Wallet size={16} />}
             label="You're owed"
-            value={formatCompact(totalOwedToYou)}
+            value={totalOwedToYou}
+            format={formatCompact}
           />
           <StatCard
             icon={<Receipt size={16} />}
             label="Outings"
             value={bills.length}
+            format={Math.round}
           />
           <StatCard
             icon={<ArrowUpRight size={16} />}
             label="Splurged"
-            value={formatCompact(totalSplurged)}
+            value={totalSplurged}
+            format={formatCompact}
           />
           <StatCard
             icon={<HandCoins size={16} />}
             label="Collected"
-            value={formatCompact(totalCollected)}
+            value={totalCollected}
+            format={formatCompact}
           />
         </div>
 
@@ -257,11 +263,11 @@ export default function StatsPage() {
                         textAlign: 'left',
                         animationDelay: `${Math.min(index * 0.06, 0.4)}s`,
                         borderColor: isTop
-                          ? 'rgba(244, 63, 94, 0.5)'
+                          ? 'rgba(251, 113, 133, 0.5)'
                           : isExpanded
                             ? 'var(--accent-color)'
                             : undefined,
-                        boxShadow: isTop ? '0 0 20px rgba(244, 63, 94, 0.22)' : undefined,
+                        boxShadow: isTop ? '0 0 20px rgba(251, 113, 133, 0.22)' : undefined,
                       }}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -363,7 +369,7 @@ export default function StatsPage() {
                   name={r.person.id === meId ? `${r.person.name} (you)` : r.person.name}
                   amount={r.total}
                   pct={maxAllTime > 0 ? (r.total / maxAllTime) * 100 : 0}
-                  fill="linear-gradient(90deg, #cfc9b8, #8f897a)"
+                  fill="linear-gradient(90deg, #fcd34d, #b45309)"
                   sub={r.person.id !== meId && r.paid > 0.005
                     ? `${formatCompact(r.paid)} settled back`
                     : undefined}
@@ -373,7 +379,6 @@ export default function StatsPage() {
           </section>
         )}
       </main>
-      <Navigation />
-    </div>
+    </>
   );
 }
