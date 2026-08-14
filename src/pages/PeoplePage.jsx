@@ -1,5 +1,6 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { useAppContext } from '../store/AppContext';
+import ShareSheet from '../components/ShareSheet';
 import {
   formatCurrency,
   formatRelativeDate,
@@ -45,7 +46,8 @@ export default function PeoplePage() {
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' | 'groups'
   const [search, setSearch] = useState('');
   const [detailPersonId, setDetailPersonId] = useState(null);
-  const [remindCopied, setRemindCopied] = useState(false);
+  // Which slice of people the group reminder covers, once chosen: { peopleIds, label }.
+  const [remindScope, setRemindScope] = useState(null);
 
   const friendDialogRef = useRef(null);
   const groupDialogRef = useRef(null);
@@ -96,26 +98,17 @@ export default function PeoplePage() {
 
   // One combined nudge for everyone still owing (optionally scoped to one
   // saved group) — meant to be posted once into a group chat, not sent 1:1
-  // like the per-person "Send request".
-  const shareReminder = async (scope) => {
+  // like the per-person "Send request". Picking a scope hands off to the share
+  // sheet, where the message gets shaped and read before it goes out.
+  const shareReminder = (scope = {}) => {
     remindDialogRef.current?.close();
-    const text = buildGroupReminderText(scope);
-    if (navigator.share) {
-      try {
-        await navigator.share({ text });
-      } catch {
-        // User cancelled or share failed — nothing to do.
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      setRemindCopied(true);
-      setTimeout(() => setRemindCopied(false), 1800);
-    } catch {
-      // Clipboard unavailable — fail quietly.
-    }
+    setRemindScope(scope);
   };
+
+  const buildReminderBody = useCallback(
+    (options) => buildGroupReminderText(remindScope || {}, options),
+    [buildGroupReminderText, remindScope],
+  );
 
   // Tapping "Remind" goes straight to everyone if there's nothing to filter
   // by; with saved groups, it opens a quick chooser first.
@@ -193,7 +186,7 @@ export default function PeoplePage() {
                     onClick={handleRemindTap}
                     aria-label="Remind people who still owe you, in one message"
                   >
-                    <Send size={13} /> {remindCopied ? 'Copied' : 'Remind'}
+                    <Send size={13} /> Remind
                   </button>
                 )}
                 <span className="text-secondary text-sm">
@@ -485,6 +478,14 @@ export default function PeoplePage() {
         />
       </dialog>
 
+      <ShareSheet
+        open={!!remindScope}
+        title={remindScope?.label ? `Remind ${remindScope.label}` : 'Remind everyone'}
+        actionLabel="Post reminder"
+        buildText={buildReminderBody}
+        fields={['showPaid', 'showPayInfo']}
+        onClose={() => setRemindScope(null)}
+      />
     </>
   );
 }
@@ -613,7 +614,12 @@ function PersonDetail({
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [customAmount, setCustomAmount] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const buildRequestBody = useCallback(
+    (options) => buildShareText(personId, options),
+    [buildShareText, personId],
+  );
 
   const person = people.find((p) => p.id === personId);
   if (!person) return null;
@@ -651,24 +657,8 @@ function PersonDetail({
     }
   };
 
-  const sendRequest = async () => {
-    const text = buildShareText(person.id);
-    if (navigator.share) {
-      try {
-        await navigator.share({ text });
-      } catch {
-        // User cancelled or share failed — nothing to do.
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // Clipboard unavailable — fail quietly.
-    }
-  };
+  // The message gets shaped and reviewed in the share sheet before it leaves.
+  const sendRequest = () => setShareOpen(true);
 
   return (
     <div className="flex flex-col" style={{ maxHeight: '85vh' }}>
@@ -871,7 +861,7 @@ function PersonDetail({
           onClick={sendRequest}
         >
           <Share2 size={18} />
-          {copied ? 'Copied' : 'Send request'}
+          Send request
         </button>
 
         {/* Subtle self toggle */}
@@ -885,6 +875,16 @@ function PersonDetail({
           </button>
         )}
       </div>
+
+      <ShareSheet
+        open={shareOpen}
+        title={`Ask ${person.name}`}
+        actionLabel="Send request"
+        buildText={buildRequestBody}
+        levels={['summary', 'bills', 'items']}
+        fields={['greeting', 'showDates', 'showSharers', 'showPaid', 'showHistory', 'showPayInfo']}
+        onClose={() => setShareOpen(false)}
+      />
     </div>
   );
 }

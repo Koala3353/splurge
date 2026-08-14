@@ -2,7 +2,11 @@
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { computeBillDues } from '../utils/split';
-import { formatCurrency } from '../utils/format';
+import {
+  DEFAULT_SHARE_OPTIONS,
+  buildPersonRequest,
+  buildGroupReminder,
+} from '../utils/shareText';
 
 const AppContext = createContext(null);
 
@@ -22,6 +26,9 @@ export function AppProvider({ children }) {
   const [meId, setMeId] = useLocalStorage('split-me', null);
   // How friends pay you back: { method: 'GCash'|'Maya'|'Bank'|…, number, qr (data URL) }
   const [payInfo, setPayInfo] = useLocalStorage('split-payinfo', null);
+  // How much detail outbound messages carry — set in the share sheet, remembered
+  // between sends so you configure it once.
+  const [shareOptions, setShareOptions] = useLocalStorage('split-shareopts', DEFAULT_SHARE_OPTIONS);
 
   // --- People ---
   const addPerson = useCallback((name) => {
@@ -84,7 +91,7 @@ export function AppProvider({ children }) {
   // --- Derived settlement data ---
   const {
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
-    billPersonStatus, unpaidBillShares,
+    billPersonStatus, unpaidBillShares, settledBillShares,
   } = useMemo(() => {
     const bals = {};
     const shares = {};
@@ -125,9 +132,11 @@ export function AppProvider({ children }) {
     // of "pay off what you've owed longest."
     const billStatus = {};        // { [billId]: { [personId]: { due, paid, remaining } } }
     const unpaidShares = {};      // { [personId]: [{ bill, amount, remaining }] } — remaining > 0 only
+    const settledShares = {};     // { [personId]: [{ bill, amount }] } — fully covered, newest first
 
     people.forEach((p) => {
       unpaidShares[p.id] = [];
+      settledShares[p.id] = [];
       let pool = life[p.id] || 0;
       const ordered = [...duesByPerson[p.id]].sort((a, b) => new Date(a.bill.date) - new Date(b.bill.date));
       ordered.forEach(({ bill, amount }) => {
@@ -137,6 +146,7 @@ export function AppProvider({ children }) {
         if (!billStatus[bill.id]) billStatus[bill.id] = {};
         billStatus[bill.id][p.id] = { due: amount, paid: applied, remaining };
         if (remaining > 0.005) unpaidShares[p.id].push({ bill, amount, remaining });
+        else if (amount > 0.005) settledShares[p.id].unshift({ bill, amount });
       });
     });
 
@@ -148,6 +158,7 @@ export function AppProvider({ children }) {
       billDuesById: duesById,
       billPersonStatus: billStatus,
       unpaidBillShares: unpaidShares,
+      settledBillShares: settledShares,
     };
   }, [people, bills, payments]);
 
@@ -160,53 +171,54 @@ export function AppProvider({ children }) {
     }, 0)
   ), [people, balances, meId]);
 
-  // --- Sharing: a message you can send to a friend to collect ---
-  // Only the CURRENTLY unpaid bills — anything they've already settled (via
-  // the oldest-first payment allocation above) is left out, so the message
-  // never re-lists old, already-covered bills.
-  const buildShareText = useCallback((personId) => {
+  // --- Sharing: messages you send out to collect ---
+  // Only the CURRENTLY unpaid bills drive the ask — anything already settled
+  // (via the oldest-first payment allocation above) stays out unless the share
+  // options opt into listing past splits. `overrides` lets the share sheet
+  // preview a shape before it's committed to storage.
+  const buildShareText = useCallback((personId, overrides) => {
     const person = people.find((p) => p.id === personId);
     if (!person) return '';
-    const bal = balances[personId] || 0;
-    const lines = (unpaidBillShares[personId] || [])
-      .map((s) => `• ${s.bill.title} — ${formatCurrency(s.remaining)}`);
-    const body = lines.length ? `\n${lines.join('\n')}` : '';
-    const payLine = payInfo?.number
-      ? `\nPay via ${payInfo.method || 'GCash'}: ${payInfo.number}`
-      : '';
-    return `Hey ${person.name} — your share comes to ${formatCurrency(Math.max(bal, 0))}:${body}\n${payLine}\nNo rush, settle up whenever. Sent with Splurge.`;
-  }, [people, balances, unpaidBillShares, payInfo]);
+    return buildPersonRequest({
+      person,
+      amount: balances[personId] || 0,
+      unpaid: unpaidBillShares[personId] || [],
+      settled: settledBillShares[personId] || [],
+      paidTotal: lifetimePayments[personId] || 0,
+      // Outbound, the organizer is "me" from the reader's point of view — their
+      // stored name (usually the literal "Me") would read as a stranger's.
+      nameOf: (id) => (id === meId ? 'me' : people.find((p) => p.id === id)?.name),
+      payInfo,
+      options: { ...shareOptions, ...(overrides || {}) },
+    });
+  }, [people, meId, balances, unpaidBillShares, settledBillShares, lifetimePayments, payInfo, shareOptions]);
 
   // One combined message listing every current outstanding balance — meant
   // to be posted ONCE into a shared group chat, rather than sent 1:1 to each
   // person like buildShareText. Pass { peopleIds, label } to scope it to one
   // saved group instead of everyone (e.g. only your "Barkada").
-  const buildGroupReminderText = useCallback((options = {}) => {
-    const { peopleIds, label } = options;
-    const scope = peopleIds ? new Set(peopleIds) : null;
+  const buildGroupReminderText = useCallback((scope = {}, overrides) => {
+    const { peopleIds, label } = scope;
+    const only = peopleIds ? new Set(peopleIds) : null;
 
-    const owing = people
+    const rows = people
       .filter((p) => p.id !== meId)
-      .filter((p) => !scope || scope.has(p.id))
-      .map((p) => ({ name: p.name, amount: balances[p.id] || 0 }))
+      .filter((p) => !only || only.has(p.id))
+      .map((p) => ({
+        name: p.name,
+        amount: balances[p.id] || 0,
+        paid: lifetimePayments[p.id] || 0,
+      }))
       .filter((r) => r.amount > 0.005)
       .sort((a, b) => b.amount - a.amount);
 
-    if (owing.length === 0) {
-      return label
-        ? `Everyone in ${label} is settled up — nothing to remind. Sent with Splurge.`
-        : "Everyone's settled up — nothing to remind anyone about. Sent with Splurge.";
-    }
-
-    const lines = owing.map((r) => `• ${r.name} — ${formatCurrency(r.amount)}`);
-    const total = owing.reduce((sum, r) => sum + r.amount, 0);
-    const payLine = payInfo?.number ? `\nPay via ${payInfo.method || 'GCash'}: ${payInfo.number}` : '';
-    const header = label
-      ? `Friendly reminder for ${label} — here's where we're at:`
-      : "Friendly reminder — here's where we're at:";
-
-    return `${header}\n${lines.join('\n')}\n\nTotal: ${formatCurrency(total)}${payLine}\n\nNo rush, settle up whenever. Sent with Splurge.`;
-  }, [people, meId, balances, payInfo]);
+    return buildGroupReminder({
+      rows,
+      label,
+      payInfo,
+      options: { ...shareOptions, ...(overrides || {}) },
+    });
+  }, [people, meId, balances, lifetimePayments, payInfo, shareOptions]);
 
   // --- Backup / restore ---
   const exportData = useCallback(() => JSON.stringify(
@@ -244,7 +256,8 @@ export function AppProvider({ children }) {
     meId, setMeId,
     payInfo, setPayInfo,
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
-    billPersonStatus, unpaidBillShares,
+    billPersonStatus, unpaidBillShares, settledBillShares,
+    shareOptions, setShareOptions,
     totalOwedToYou,
     buildShareText, buildGroupReminderText, exportData, importData, clearAll,
   }), [
@@ -255,7 +268,8 @@ export function AppProvider({ children }) {
     meId, setMeId,
     payInfo, setPayInfo,
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
-    billPersonStatus, unpaidBillShares,
+    billPersonStatus, unpaidBillShares, settledBillShares,
+    shareOptions, setShareOptions,
     totalOwedToYou,
     buildShareText, buildGroupReminderText, exportData, importData, clearAll,
   ]);
