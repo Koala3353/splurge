@@ -23,14 +23,14 @@ function StatCard({ icon, label, value, format = (n) => n, hero = false }) {
       style={{ padding: '1.25rem 1rem' }}
     >
       <div
-        className={`flex items-center gap-2 mb-3 ${hero ? 'text-white' : 'text-secondary'}`}
+        className={`flex items-center gap-2 mb-3 ${hero ? 'text-on-accent' : 'text-secondary'}`}
         style={{ opacity: hero ? 0.95 : 1, position: 'relative', zIndex: 1 }}
       >
         <span className="flex-shrink-0 flex items-center">{icon}</span>
         <span className="text-xs font-semibold uppercase tracking-wider truncate">{label}</span>
       </div>
       <div
-        className={`font-display font-black tabular-nums truncate min-w-0 ${hero ? 'text-white' : 'text-primary'}`}
+        className={`font-display font-black tabular-nums truncate min-w-0 ${hero ? 'text-on-accent' : 'text-primary'}`}
         style={{ fontSize: 'clamp(1.35rem, 7vw, 2rem)', lineHeight: 1.1, position: 'relative', zIndex: 1 }}
       >
         {format(animated)}
@@ -41,7 +41,8 @@ function StatCard({ icon, label, value, format = (n) => n, hero = false }) {
 
 // Custom horizontal bar built from plain divs. Width animates via CSS
 // transition; fill defaults to the danger gradient (debts) but can be
-// overridden (e.g. neutral platinum for all-time totals). `sub` renders a
+// overridden (e.g. --gradient-data for all-time totals, which are magnitude
+// rather than paid/owed and so stay out of the status colour channel). `sub` renders a
 // quiet caption under the bar.
 function OwesBar({ name, amount, pct, fill, sub }) {
   return (
@@ -263,11 +264,11 @@ export default function StatsPage() {
                         textAlign: 'left',
                         animationDelay: `${Math.min(index * 0.06, 0.4)}s`,
                         borderColor: isTop
-                          ? 'rgba(251, 113, 133, 0.5)'
+                          ? 'var(--border-danger)'
                           : isExpanded
                             ? 'var(--accent-color)'
                             : undefined,
-                        boxShadow: isTop ? '0 0 20px rgba(251, 113, 133, 0.22)' : undefined,
+                        boxShadow: isTop ? 'var(--glow-danger)' : undefined,
                       }}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -369,7 +370,7 @@ export default function StatsPage() {
                   name={r.person.id === meId ? `${r.person.name} (you)` : r.person.name}
                   amount={r.total}
                   pct={maxAllTime > 0 ? (r.total / maxAllTime) * 100 : 0}
-                  fill="linear-gradient(90deg, #fcd34d, #b45309)"
+                  fill="var(--gradient-data)"
                   sub={r.person.id !== meId && r.paid > 0.005
                     ? `${formatCompact(r.paid)} settled back`
                     : undefined}

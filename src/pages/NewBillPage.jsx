@@ -211,7 +211,7 @@ export default function NewBillPage() {
           <div className="flex gap-3 items-center">
             <button
               className="btn p-2 text-danger pressable"
-              style={{ background: 'rgba(251,113,133,0.1)', borderRadius: '50%' }}
+              style={{ background: 'var(--fill-danger-soft)', borderRadius: '50%' }}
               onClick={() => discardRef.current?.showModal()}
               aria-label="Discard split"
             >
@@ -258,10 +258,10 @@ export default function NewBillPage() {
                     <button
                       key={g.id}
                       className="cursor-pointer pressable text-left"
-                      style={{ background: 'rgba(62,207,142,0.09)', borderRadius: 'var(--radius-lg)', padding: '1rem', minWidth: '160px', border: 'none' }}
+                      style={{ background: 'var(--fill-accent-soft)', borderRadius: 'var(--radius-lg)', padding: '1rem', minWidth: '160px', border: 'none' }}
                       onClick={() => handleGroupSelect(g.id)}
                     >
-                      <Users size={24} className="text-success mb-2" />
+                      <Users size={24} className="text-accent mb-2" />
                       <h4 className="font-bold">{g.name}</h4>
                       <p className="text-xs text-secondary mt-1 truncate">
                         {g.peopleIds.map((id) => personName(id)).filter(Boolean).join(', ')}
@@ -285,10 +285,10 @@ export default function NewBillPage() {
 
               <button
                 className="btn w-full flex items-center gap-2 mb-6 pressable"
-                style={{ background: 'rgba(62,207,142,0.09)', color: 'var(--text-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)' }}
+                style={{ background: 'var(--fill-accent-soft)', color: 'var(--text-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)' }}
                 onClick={handleAddMe}
               >
-                <div className="bg-success text-bg rounded-full p-1"><Plus size={14} /></div>
+                <div className="bg-accent text-on-accent rounded-full p-1"><Plus size={14} /></div>
                 <span className="font-bold">Add me</span>
               </button>
 
@@ -327,7 +327,7 @@ export default function NewBillPage() {
                     <Plus size={32} className="mb-2 text-primary" />
                     <span>Add manually</span>
                   </button>
-                  <button className="btn flex-col items-center pressable" style={{ background: 'rgba(34,197,94,0.1)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={handleScanTap}>
+                  <button className="btn flex-col items-center pressable" style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={handleScanTap}>
                     <Sparkles size={32} className="mb-2" />
                     <span>Scan receipt</span>
                   </button>
@@ -355,7 +355,7 @@ export default function NewBillPage() {
             {!isProcessing && items.length > 0 && (
               <div className="flex-col gap-4">
                 {scanNote && (
-                  <div className="glass-panel p-3 text-sm text-secondary" style={{ borderColor: 'rgba(251,191,36,0.35)' }}>
+                  <div className="glass-panel p-3 text-sm text-secondary" style={{ borderColor: 'var(--border-warning)' }}>
                     {scanNote}
                   </div>
                 )}
@@ -431,7 +431,7 @@ export default function NewBillPage() {
             <div className="card mb-6 p-0" style={{ padding: 0 }}>
               <div className="p-4 border-b border-glass flex justify-between items-center cursor-pointer pressable" onClick={addFee}>
                 <div className="flex items-center gap-3">
-                  <div style={{ background: 'rgba(62,207,142,0.09)', color: 'var(--success)', padding: '0.5rem', borderRadius: '50%' }}><Plus size={20} /></div>
+                  <div style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-color)', padding: '0.5rem', borderRadius: '50%' }}><Plus size={20} /></div>
                   <div>
                     <h3 className="font-bold text-lg">Fees &amp; tips</h3>
                     <p className="text-sm text-secondary">Catch service charge or discounts before you send.</p>
@@ -462,7 +462,7 @@ export default function NewBillPage() {
                                   type="button"
                                   className="pill pressable flex-1 flex items-center justify-center gap-1"
                                   style={!isDiscount
-                                    ? { background: 'rgba(62,207,142,0.16)', color: 'var(--success)', borderColor: 'rgba(62,207,142,0.5)' }
+                                    ? { background: 'var(--fill-success-soft)', color: 'var(--success)', borderColor: 'var(--border-success)' }
                                     : null}
                                   onClick={() => updateFee(fee.id, 'amount', Math.abs(fee.amount || 0))}
                                 >
@@ -472,7 +472,7 @@ export default function NewBillPage() {
                                   type="button"
                                   className="pill pressable flex-1 flex items-center justify-center gap-1"
                                   style={isDiscount
-                                    ? { background: 'rgba(251,113,133,0.16)', color: 'var(--danger)', borderColor: 'rgba(251,113,133,0.5)' }
+                                    ? { background: 'var(--fill-danger-soft)', color: 'var(--danger)', borderColor: 'var(--border-danger)' }
                                     : null}
                                   onClick={() => updateFee(fee.id, 'amount', -Math.abs(fee.amount || 0))}
                                 >

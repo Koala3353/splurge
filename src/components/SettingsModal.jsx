@@ -208,6 +208,7 @@ export default function SettingsModal({ open, onClose }) {
                 src={payInfo.qr}
                 alt="Your payment QR code"
                 className="w-full rounded-lg"
+                /* literal white on purpose — QR needs a true white quiet zone to scan */
                 style={{ background: '#fff', padding: '0.5rem' }}
               />
             </button>
@@ -243,7 +244,7 @@ export default function SettingsModal({ open, onClose }) {
 
           {/* Danger zone */}
           {confirmClear ? (
-            <div className="glass-panel p-3 flex flex-col gap-2" style={{ borderColor: 'rgba(251,113,133,0.4)' }}>
+            <div className="glass-panel p-3 flex flex-col gap-2" style={{ borderColor: 'var(--border-danger)' }}>
               <p className="text-sm text-center">Delete everything — people, splits, payments? This can’t be undone.</p>
               <div className="flex gap-2">
                 <button className="btn btn-secondary flex-1 pressable" onClick={() => setConfirmClear(false)}>Keep my data</button>

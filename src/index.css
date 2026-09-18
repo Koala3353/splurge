@@ -1,35 +1,94 @@
 :root {
-  /* Money & growth — deep vault-black with a signature emerald (the color of
-     the peso/dollar bill, "growing savings") as the PRIMARY interactive
-     color, not just a success accent. Warm gold marks standout/lifetime
-     moments; rose stays reserved strictly for debts. */
-  --bg-color: #070f0b;
-  --bg-elevated: #0f1f16;
-  --text-primary: #f3f7f4;
-  --text-secondary: #a3b5ab;   /* soft sage-gray, dimmer for hierarchy */
-  --text-tertiary: #6d7d74;    /* quiet labels */
+  /* ======================================================================
+     LAYER 1 — PRIMITIVES. Raw values, named for what they are, nothing else.
+     A future retheme edits this block and stops; every rule in the file
+     reaches colour through the semantic layer below, never through a hex.
+     Ratios in comments are measured against --ink-900.
+     ====================================================================== */
+  --ink-900: #100D0A;        /* warm charcoal base                          */
+  --ink-800: #1B1613;        /* elevated surface                            */
+  --ink-700: #2A231D;        /* hairline / divider base                     */
+  --ink-100: #F7F4EF;        /* warm white                         17.7:1   */
+  --ink-300: #BCB2A6;        /* warm secondary                      9.3:1   */
+  --ink-500: #8A8076;        /* warm tertiary                       5.0:1   */
 
-  /* Accent — vivid emerald, the app's signature color */
-  --accent-color: #22c55e;
-  --accent-bright: #4ade80;    /* lighter, for glows/highlights on dark bg */
-  --accent-2: #eab308;         /* warm gold — lifetime/standout moments */
-  --accent-hover: #16a34a;
-  --success: #3ecf8e;          /* money coming back to you (bright mint) */
-  --danger: #fb7185;           /* debts only */
-  --warning: #eab308;
+  --bronze-400: #E0A458;     /* light bronze — glows, focus         8.9:1   */
+  --bronze-500: #C9913D;     /* signature bronze                    7.0:1   */
+  --bronze-600: #A8752C;     /* pressed / hover                             */
 
-  /* Surfaces — green-tinted smoked glass, not neutral gray */
-  --glass-bg: rgba(16, 36, 26, 0.55);
-  --glass-bg-strong: rgba(10, 24, 17, 0.86);
-  --glass-border: rgba(160, 230, 190, 0.10);
-  --glass-highlight: rgba(190, 255, 220, 0.07);
+  --leaf-400: #7CC474;       /* paid, money in                      9.2:1   */
+  --leaf-600: #4E9A56;       /* deeper leaf, gradient end                   */
+  --rose-400: #F2726A;       /* owed, debts                         6.8:1   */
+  --rose-600: #C4453F;       /* rose fill, white text               4.9:1   */
+  --rose-700: #9E2F2B;       /* deep rose, gradient end             7.3:1   */
 
-  /* Gradients — deep teal-green -> vivid emerald (dark enough that white
-     text always works); gold reserved for lifetime/standout surfaces. */
-  --gradient-primary: linear-gradient(135deg, #059669 0%, #22c55e 100%);
-  --gradient-danger: linear-gradient(135deg, #fb7185, #e11d48);
-  --gradient-success: linear-gradient(135deg, #34d399, #10b981);
-  --gradient-gold: linear-gradient(135deg, #fcd34d, #b45309);
+  /* Channels for tinting surfaces and shadows in the base hue rather than
+     with flat black, which is what makes a dark UI read as cheap. */
+  --tint-ink: 16, 13, 10;
+  --tint-warm: 233, 214, 186;
+  --tint-bronze: 201, 145, 61;
+  --tint-bronze-deep: 120, 82, 34;
+  --tint-leaf: 124, 196, 116;
+  --tint-rose: 242, 114, 106;
+
+  /* ======================================================================
+     LAYER 2 — SEMANTIC. What a colour MEANS in this app. Components use
+     these names only.
+
+     House rule: bronze is chrome — controls, nav, focus, brand — and never
+     touches a money figure. Amounts stay neutral, turn leaf when paid and
+     rose when owed. The previous palette lost exactly this: green was the
+     background, the brand AND the status at once, so no single green meant
+     anything. One colour, one job.
+     ====================================================================== */
+  --bg-color: var(--ink-900);
+  --bg-elevated: var(--ink-800);
+  --text-primary: var(--ink-100);
+  --text-secondary: var(--ink-300);
+  --text-tertiary: var(--ink-500);
+
+  --accent-color: var(--bronze-500);
+  --accent-bright: var(--bronze-400);
+  --accent-hover: var(--bronze-600);
+  /* Bronze is far too light to carry white text (2.8:1 — the old emerald
+     button shipped at 2.3:1). Anything filled with an accent takes dark ink
+     instead: 7.0:1 on bronze-500, 8.9:1 on bronze-400. */
+  --on-accent: var(--ink-900);
+
+  --success: var(--leaf-400);   /* settled */
+  --danger: var(--rose-400);    /* outstanding — text/status on dark */
+  /* Filled destructive surfaces need a darker rose: white fails on
+     rose-400 (2.8:1) but clears on rose-600 (4.9:1). */
+  --danger-fill: var(--rose-600);
+  --warning: var(--bronze-400); /* rank / attention, never an amount */
+
+  /* Surfaces — warm smoked glass, tinted off the base hue. */
+  --glass-bg: rgba(38, 31, 25, 0.55);
+  --glass-bg-strong: rgba(24, 19, 15, 0.86);
+  --glass-border: rgba(var(--tint-warm), 0.10);
+  --glass-highlight: rgba(var(--tint-warm), 0.07);
+
+  /* Gradients. Primary runs light-to-lighter so dark ink clears contrast at
+     both ends; --gradient-data is neutral because it renders money magnitude
+     and must stay out of the paid/owed colour channel. */
+  --gradient-primary: linear-gradient(135deg, var(--bronze-500) 0%, var(--bronze-400) 100%);
+  --gradient-danger: linear-gradient(135deg, var(--rose-600), var(--rose-700));
+  --gradient-success: linear-gradient(135deg, var(--leaf-400), var(--leaf-600));
+  --gradient-data: linear-gradient(90deg, var(--ink-500), var(--ink-300));
+
+  /* ======================================================================
+     LAYER 3 — COMPONENT. Soft fills and hairlines that JSX inline styles
+     reach for. They exist as tokens purely so no component has to write a
+     raw rgba() again; that habit is what left ~27 stale literals behind
+     the last time this app was rethemed.
+     ====================================================================== */
+  --fill-accent-soft: rgba(var(--tint-bronze), 0.12);
+  --fill-success-soft: rgba(var(--tint-leaf), 0.12);
+  --fill-danger-soft: rgba(var(--tint-rose), 0.12);
+  --border-success: rgba(var(--tint-leaf), 0.50);
+  --border-danger: rgba(var(--tint-rose), 0.50);
+  --glow-danger: 0 0 20px rgba(var(--tint-rose), 0.22);
+  --border-warning: rgba(var(--tint-bronze), 0.35);
 
   /* Typography — native system stack for body (fast + offline-safe), a
      characterful display face for the wordmark, headings, and money figures. */
@@ -52,12 +111,13 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
 
-  /* Shadows — mostly depth from darkness; a signature emerald glow for
-     primary actions, gold glow for lifetime/standout surfaces. */
+  /* Shadows — depth from darkness, tinted warm rather than flat black, plus
+     one bronze glow reserved for the primary action. */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
   --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
-  --shadow-glow: 0 0 24px rgba(34, 197, 94, 0.38);
-  --shadow-glow-gold: 0 10px 26px rgba(234, 179, 8, 0.3);
+  --shadow-glow: 0 0 24px rgba(var(--tint-bronze), 0.30);
+  --shadow-danger: 0 6px 18px rgba(158, 47, 43, 0.45);
+  --shadow-success: 0 6px 18px rgba(78, 154, 86, 0.35);
   --shadow-glass: 0 14px 40px rgba(0, 0, 0, 0.5);
 }
 
@@ -173,14 +233,14 @@ button:disabled:hover {
 
 .btn-primary {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--on-accent);
   box-shadow: var(--shadow-glow);
   border: 1px solid rgba(255,255,255,0.1);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 18px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 18px rgba(var(--tint-bronze), 0.32);
   filter: brightness(1.08);
 }
 
@@ -198,7 +258,7 @@ button:disabled:hover {
 .btn-danger {
   background: var(--gradient-danger);
   color: white;
-  box-shadow: 0 6px 18px rgba(251, 113, 133, 0.35);
+  box-shadow: var(--shadow-danger);
 }
 
 .btn-danger:hover {
@@ -208,8 +268,8 @@ button:disabled:hover {
 
 .btn-success {
   background: var(--gradient-success);
-  color: white;
-  box-shadow: 0 6px 18px rgba(52, 211, 153, 0.32);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-success);
 }
 
 .btn-success:hover {
@@ -222,7 +282,7 @@ input, select {
   font-family: inherit;
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(8, 8, 16, 0.5);
+  background: rgba(var(--tint-ink), 0.5);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -233,7 +293,7 @@ input, select {
 input:focus, select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.22);
+  box-shadow: 0 0 0 3px rgba(var(--tint-bronze), 0.26);
 }
 
 /* Animations */
@@ -279,9 +339,9 @@ input:focus, select:focus {
 }
 
 .pill-active {
-  background: rgba(34, 197, 94, 0.16);
+  background: rgba(var(--tint-bronze), 0.18);
   color: var(--text-primary);
-  border-color: rgba(74, 222, 128, 0.45);
+  border-color: rgba(var(--tint-bronze), 0.55);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -402,8 +462,12 @@ input:focus, select:focus {
 .text-danger { color: var(--danger); }
 .text-success { color: var(--success); }
 .text-accent { color: var(--accent-color); }
-.bg-success { background-color: var(--success); }
-.bg-accent { background-color: var(--accent-color); }
+.text-on-accent { color: var(--on-accent); }
+/* Every fill below is light enough that white text fails on it, so each one
+   carries its own foreground. Setting it here rather than on the call sites
+   means a new chip can't reintroduce the white-on-light bug by omission. */
+.bg-success { background-color: var(--success); color: var(--on-accent); }
+.bg-accent { background-color: var(--accent-color); color: var(--on-accent); }
 .text-bg { color: var(--bg-color); }
 .bg-glass { background-color: var(--glass-bg); }
 
@@ -465,8 +529,8 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   /* Aurora: soft emerald vault-glow so the backdrop has depth, not a flat
      black void. Painted on the (static) shell; content scrolls over it. */
   background-image:
-    radial-gradient(85% 40% at 50% -10%, rgba(34, 197, 94, 0.12), transparent 70%),
-    radial-gradient(70% 45% at 50% 115%, rgba(16, 129, 89, 0.08), transparent 72%);
+    radial-gradient(85% 40% at 50% -10%, rgba(var(--tint-bronze), 0.10), transparent 70%),
+    radial-gradient(70% 45% at 50% 115%, rgba(var(--tint-bronze-deep), 0.16), transparent 72%);
   background-repeat: no-repeat;
 }
 
@@ -490,7 +554,7 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
 .app-header {
   flex-shrink: 0;
   padding: calc(1rem + env(safe-area-inset-top)) 1.5rem 1rem 1.5rem;
-  background-color: rgba(7, 15, 11, 0.6);
+  background-color: rgba(var(--tint-ink), 0.6);
   backdrop-filter: blur(16px) saturate(1.3);
   -webkit-backdrop-filter: blur(16px) saturate(1.3);
   z-index: 10;
@@ -512,7 +576,7 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   }
   to {
     box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-    background-color: rgba(7, 15, 11, 0.82);
+    background-color: rgba(var(--tint-ink), 0.82);
     backdrop-filter: blur(16px) saturate(1.3);
   }
 }
@@ -590,7 +654,7 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   right: 0;
   bottom: 0;
   width: 100px;
-  background-color: var(--danger);
+  background-color: var(--danger-fill);
   color: white;
   display: flex;
   align-items: center;
@@ -612,7 +676,7 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   height: 3.5rem;
   border-radius: 50%;
   background: var(--gradient-primary);
-  color: white;
+  color: var(--on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -719,7 +783,7 @@ dialog[open] {
 
 /* Sticky Footer Polish */
 .app-footer {
-  background-color: rgba(7, 15, 11, 0.72) !important;
+  background-color: rgba(var(--tint-ink), 0.72) !important;
   backdrop-filter: blur(18px) saturate(1.3);
   -webkit-backdrop-filter: blur(18px) saturate(1.3);
 }
@@ -729,7 +793,7 @@ dialog[open] {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background-color: rgba(7, 15, 11, 0.97);
+  background-color: rgba(var(--tint-ink), 0.97);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
@@ -850,13 +914,12 @@ dialog[open] {
 .break-words { overflow-wrap: anywhere; word-break: break-word; }
 
 /* Colors */
-.text-white { color: #ffffff; }
 .text-warning { color: var(--warning); }
-.bg-danger { background-color: var(--danger); }
-.bg-warning { background-color: var(--warning); }
+.bg-danger { background-color: var(--danger); color: var(--on-accent); }
+.bg-warning { background-color: var(--warning); color: var(--on-accent); }
 .bg-primary { background-color: var(--accent-color); }
 .bg-transparent { background-color: transparent; }
-.gradient-primary { background: var(--gradient-primary); }
+.gradient-primary { background: var(--gradient-primary); color: var(--on-accent); }
 .gradient-danger { background: var(--gradient-danger); }
 .gradient-success { background: var(--gradient-success); }
 
@@ -915,14 +978,17 @@ dialog[open] {
    Signature surfaces
    ========================================================================== */
 
-/* The headline balance card on Home — glass with a money-green glow halo. */
+/* The headline balance card on Home. The halo is neutral warm on purpose:
+   the figure itself carries the meaning (white when settled, leaf when
+   owed), so a tinted glow would either fight it or leak brand colour
+   onto a money figure. */
 .balance-hero {
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-xl);
   border: 1px solid var(--glass-border);
   background:
-    radial-gradient(120% 130% at 50% -10%, rgba(62, 207, 142, 0.09), transparent 60%),
+    radial-gradient(120% 130% at 50% -10%, rgba(var(--tint-warm), 0.07), transparent 60%),
     var(--glass-bg);
   backdrop-filter: blur(16px) saturate(1.3);
   -webkit-backdrop-filter: blur(16px) saturate(1.3);
@@ -930,7 +996,7 @@ dialog[open] {
 }
 
 .balance-hero .balance-amount {
-  text-shadow: 0 0 28px rgba(62, 207, 142, 0.25);
+  text-shadow: 0 0 30px rgba(var(--tint-warm), 0.16);
 }
 
 /* Gradient feature card (e.g. the Stats "You're owed" hero). */
@@ -939,7 +1005,7 @@ dialog[open] {
   overflow: hidden;
   border: none !important;
   background: var(--gradient-primary);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(234, 179, 8, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(var(--tint-warm), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .feature-card::after {
@@ -955,8 +1021,8 @@ dialog[open] {
 
 /* Active bottom-nav item gets a soft accent chip behind it. */
 .nav-item-active {
-  background: rgba(34, 197, 94, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.22);
+  background: rgba(var(--tint-bronze), 0.16);
+  box-shadow: inset 0 0 0 1px rgba(var(--tint-bronze), 0.30);
 }
 
 /* --- Share sheet ---------------------------------------------------------- */
@@ -965,8 +1031,8 @@ dialog[open] {
    bubble, accent-tinted because it's yours, squared at the corner it sends
    from. Reading it here is the whole point of the sheet. */
 .share-preview {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.07));
-  border: 1px solid rgba(34, 197, 94, 0.24);
+  background: linear-gradient(180deg, rgba(var(--tint-bronze), 0.15), rgba(var(--tint-bronze), 0.07));
+  border: 1px solid rgba(var(--tint-bronze), 0.26);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   padding: 0.9rem 1rem;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
@@ -1069,6 +1135,8 @@ dialog[open] {
 
 .switch[data-on]::after {
   transform: translateX(18px);
+  /* The knob stays pure white in both states: it reads as a physical control
+     riding on the track rather than as themed surface. */
   background: #fff;
 }
 

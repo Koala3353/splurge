@@ -151,7 +151,7 @@ export default function PeoplePage() {
               border: 'none',
               background:
                 activeTab === 'friends' ? 'var(--gradient-primary)' : 'transparent',
-              color: activeTab === 'friends' ? 'white' : 'var(--text-secondary)',
+              color: activeTab === 'friends' ? 'var(--on-accent)' : 'var(--text-secondary)',
               padding: '0.5rem',
             }}
             onClick={() => setActiveTab('friends')}
@@ -165,7 +165,7 @@ export default function PeoplePage() {
               border: 'none',
               background:
                 activeTab === 'groups' ? 'var(--gradient-primary)' : 'transparent',
-              color: activeTab === 'groups' ? 'white' : 'var(--text-secondary)',
+              color: activeTab === 'groups' ? 'var(--on-accent)' : 'var(--text-secondary)',
               padding: '0.5rem',
             }}
             onClick={() => setActiveTab('groups')}
