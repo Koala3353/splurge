@@ -7,6 +7,15 @@ import { rateReceiptText } from './receipt';
 let workerPromise = null;
 let progressCb = null;
 
+// Page-segmentation modes. PSM 4 ("single column of variable-size lines")
+// sounds like the right description of a receipt, but it silently drops the
+// right-hand price column whenever the gap between item name and amount is
+// wide — which is how most receipts are printed. PSM 6 treats the receipt as
+// one uniform block and keeps both columns on the same line, which is what the
+// parser needs in order to pair a name with its amount.
+const PSM_BLOCK = '6';
+const PSM_COLUMN = '4';
+
 // Lazily create — and reuse — a single configured worker. Calling this early
 // (e.g. when the user taps "Scan") warms the engine while they pick a photo.
 export function warmUpOcr() {
@@ -20,8 +29,7 @@ export function warmUpOcr() {
           else if (/load|traineddata|initial/i.test(m.status)) progressCb('Warming up the scanner (one-time)…');
         },
       });
-      // PSM 4 = single column of variable-size lines (a receipt).
-      await worker.setParameters({ tessedit_pageseg_mode: '4', preserve_interword_spaces: '1' });
+      await worker.setParameters({ preserve_interword_spaces: '1' });
       return worker;
     })().catch((err) => { workerPromise = null; throw err; });
   }
@@ -54,11 +62,14 @@ export async function scanReceipt(file, onProgress) {
       return false;
     };
 
+    let appliedPsm = null;
     let best = { text: '', key: [-1, 0, 0, 0] };
     for (let i = 0; i < candidates.length; i++) {
       onProgress?.(i === 0 ? 'Reading the receipt…' : 'Trying another read…');
       let canvas;
       try { canvas = candidates[i].run(); } catch { continue; }
+      const psm = candidates[i].psm;
+      if (psm !== appliedPsm) { await worker.setParameters({ tessedit_pageseg_mode: psm }); appliedPsm = psm; }
       const { data } = await worker.recognize(canvas);
       const rate = rateReceiptText(data.text);
       const words = data.text.split(/\s+/).filter(Boolean).length;
@@ -85,23 +96,69 @@ async function preprocessBase(file) {
   img.src = url;
   try {
     await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
-    const TARGET = 1600; // longest side: legible text vs. mobile memory/speed
-    let { width, height } = img;
-    const scale = TARGET / Math.max(width, height);
-    if (scale < 0.95 || scale > 1.1) {
-      width = Math.max(1, Math.round(width * scale));
-      height = Math.max(1, Math.round(height * scale));
-    }
-    const raw = document.createElement('canvas');
-    raw.width = width;
-    raw.height = height;
-    raw.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0, width, height);
 
-    const thresh = document.createElement('canvas');
-    thresh.width = width;
-    thresh.height = height;
+    // Pass 1 — a cheap downscaled copy, used only to find where the receipt
+    // sits in the frame. Analysing at full resolution would cost ~48MB of
+    // ImageData on a 12MP phone photo for information we then throw away.
+    const ANALYSIS = 1400;
+    const aScale = Math.min(1, ANALYSIS / Math.max(img.width, img.height));
+    const aw = Math.max(1, Math.round(img.width * aScale));
+    const ah = Math.max(1, Math.round(img.height * aScale));
+    const probe = document.createElement('canvas');
+    probe.width = aw; probe.height = ah;
+    const pctx = probe.getContext('2d', { willReadFrequently: true });
+    pctx.drawImage(img, 0, 0, aw, ah);
+
+    let crop = { x: 0, y: 0, w: img.width, h: img.height };
+    try {
+      const pd = pctx.getImageData(0, 0, aw, ah);
+      adaptiveThreshold(pd.data, aw, ah);
+      const b = contentBounds(pd.data, aw, ah);
+      if (b) {
+        // Map back to original pixels and pad, so we never shave a first or
+        // last line off the receipt.
+        const pad = Math.round(Math.max(aw, ah) * 0.02);
+        const x0 = Math.max(0, b.x0 - pad), y0 = Math.max(0, b.y0 - pad);
+        const x1 = Math.min(aw - 1, b.x1 + pad), y1 = Math.min(ah - 1, b.y1 + pad);
+        const inv = 1 / aScale;
+        crop = {
+          x: Math.round(x0 * inv),
+          y: Math.round(y0 * inv),
+          w: Math.round((x1 - x0 + 1) * inv),
+          h: Math.round((y1 - y0 + 1) * inv),
+        };
+      }
+    } catch { /* tainted or unreadable — fall back to the whole frame */ }
+
+    // Pass 2 — re-render ONLY the receipt, straight from the original pixels,
+    // scaled by its SHORT side. Scaling the photo's longest side (the old
+    // behaviour) left a long receipt about 400px wide, which puts thermal
+    // print near 14px cap height — under what Tesseract reads reliably.
+    // Driving the short side instead keeps glyphs in range at any receipt
+    // length, which is the single biggest accuracy lever here.
+    const TARGET_SHORT = 1100;
+    const MAX_PIXELS = 4.2e6;   // keep ImageData allocations mobile-safe
+    let scale = TARGET_SHORT / Math.max(1, Math.min(crop.w, crop.h));
+    scale = Math.min(scale, 1.6);                       // upscaling invents no detail
+    if (crop.w * crop.h * scale * scale > MAX_PIXELS) {
+      scale = Math.sqrt(MAX_PIXELS / (crop.w * crop.h));
+    }
+    const width = Math.max(1, Math.round(crop.w * scale));
+    const height = Math.max(1, Math.round(crop.h * scale));
+
+    const draw = () => {
+      const c = document.createElement('canvas');
+      c.width = width; c.height = height;
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, crop.x, crop.y, crop.w, crop.h, 0, 0, width, height);
+      return c;
+    };
+
+    const raw = draw();
+    const thresh = draw();
     const tctx = thresh.getContext('2d', { willReadFrequently: true });
-    tctx.drawImage(img, 0, 0, width, height);
     try {
       const imageData = tctx.getImageData(0, 0, width, height);
       adaptiveThreshold(imageData.data, width, height);
@@ -111,6 +168,40 @@ async function preprocessBase(file) {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+// Locate the receipt within the frame from ink row/column profiles. A
+// binarized thermal receipt is overwhelmingly the densest structured ink in
+// shot, so the tightest box holding the bulk of it is the receipt. Profiles
+// are used rather than contour-finding because they degrade gracefully: a
+// cluttered background simply widens the box back toward the full frame
+// instead of locking onto a wrong quadrilateral and cropping the receipt away.
+function contentBounds(data, w, h) {
+  const rows = new Float64Array(h);
+  const cols = new Float64Array(w);
+  let ink = 0;
+  for (let y = 0; y < h; y++) {
+    const yo = y * w;
+    for (let x = 0; x < w; x++) {
+      if (data[(yo + x) * 4] < 128) { rows[y]++; cols[x]++; ink++; }
+    }
+  }
+  // Too little ink to trust, or so much that the whole frame is "content".
+  if (ink < w * h * 0.005 || ink > w * h * 0.6) return null;
+
+  const span = (arr, len) => {
+    let max = 0;
+    for (let i = 0; i < len; i++) if (arr[i] > max) max = arr[i];
+    if (max < 3) return null;
+    const thr = max * 0.06;
+    let a = 0; while (a < len && arr[a] < thr) a++;
+    let b = len - 1; while (b > a && arr[b] < thr) b--;
+    return b - a < len * 0.15 ? null : [a, b];   // implausibly thin -> distrust
+  };
+  const v = span(rows, h);
+  const hh = span(cols, w);
+  if (!v || !hh) return null;
+  return { x0: hh[0], y0: v[0], x1: hh[1], y1: v[1] };
 }
 
 // Decide a likely orientation order, then return lazy thunks over BOTH
@@ -148,9 +239,14 @@ async function buildCandidates(file) {
   const order = vertical ? [90, -90, 0] : [0, 90, -90];
   const out = [];
   for (const deg of order) {
-    out.push({ run: mk(deg, 'thresh'), variant: 'thresh' });
-    out.push({ run: mk(deg, 'raw'), variant: 'raw' });
+    out.push({ run: mk(deg, 'thresh'), variant: 'thresh', psm: PSM_BLOCK });
+    out.push({ run: mk(deg, 'raw'), variant: 'raw', psm: PSM_BLOCK });
   }
+  // Last resort. PSM 6 beat PSM 4 on every layout measured (right-aligned
+  // columns, tilt, faint print, small-in-frame), but it is one engine
+  // heuristic among several, so the column mode stays available for a read
+  // that produced nothing. The early exit above means this is rarely reached.
+  out.push({ run: mk(order[0], 'thresh'), variant: 'thresh', psm: PSM_COLUMN });
   return out;
 }
 

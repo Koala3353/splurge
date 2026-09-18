@@ -178,6 +178,14 @@ function cleanName(s) {
     .replace(/\s{2,}/g, ' ')
     .replace(/[\s.\-:,*]+$/, '')             // trailing separators
     .replace(/^[\s.\-:,*]+/, '')             // leading separators
+    // Leading quantity column: "2 Chicken Adobo", "3x Rice". The unit guard
+    // keeps real menu names like "2 pc Chickenjoy" intact.
+    .replace(/^\d{1,3}\s*[xX*]?\s+(?!(?:pc|pcs|pk|pack|pax|kg|g|ml|l|oz)\b)(?=[A-Za-z]{3,})/i, '')
+    // Speckle picked up from the receipt edge or the table behind it lands as
+    // a stray token in front of the name ("n Halo Halo", "bl Pecho Solo").
+    // Only single letters and vowel-less pairs are dropped, so genuine short
+    // words survive — "Ox Tail", "La Paz" and "Mi Goreng" all keep their heads.
+    .replace(/^(?:(?:[A-Za-z]|[B-DF-HJ-NP-TV-Zb-df-hj-np-tv-z]{2})\s+){1,2}(?=[A-Za-z]{3,})/, '')
     .trim();
 }
 
@@ -262,7 +270,16 @@ function parseCore(text, selectedPeople) {
     // items but keep scanning it for fee/discount lines.
     if (amount && Number.isFinite(amount.value) && items.length >= 2
         && Math.abs(amount.value - runningSum) < 0.6 && amount.value >= largestItem - 0.01) {
-      summaryStarted = true;
+      // Matching the running sum is suggestive, not proof: the third item on a
+      // receipt of 100 + 100 + 200 hits it by coincidence. A real subtotal
+      // either names itself ("Subtotal", "Total", or an OCR garble of one) or
+      // carries no name at all, so a line with a genuine dish name is left
+      // alone. Erring this way is deliberate — a stray extra row is visible and
+      // deletable, whereas silently dropping the rest of the receipt is not.
+      const label = cleanName(line.slice(0, line.length - amount.raw.length));
+      const looksLikeAnItem = label.replace(/[^A-Za-z]/g, '').length >= 3
+        && !isSkippableLine(lower);
+      if (!looksLikeAnItem) summaryStarted = true;
     }
 
     // Shared adjustments (service charge, PWD/senior discounts) live among
