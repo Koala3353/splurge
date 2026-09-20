@@ -11,6 +11,7 @@ import {
   Users, UserPlus, Sparkles, CheckCircle, X, RotateCcw,
 } from 'lucide-react';
 import SwipeableItem from '../components/SwipeableItem';
+import ScanDiagnostics from '../components/ScanDiagnostics';
 
 const newItem = (people) => ({ id: crypto.randomUUID(), name: '', price: 0, people: [...people] });
 
@@ -31,6 +32,9 @@ export default function NewBillPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrProgress, setOcrProgress] = useState('Loading scanner...');
   const [scanNote, setScanNote] = useState('');
+  // What the scanner actually did: which variant/orientation/mode won, how
+  // confident the engine was, and the image it really saw.
+  const [scanInfo, setScanInfo] = useState(null);
   const [items, setItems] = useState(() => (editBill?.items || []).map((it) => ({ ...it, people: [...(it.people || [])] })));
   const [fees, setFees] = useState(() => (editBill?.fees || []).map((f) => ({
     ...f,
@@ -107,12 +111,14 @@ export default function NewBillPage() {
     if (!file) return;
     setImage(URL.createObjectURL(file));
     setScanNote('');
+    setScanInfo(null);
     setIsProcessing(true);
     setOcrProgress('Optimizing image…');
 
     try {
-      const text = await scanReceipt(file, setOcrProgress);
+      const { text, diagnostics } = await scanReceipt(file, setOcrProgress);
       const { items: parsed, fees: scannedFees } = parseReceiptFull(text, selectedPeople);
+      setScanInfo({ ...diagnostics, itemCount: parsed.length, feeCount: scannedFees.length, text });
       if (parsed.length > 0) {
         setItems(parsed);
         if (scannedFees.length > 0) {
@@ -354,6 +360,7 @@ export default function NewBillPage() {
 
             {!isProcessing && items.length > 0 && (
               <div className="flex-col gap-4">
+                <ScanDiagnostics info={scanInfo} />
                 {scanNote && (
                   <div className="glass-panel p-3 text-sm text-secondary" style={{ borderColor: 'var(--border-warning)' }}>
                     {scanNote}

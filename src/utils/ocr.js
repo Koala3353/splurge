@@ -47,12 +47,13 @@ export async function scanReceipt(file, onProgress) {
     //  1. money items + fee lines (×2) — strong evidence of a real read
     //  2. bare-integer items, CAPPED at 1 — name+integer garbage is exactly
     //     what busy backgrounds hallucinate, so more of them isn't better
-    //  3. thresholded variant over raw — cleaner when both are equal
+    //  3. engine confidence, bucketed — a finer signal than word count, but
+    //     coarse enough that a 2-point wobble can't outrank real evidence
     //  4. word count — only as a final tie-break (never lets noise outvote)
-    const keyOf = (rate, variant, words) => [
+    const keyOf = (rate, confidence, words) => [
       2 * (rate.money + rate.fees),
       Math.min(rate.bare, 1),
-      variant === 'thresh' ? 1 : 0,
+      Math.round(confidence / 10),
       words,
     ];
     const gt = (a, b) => {
@@ -63,195 +64,334 @@ export async function scanReceipt(file, onProgress) {
     };
 
     let appliedPsm = null;
-    let best = { text: '', key: [-1, 0, 0, 0] };
+    let best = { text: '', key: [-1, 0, 0, 0], diagnostics: null };
+    let attempts = 0;
+
     for (let i = 0; i < candidates.length; i++) {
       onProgress?.(i === 0 ? 'Reading the receipt…' : 'Trying another read…');
+      const cand = candidates[i];
       let canvas;
-      try { canvas = candidates[i].run(); } catch { continue; }
-      const psm = candidates[i].psm;
-      if (psm !== appliedPsm) { await worker.setParameters({ tessedit_pageseg_mode: psm }); appliedPsm = psm; }
+      try { canvas = cand.run(); } catch { continue; }
+      if (cand.psm !== appliedPsm) {
+        await worker.setParameters({ tessedit_pageseg_mode: cand.psm });
+        appliedPsm = cand.psm;
+      }
       const { data } = await worker.recognize(canvas);
+      attempts += 1;
       const rate = rateReceiptText(data.text);
       const words = data.text.split(/\s+/).filter(Boolean).length;
-      const key = keyOf(rate, candidates[i].variant, words);
-      if (gt(key, best.key)) best = { text: data.text, key };
+      const confidence = Number.isFinite(data.confidence) ? data.confidence : 0;
+      const key = keyOf(rate, confidence, words);
+      if (gt(key, best.key)) {
+        best = {
+          text: data.text,
+          key,
+          diagnostics: {
+            variant: cand.variant,
+            orientation: cand.deg,
+            cropped: cand.cropped,
+            psm: cand.psm,
+            confidence: Math.round(confidence),
+            width: canvas.width,
+            height: canvas.height,
+            preview: thumbnail(canvas),
+          },
+        };
+      }
       if (best.key[0] >= 4) break;            // ≥2 strong signals — done
       if (best.key[0] >= 2 && i >= 1) break;  // 1 strong signal + both variants tried
     }
-    return best.text;
+
+    return {
+      text: best.text,
+      diagnostics: { ...(best.diagnostics || {}), attempts, tried: candidates.length },
+    };
   } finally {
     progressCb = null;
   }
 }
 
+// A small JPEG of exactly what the engine saw. This is the fastest way to
+// tell a bad crop from a threshold that erased faint print — both look
+// identical in the item list, and completely different here.
+function thumbnail(canvas, maxW = 260) {
+  try {
+    const scale = Math.min(1, maxW / canvas.width);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(canvas.width * scale));
+    c.height = Math.max(1, Math.round(canvas.height * scale));
+    c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.6);
+  } catch { return null; }
+}
+
 // --- Preprocessing --------------------------------------------------------
 
-// Load + resize the photo, returning BOTH preprocessing variants: an
-// adaptively-binarized canvas (rescues dark/low-contrast surfaces) and the
-// plain resized photo (rescues washed-out prints that binarization erases).
-// Neither wins universally, so scanReceipt races both and keeps the best.
-async function preprocessBase(file) {
-  const img = new Image();
-  const url = URL.createObjectURL(file);
-  img.src = url;
+const TARGET_SHORT = 1100;   // receipt width in px; keeps thermal glyphs ~35px
+const MAX_PIXELS = 4.2e6;    // ImageData ceiling, so mid-range phones survive
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+
+// Render a region of the original photo at a text-legible size. Scaling by the
+// SHORT side matters: driving the longest side (as this once did) leaves a long
+// receipt about 400px wide, putting thermal print near 14px cap height — below
+// what Tesseract reads reliably — while a short receipt comes out fine. That
+// asymmetry is exactly why scans used to work "sometimes".
+function renderRegion(img, box) {
+  const b = box || { x: 0, y: 0, w: img.width, h: img.height };
+  let scale = TARGET_SHORT / Math.max(1, Math.min(b.w, b.h));
+  scale = Math.min(scale, 1.6);                       // upscaling invents no detail
+  if (b.w * b.h * scale * scale > MAX_PIXELS) scale = Math.sqrt(MAX_PIXELS / (b.w * b.h));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(b.w * scale));
+  c.height = Math.max(1, Math.round(b.h * scale));
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, b.x, b.y, b.w, b.h, 0, 0, c.width, c.height);
+  return c;
+}
+
+// Apply a variant in place. Three are offered because no single one wins on
+// real receipts: binarization rescues dark or unevenly-lit surfaces but can
+// erase faint dot-matrix print outright, a contrast stretch keeps those faint
+// strokes alive, and the untouched photo sometimes beats both on a crisp,
+// well-lit shot.
+function applyVariant(canvas, variant) {
+  if (variant === 'original') return canvas;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   try {
-    await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+    const id = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    if (variant === 'threshold') adaptiveThreshold(id.data, canvas.width, canvas.height);
+    else contrastStretch(id.data, canvas.width, canvas.height);
+    ctx.putImageData(id, 0, 0);
+  } catch { /* tainted canvas — leave the plain draw */ }
+  return canvas;
+}
 
-    // Pass 1 — a cheap downscaled copy, used only to find where the receipt
-    // sits in the frame. Analysing at full resolution would cost ~48MB of
-    // ImageData on a 12MP phone photo for information we then throw away.
-    const ANALYSIS = 1400;
-    const aScale = Math.min(1, ANALYSIS / Math.max(img.width, img.height));
-    const aw = Math.max(1, Math.round(img.width * aScale));
-    const ah = Math.max(1, Math.round(img.height * aScale));
-    const probe = document.createElement('canvas');
-    probe.width = aw; probe.height = ah;
-    const pctx = probe.getContext('2d', { willReadFrequently: true });
-    pctx.drawImage(img, 0, 0, aw, ah);
+// Grayscale + percentile contrast stretch. Thermal print is often faint gray on
+// off-white rather than black on white; clipping to the 2nd/98th percentile
+// pulls those strokes apart without the all-or-nothing decision binarization
+// makes, so half-formed characters survive to the recogniser.
+function contrastStretch(d, w, h) {
+  const n = w * h;
+  const gray = new Uint8ClampedArray(n);
+  const hist = new Uint32Array(256);
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    const g = (0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2]) | 0;
+    gray[i] = g; hist[g]++;
+  }
+  let acc = 0; let lo = 0; let hi = 255;
+  const loCut = n * 0.02; const hiCut = n * 0.98;
+  for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= loCut) { lo = v; break; } }
+  acc = 0;
+  for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= hiCut) { hi = v; break; } }
+  const range = Math.max(1, hi - lo);
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    let v = ((gray[i] - lo) / range) * 255;
+    v = v < 0 ? 0 : v > 255 ? 255 : v;
+    d[p] = d[p + 1] = d[p + 2] = v;
+  }
+}
 
-    let crop = { x: 0, y: 0, w: img.width, h: img.height };
-    try {
-      const pd = pctx.getImageData(0, 0, aw, ah);
-      adaptiveThreshold(pd.data, aw, ah);
-      const b = contentBounds(pd.data, aw, ah);
-      if (b) {
-        // Map back to original pixels and pad, so we never shave a first or
-        // last line off the receipt.
-        const pad = Math.round(Math.max(aw, ah) * 0.02);
-        const x0 = Math.max(0, b.x0 - pad), y0 = Math.max(0, b.y0 - pad);
-        const x1 = Math.min(aw - 1, b.x1 + pad), y1 = Math.min(ah - 1, b.y1 + pad);
-        const inv = 1 / aScale;
-        crop = {
-          x: Math.round(x0 * inv),
-          y: Math.round(y0 * inv),
-          w: Math.round((x1 - x0 + 1) * inv),
-          h: Math.round((y1 - y0 + 1) * inv),
-        };
+// Locate the receipt by finding the paper, not the ink. An earlier version
+// profiled dark pixels, which fails on exactly the surfaces that need it most:
+// wood grain, tiles or a patterned tablecloth scatter "ink" across the whole
+// frame, the bounding box grows to fill it, and the crop is discarded. Paper is
+// the more reliable signal — a receipt is a large, bright, contiguous block,
+// and Otsu picks the paper/table split without a hand-tuned constant.
+function otsuThreshold(hist, total) {
+  let sum = 0;
+  for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sumB = 0; let wB = 0; let best = 128; let bestVar = -1;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t];
+    if (!wB) continue;
+    const wF = total - wB;
+    if (!wF) break;
+    sumB += t * hist[t];
+    const mB = sumB / wB;
+    const mF = (sum - sumB) / wF;
+    const v = wB * wF * (mB - mF) * (mB - mF);
+    if (v > bestVar) { bestVar = v; best = t; }
+  }
+  return best;
+}
+
+// Grow outward from the densest row/column while coverage stays high. Taking a
+// plain min/max bounding box would let one bright speck in a corner drag the
+// crop back out to the whole frame; requiring sustained coverage keeps the box
+// on the paper itself.
+function denseBand(profile, len, peakFrac = 0.45) {
+  let peak = 0; let peakAt = 0;
+  for (let i = 0; i < len; i++) if (profile[i] > peak) { peak = profile[i]; peakAt = i; }
+  if (peak <= 0) return null;
+  const floor = peak * peakFrac;
+  let a = peakAt; while (a > 0 && profile[a - 1] >= floor) a--;
+  let b = peakAt; while (b < len - 1 && profile[b + 1] >= floor) b++;
+  return [a, b];
+}
+
+function detectCrop(img) {
+  const ANALYSIS = 1000;
+  const scale = Math.min(1, ANALYSIS / Math.max(img.width, img.height));
+  const aw = Math.max(1, Math.round(img.width * scale));
+  const ah = Math.max(1, Math.round(img.height * scale));
+  const probe = document.createElement('canvas');
+  probe.width = aw; probe.height = ah;
+  const ctx = probe.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, aw, ah);
+  try {
+    const d = ctx.getImageData(0, 0, aw, ah).data;
+    const n = aw * ah;
+    const gray = new Uint8ClampedArray(n);
+    const hist = new Uint32Array(256);
+    for (let i = 0, p = 0; i < n; i++, p += 4) {
+      const g = (0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2]) | 0;
+      gray[i] = g; hist[g]++;
+    }
+    const t = otsuThreshold(hist, n);
+    const rows = new Float64Array(ah);
+    const cols = new Float64Array(aw);
+    let bright = 0;
+    for (let y = 0; y < ah; y++) {
+      const yo = y * aw;
+      for (let x = 0; x < aw; x++) {
+        if (gray[yo + x] > t) { rows[y]++; cols[x]++; bright++; }
       }
-    } catch { /* tainted or unreadable — fall back to the whole frame */ }
-
-    // Pass 2 — re-render ONLY the receipt, straight from the original pixels,
-    // scaled by its SHORT side. Scaling the photo's longest side (the old
-    // behaviour) left a long receipt about 400px wide, which puts thermal
-    // print near 14px cap height — under what Tesseract reads reliably.
-    // Driving the short side instead keeps glyphs in range at any receipt
-    // length, which is the single biggest accuracy lever here.
-    const TARGET_SHORT = 1100;
-    const MAX_PIXELS = 4.2e6;   // keep ImageData allocations mobile-safe
-    let scale = TARGET_SHORT / Math.max(1, Math.min(crop.w, crop.h));
-    scale = Math.min(scale, 1.6);                       // upscaling invents no detail
-    if (crop.w * crop.h * scale * scale > MAX_PIXELS) {
-      scale = Math.sqrt(MAX_PIXELS / (crop.w * crop.h));
     }
-    const width = Math.max(1, Math.round(crop.w * scale));
-    const height = Math.max(1, Math.round(crop.h * scale));
+    // Paper should be a substantial but not total share of the frame.
+    const frac = bright / n;
+    if (frac < 0.04 || frac > 0.9) return null;
 
-    const draw = () => {
-      const c = document.createElement('canvas');
-      c.width = width; c.height = height;
-      const ctx = c.getContext('2d', { willReadFrequently: true });
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, crop.x, crop.y, crop.w, crop.h, 0, 0, width, height);
-      return c;
+    const v = denseBand(rows, ah);
+    const hh = denseBand(cols, aw);
+    if (!v || !hh) return null;
+
+    const pad = Math.round(Math.max(aw, ah) * 0.015);
+    const x0 = Math.max(0, hh[0] - pad);
+    const y0 = Math.max(0, v[0] - pad);
+    const x1 = Math.min(aw - 1, hh[1] + pad);
+    const y1 = Math.min(ah - 1, v[1] + pad);
+    if (x1 - x0 < aw * 0.08 || y1 - y0 < ah * 0.08) return null;   // implausibly small
+
+    const inv = 1 / scale;
+    const box = {
+      x: Math.round(x0 * inv), y: Math.round(y0 * inv),
+      w: Math.round((x1 - x0 + 1) * inv), h: Math.round((y1 - y0 + 1) * inv),
     };
-
-    const raw = draw();
-    const thresh = draw();
-    const tctx = thresh.getContext('2d', { willReadFrequently: true });
-    try {
-      const imageData = tctx.getImageData(0, 0, width, height);
-      adaptiveThreshold(imageData.data, width, height);
-      tctx.putImageData(imageData, 0, 0);
-    } catch { /* tainted canvas — leave the plain draw */ }
-    return { raw, thresh };
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+    // Not worth racing a crop that barely shrinks the frame.
+    if (box.w * box.h > img.width * img.height * 0.92) return null;
+    return box;
+  } catch { return null; }
 }
 
-// Locate the receipt within the frame from ink row/column profiles. A
-// binarized thermal receipt is overwhelmingly the densest structured ink in
-// shot, so the tightest box holding the bulk of it is the receipt. Profiles
-// are used rather than contour-finding because they degrade gracefully: a
-// cluttered background simply widens the box back toward the full frame
-// instead of locking onto a wrong quadrilateral and cropping the receipt away.
-function contentBounds(data, w, h) {
-  const rows = new Float64Array(h);
-  const cols = new Float64Array(w);
-  let ink = 0;
-  for (let y = 0; y < h; y++) {
-    const yo = y * w;
-    for (let x = 0; x < w; x++) {
-      if (data[(yo + x) * 4] < 128) { rows[y]++; cols[x]++; ink++; }
-    }
-  }
-  // Too little ink to trust, or so much that the whole frame is "content".
-  if (ink < w * h * 0.005 || ink > w * h * 0.6) return null;
-
-  const span = (arr, len) => {
-    let max = 0;
-    for (let i = 0; i < len; i++) if (arr[i] > max) max = arr[i];
-    if (max < 3) return null;
-    const thr = max * 0.06;
-    let a = 0; while (a < len && arr[a] < thr) a++;
-    let b = len - 1; while (b > a && arr[b] < thr) b--;
-    return b - a < len * 0.15 ? null : [a, b];   // implausibly thin -> distrust
-  };
-  const v = span(rows, h);
-  const hh = span(cols, w);
-  if (!v || !hh) return null;
-  return { x0: hh[0], y0: v[0], x1: hh[1], y1: v[1] };
-}
-
-// Decide a likely orientation order, then return lazy thunks over BOTH
-// preprocessing variants per orientation (thresholded first — it wins more
-// often — then raw). Receipts are tall: if the text runs vertically
-// (sideways photo) we try the 90° rotations first; otherwise upright first.
+// Lazy, best-first list of everything worth trying. Ordering matters far more
+// than breadth: the early exit in scanReceipt usually stops after one or two
+// passes, so the combinations most likely to succeed go first and the
+// expensive long tail only runs when the receipt is genuinely hard.
 async function buildCandidates(file) {
-  const { raw, thresh } = await preprocessBase(file);
-  let vertical = false;
-  try {
-    const d = thresh.getContext('2d').getImageData(0, 0, thresh.width, thresh.height).data;
-    const { varH, varV } = projectionVariances(d, thresh.width, thresh.height);
-    vertical = varV > varH * 1.15;
-  } catch { /* ignore */ }
+  const img = await loadImage(file);
+  const crop = detectCrop(img);
 
-  // The skew angle is estimated on the binarized rotation (the estimator
-  // needs clean black-on-white) and applied to whichever variant is OCRed.
-  const rotCache = {};
-  const rotated = (deg, base) => (deg === 0 ? base : rotate90(base, deg));
-  const mk = (deg, variant) => () => {
-    if (!(deg in rotCache)) {
-      const t = rotated(deg, thresh);
-      let angle = 0;
-      try {
-        const d = t.getContext('2d').getImageData(0, 0, t.width, t.height).data;
-        angle = estimateSkew(d, t.width, t.height);
-      } catch { /* ignore */ }
-      rotCache[deg] = { t, angle };
+  const renders = new Map();                       // "cropped|variant" -> canvas
+  const baseOf = (cropped, variant) => {
+    const k = `${cropped}|${variant}`;
+    if (!renders.has(k)) {
+      renders.set(k, applyVariant(renderRegion(img, cropped ? crop : null), variant));
     }
-    const { t, angle } = rotCache[deg];
-    const canvas = variant === 'thresh' ? t : rotated(deg, raw);
-    return Math.abs(angle) >= 1 ? deskew(canvas, angle) : canvas;
+    return renders.get(k);
   };
 
-  const order = vertical ? [90, -90, 0] : [0, 90, -90];
-  const out = [];
-  for (const deg of order) {
-    out.push({ run: mk(deg, 'thresh'), variant: 'thresh', psm: PSM_BLOCK });
-    out.push({ run: mk(deg, 'raw'), variant: 'raw', psm: PSM_BLOCK });
+  // Orientation: receipts are tall, so if the text energy runs vertically the
+  // photo was taken sideways and the 90° rotations go first.
+  // Orientation. The paper's own shape is the strongest signal available and
+  // it is already measured: receipts are printed on a tall narrow roll, so a
+  // detected region that is wider than it is tall means the photo was taken
+  // sideways. Pixel-statistics probes were tried first and proved unreliable —
+  // adaptive binarization speckles blank paper, and a global threshold turns
+  // the shadowed edge of an unevenly-lit receipt into a solid block, and either
+  // one flattens the line structure the measurement depends on.
+  let vertical = false;
+  if (crop && Math.max(crop.w, crop.h) / Math.min(crop.w, crop.h) > 1.2) {
+    vertical = crop.w > crop.h;
+  } else {
+    // No decisive crop (square-ish receipt, or paper filling the frame): fall
+    // back to text-energy profiles, which are at least unbiased here.
+    try {
+      const t = baseOf(!!crop, 'original');
+      const d = t.getContext('2d').getImageData(0, 0, t.width, t.height).data;
+      globalThreshold(d, t.width, t.height);
+      const { varH, varV } = projectionVariances(d, t.width, t.height);
+      vertical = varV > varH * 1.15;
+    } catch { /* leave upright */ }
   }
-  // Last resort. PSM 6 beat PSM 4 on every layout measured (right-aligned
-  // columns, tilt, faint print, small-in-frame), but it is one engine
-  // heuristic among several, so the column mode stays available for a read
-  // that produced nothing. The early exit above means this is rarely reached.
-  out.push({ run: mk(order[0], 'thresh'), variant: 'thresh', psm: PSM_COLUMN });
+
+  const skewCache = new Map();
+  const make = (cropped, variant, deg, psm) => ({
+    variant, deg, psm, cropped,
+    run: () => {
+      const base = baseOf(cropped, variant);
+      const rotated = deg === 0 ? base : rotate90(base, deg);
+      const k = `${cropped}|${deg}`;
+      if (!skewCache.has(k)) {
+        let angle = 0;
+        try {
+          const ref = deg === 0 ? baseOf(cropped, 'threshold')
+            : rotate90(baseOf(cropped, 'threshold'), deg);
+          const d = ref.getContext('2d').getImageData(0, 0, ref.width, ref.height).data;
+          angle = estimateSkew(d, ref.width, ref.height);
+        } catch { /* ignore */ }
+        skewCache.set(k, angle);
+      }
+      const angle = skewCache.get(k);
+      return Math.abs(angle) >= 1 ? deskew(rotated, angle) : rotated;
+    },
+  });
+
+  const primary = vertical ? 90 : 0;
+  const others = vertical ? [-90, 0] : [90, -90];
+  const C = !!crop;
+  const out = [make(C, 'threshold', primary, PSM_BLOCK)];
+  // A sideways photo is 90° or -90° and the paper's shape cannot say which, so
+  // resolve the flip immediately rather than after three variants of the wrong
+  // rotation — it is the difference between two passes and five.
+  if (vertical) out.push(make(C, 'threshold', -90, PSM_BLOCK));
+  out.push(make(C, 'contrast', primary, PSM_BLOCK));
+  out.push(make(C, 'original', primary, PSM_BLOCK));
+  // If a crop was taken, give the untouched frame a shot before spending
+  // passes on rotations — a wrong crop is the failure this recovers from.
+  if (C) out.push(make(false, 'threshold', primary, PSM_BLOCK));
+  for (const deg of others) {
+    if (vertical && deg === -90) continue;   // already tried above
+    out.push(make(C, 'threshold', deg, PSM_BLOCK));
+    out.push(make(C, 'contrast', deg, PSM_BLOCK));
+  }
+  // Column mode lost to block mode on every layout measured, but it stays as a
+  // final fallback for a read that produced nothing at all.
+  out.push(make(C, 'threshold', primary, PSM_COLUMN));
   return out;
 }
 
 // Horizontal vs. vertical text energy, from a downscaled binary sample. Text
-// lines make the projection perpendicular to them spiky (high variance).
+// lines make the projection perpendicular to them spiky, so an upright receipt
+// has a spiky row profile and a smooth column profile.
+//
+// The two profiles must be compared scale-free. Raw variance is not: the row
+// and column profiles are sampled on different axes, so on a tall receipt the
+// column counts range far higher than the row counts and win on magnitude
+// alone. That made every tall receipt — which is to say every receipt — look
+// like it had been photographed sideways, so the engine spent its first passes
+// on wrong rotations and only reached the correct one last. The coefficient of
+// variation (spread relative to the mean) removes that bias.
 function projectionVariances(data, w, h) {
   const SW = Math.min(200, w);
   const s = SW / w;
@@ -267,12 +407,34 @@ function projectionVariances(data, w, h) {
     }
   }
   if (total < 50) return { varH: 0, varV: 0 };
-  const variance = (arr) => {
-    let m = 0; for (let i = 0; i < arr.length; i++) m += arr[i]; m /= arr.length;
-    let s2 = 0; for (let i = 0; i < arr.length; i++) { const dd = arr[i] - m; s2 += dd * dd; }
-    return s2 / arr.length;
+  const cv = (arr) => {
+    let m = 0;
+    for (let i = 0; i < arr.length; i++) m += arr[i];
+    m /= arr.length;
+    if (m <= 0) return 0;
+    let s2 = 0;
+    for (let i = 0; i < arr.length; i++) { const dd = arr[i] - m; s2 += dd * dd; }
+    return Math.sqrt(s2 / arr.length) / m;
   };
-  return { varH: variance(rows), varV: variance(cols) };
+  return { varH: cv(rows), varV: cv(cols) };
+}
+
+// Global Otsu binarization on a copy of the pixels. Used for structural
+// measurements (orientation, skew) where clean line separation matters more
+// than rescuing every faint stroke.
+function globalThreshold(d, w, h) {
+  const n = w * h;
+  const gray = new Uint8ClampedArray(n);
+  const hist = new Uint32Array(256);
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    const g = (0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2]) | 0;
+    gray[i] = g; hist[g]++;
+  }
+  const t = otsuThreshold(hist, n);
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    const v = gray[i] < t ? 0 : 255;
+    d[p] = d[p + 1] = d[p + 2] = v;
+  }
 }
 
 // Rotate a canvas by ±90° (dir > 0 = clockwise). Dimensions swap.
@@ -385,6 +547,12 @@ function adaptiveThreshold(d, w, h) {
   const half = win >> 1;
   const C = 8;
 
+  // Global paper/ink split, used only as a ceiling so texture on bright paper
+  // cannot become ink. Generous headroom above it keeps faint thermal strokes.
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < n; i++) hist[gray[i] | 0]++;
+  const inkCeiling = otsuThreshold(hist, n) + 40;
+
   for (let y = 0; y < h; y++) {
     const y0 = y - half < 0 ? 0 : y - half;
     const y1 = y + half >= h ? h - 1 : y + half;
@@ -398,7 +566,11 @@ function adaptiveThreshold(d, w, h) {
         + integral[y0 * iw + x0];
       const mean = sum / area;
       const idx = y * w + x;
-      const v = gray[idx] < mean - C ? 0 : 255;
+      const g = gray[idx];
+      // Local test finds strokes under uneven lighting; the global test stops
+      // faint paper texture from being promoted to ink, which used to speckle
+      // every blank region and bury the receipt's line structure in noise.
+      const v = (g < mean - C && g < inkCeiling) ? 0 : 255;
       const p = idx * 4;
       d[p] = d[p + 1] = d[p + 2] = v;
     }
