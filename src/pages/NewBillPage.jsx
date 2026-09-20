@@ -8,7 +8,7 @@ import { warmUpOcr, scanReceipt } from '../utils/ocr';
 import { flushSync } from 'react-dom';
 import {
   Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft,
-  Users, UserPlus, Sparkles, CheckCircle, X, RotateCcw,
+  Users, UserPlus, CheckCircle, X, RotateCcw, Camera, ImagePlus,
 } from 'lucide-react';
 import SwipeableItem from '../components/SwipeableItem';
 import ScanDiagnostics from '../components/ScanDiagnostics';
@@ -45,7 +45,11 @@ export default function NewBillPage() {
     ...f,
     people: f.people || [...(editBill?.participants || [])],
   })));
-  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const uploadInputRef = useRef(null);
+  // Remembered so Rescan reopens whichever source was used, rather than
+  // always dropping someone who picked from their gallery into the camera.
+  const lastSourceRef = useRef('camera');
   const discardRef = useRef(null);
 
   const handleStepChange = (newStep) => {
@@ -104,12 +108,18 @@ export default function NewBillPage() {
   };
 
   // --- STEP 2: Items & OCR ---
-  // Start the (cached) scan engine the moment the user taps Scan, so it warms
-  // up while they pick a photo — then open the file picker.
-  const handleScanTap = () => {
+  // Start the (cached) scan engine the moment the user taps, so it warms up
+  // while they frame the shot or browse their gallery — then open the picker.
+  // Two inputs rather than one: `capture` hands straight to the camera on
+  // mobile, and its absence is what lets the OS offer the photo library, so a
+  // single input cannot do both.
+  const handleScanTap = (source = 'camera') => {
+    lastSourceRef.current = source;
     warmUpOcr().catch(() => {});
-    fileInputRef.current?.click();
+    (source === 'library' ? uploadInputRef : cameraInputRef).current?.click();
   };
+
+  const handleRescanTap = () => handleScanTap(lastSourceRef.current);
 
   const handleImageCapture = async (e) => {
     const file = e.target.files[0];
@@ -333,21 +343,36 @@ export default function NewBillPage() {
         {step === 2 && (
           <>
             {/* Always mounted so "Rescan" works once items exist, too. */}
-            <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleImageCapture} style={{ display: 'none' }} />
+            <input type="file" accept="image/*" capture="environment" ref={cameraInputRef} onChange={handleImageCapture} style={{ display: 'none' }} />
+            <input type="file" accept="image/*" ref={uploadInputRef} onChange={handleImageCapture} style={{ display: 'none' }} />
             {items.length === 0 && !isProcessing && (
               <div className="card text-center py-8">
                 <h3 className="font-bold text-xl mb-2">What&apos;d everyone get?</h3>
-                <p className="text-sm text-secondary mb-6">Snap the receipt and we&apos;ll pull out the lines, or add them yourself.</p>
-                <div className="flex gap-4 justify-center">
-                  <button className="btn btn-secondary flex-col items-center p-4 rounded-xl flex-1 pressable" onClick={() => setItems([newItem(selectedPeople)])}>
-                    <Plus size={32} className="mb-2 text-primary" />
-                    <span>Add manually</span>
+                <p className="text-sm text-secondary mb-6">Snap the receipt or pick one from your photos, and we&apos;ll pull out the lines.</p>
+                {/* The two scan routes carry equal weight: shooting a receipt at
+                    the table and splitting one someone already sent you are
+                    equally normal. Typing it out stays available underneath. */}
+                <div className="flex gap-3 justify-center mb-3">
+                  <button
+                    className="btn flex-col items-center pressable"
+                    style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }}
+                    onClick={() => handleScanTap('camera')}
+                  >
+                    <Camera size={28} className="mb-2" />
+                    <span>Take photo</span>
                   </button>
-                  <button className="btn flex-col items-center pressable" style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }} onClick={handleScanTap}>
-                    <Sparkles size={32} className="mb-2" />
-                    <span>Scan receipt</span>
+                  <button
+                    className="btn flex-col items-center pressable"
+                    style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }}
+                    onClick={() => handleScanTap('library')}
+                  >
+                    <ImagePlus size={28} className="mb-2" />
+                    <span>Upload photo</span>
                   </button>
                 </div>
+                <button className="btn btn-secondary w-full pressable" onClick={() => setItems([newItem(selectedPeople)])}>
+                  <Plus size={18} /> Add them manually
+                </button>
               </div>
             )}
 
@@ -395,7 +420,7 @@ export default function NewBillPage() {
                 <div className="flex justify-between items-center mb-2 px-2">
                   <span className="text-sm text-secondary font-bold uppercase">Subtotal</span>
                   <div className="flex items-center gap-3">
-                    <button className="text-xs text-accent pressable flex items-center gap-1" onClick={handleScanTap} aria-label="Rescan receipt">
+                    <button className="text-xs text-accent pressable flex items-center gap-1" onClick={handleRescanTap} aria-label="Rescan receipt">
                       <RotateCcw size={13} /> Rescan
                     </button>
                     <span className="font-bold tabular-nums">{formatCurrency(itemsTotal)}</span>
@@ -633,7 +658,7 @@ export default function NewBillPage() {
         open={scanResultOpen}
         info={scanInfo}
         onClose={() => setScanResultOpen(false)}
-        onRescan={() => { setScanResultOpen(false); handleScanTap(); }}
+        onRescan={() => { setScanResultOpen(false); handleRescanTap(); }}
       />
 
       {/* Discard confirm */}
