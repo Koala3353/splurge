@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import SwipeableItem from '../components/SwipeableItem';
 import ScanDiagnostics from '../components/ScanDiagnostics';
+import ScanResultDialog from '../components/ScanResultDialog';
 
 const newItem = (people) => ({ id: crypto.randomUUID(), name: '', price: 0, people: [...people] });
 
@@ -31,10 +32,14 @@ export default function NewBillPage() {
   const [image, setImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [ocrProgress, setOcrProgress] = useState('Loading scanner...');
+  // Structured detail behind the progress line: which attempt is running,
+  // what it is trying, and why the previous attempt was rejected.
+  const [ocrStep, setOcrStep] = useState(null);
   const [scanNote, setScanNote] = useState('');
   // What the scanner actually did: which variant/orientation/mode won, how
   // confident the engine was, and the image it really saw.
   const [scanInfo, setScanInfo] = useState(null);
+  const [scanResultOpen, setScanResultOpen] = useState(false);
   const [items, setItems] = useState(() => (editBill?.items || []).map((it) => ({ ...it, people: [...(it.people || [])] })));
   const [fees, setFees] = useState(() => (editBill?.fees || []).map((f) => ({
     ...f,
@@ -112,13 +117,18 @@ export default function NewBillPage() {
     setImage(URL.createObjectURL(file));
     setScanNote('');
     setScanInfo(null);
+    setOcrStep(null);
     setIsProcessing(true);
     setOcrProgress('Optimizing image…');
 
     try {
-      const { text, diagnostics } = await scanReceipt(file, setOcrProgress);
+      const { text, diagnostics } = await scanReceipt(file, (msg, step) => {
+        setOcrProgress(msg);
+        setOcrStep(step || null);
+      });
       const { items: parsed, fees: scannedFees } = parseReceiptFull(text, selectedPeople);
       setScanInfo({ ...diagnostics, itemCount: parsed.length, feeCount: scannedFees.length, text });
+      setScanResultOpen(true);
       if (parsed.length > 0) {
         setItems(parsed);
         if (scannedFees.length > 0) {
@@ -354,6 +364,22 @@ export default function NewBillPage() {
                 <div className="card border-glass p-4 text-center bg-glass flex flex-col items-center gap-3" style={{ width: '100%', maxWidth: '320px' }}>
                   <Loader2 size={24} className="animate-spin text-accent" />
                   <p className="font-bold tracking-wider uppercase text-sm text-primary">{ocrProgress}</p>
+                  {ocrStep && (
+                    <div style={{ width: '100%' }}>
+                      <p className="text-xs text-secondary" style={{ lineHeight: 1.4 }}>
+                        Attempt {ocrStep.attempt} of {ocrStep.total} · trying {ocrStep.trying}
+                      </p>
+                      {/* Progress through the candidate list, so a long scan
+                          reads as deliberate work rather than a hang. */}
+                      <div style={{ marginTop: '0.5rem', height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${Math.round((ocrStep.attempt / Math.max(1, ocrStep.total)) * 100)}%`,
+                          height: '100%', background: 'var(--gradient-primary)',
+                          transition: 'width 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+                        }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -602,6 +628,13 @@ export default function NewBillPage() {
           </button>
         )}
       </div>
+
+      <ScanResultDialog
+        open={scanResultOpen}
+        info={scanInfo}
+        onClose={() => setScanResultOpen(false)}
+        onRescan={() => { setScanResultOpen(false); handleScanTap(); }}
+      />
 
       {/* Discard confirm */}
       <dialog ref={discardRef} onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
