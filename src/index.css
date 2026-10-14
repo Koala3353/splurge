@@ -1144,3 +1144,44 @@ dialog[open] {
   .share-preview-body { animation: none; }
   .switch::after { transition: background 0.2s; }
 }
+
+/* --- Paged lists (person detail) --- */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+}
+
+.pager-count {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-width: 5.5ch;
+  text-align: center;
+}
+
+.pager-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+}
+
+.pager-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}

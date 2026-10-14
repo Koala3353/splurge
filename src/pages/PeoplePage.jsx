@@ -13,6 +13,7 @@ import {
   Circle,
   CheckCircle,
   ChevronRight,
+  ChevronLeft,
   Trash2,
   Share2,
   Send,
@@ -596,6 +597,55 @@ function NewGroupForm({ people, meId, addGroup, onClose }) {
   );
 }
 
+const PAGE_SIZE = 8;
+
+// Keeps a long list browsable: slices it, and rewinds if the list shrinks
+// under us (a payment undone, a split settled).
+function usePage(total) {
+  const [page, setPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const safe = Math.min(page, pageCount - 1);
+  if (safe !== page) setPage(safe);
+  const start = safe * PAGE_SIZE;
+  return {
+    page: safe,
+    pageCount,
+    start,
+    end: Math.min(start + PAGE_SIZE, total),
+    setPage,
+  };
+}
+
+function Pager({ label, total, state }) {
+  if (state.pageCount < 2) return null;
+  const { page, pageCount, start, end, setPage } = state;
+  return (
+    <div className="pager">
+      <button
+        type="button"
+        className="pager-btn pressable"
+        aria-label={`Previous page of ${label}`}
+        disabled={page === 0}
+        onClick={() => setPage(page - 1)}
+      >
+        <ChevronLeft size={16} />
+      </button>
+      <span className="pager-count">
+        {start + 1}–{end} of {total}
+      </span>
+      <button
+        type="button"
+        className="pager-btn pressable"
+        aria-label={`Next page of ${label}`}
+        disabled={page >= pageCount - 1}
+        onClick={() => setPage(page + 1)}
+      >
+        <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+}
+
 function PersonDetail({
   personId,
   people,
@@ -622,15 +672,28 @@ function PersonDetail({
   );
 
   const person = people.find((p) => p.id === personId);
+
+  // Newest first — the split you just made is the one you came here to look at.
+  const shares = useMemo(
+    () => [...(personBillShares[personId] || [])].sort(
+      (a, b) => new Date(b.bill.date) - new Date(a.bill.date),
+    ),
+    [personBillShares, personId],
+  );
+  const payments = useMemo(
+    () => [...(paymentsByPerson[personId] || [])].sort(
+      (a, b) => new Date(b.date) - new Date(a.date),
+    ),
+    [paymentsByPerson, personId],
+  );
+  const sharePage = usePage(shares.length);
+  const paymentPage = usePage(payments.length);
+
   if (!person) return null;
 
   const balance = balances[person.id] || 0;
   const owed = balance > 0 ? balance : 0;
-  const shares = personBillShares[person.id] || [];
   const lifetime = lifetimePayments[person.id] || 0;
-  const payments = [...(paymentsByPerson[person.id] || [])].sort(
-    (a, b) => new Date(b.date) - new Date(a.date),
-  );
   const isMe = person.id === meId;
   const canPayQuick = owed > 0.005;
   const customValid = parseFloat(customAmount) > 0;
@@ -743,36 +806,8 @@ function PersonDetail({
           </div>
         </div>
 
-        {/* Their splits */}
-        <h3 className="font-bold text-lg mb-3">Their splits</h3>
-        {shares.length === 0 ? (
-          <p className="text-secondary text-sm text-center py-4 glass-panel">
-            No splits yet.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2 mb-6">
-            {shares.map((share, idx) => (
-              <div
-                key={idx}
-                className="flex justify-between items-center glass-panel"
-                style={{ padding: '0.75rem' }}
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">{share.bill.title}</p>
-                  <p className="text-xs text-secondary">
-                    {formatRelativeDate(share.bill.date)}
-                  </p>
-                </div>
-                <div className="font-bold text-accent flex-shrink-0 ml-2">
-                  {formatCurrency(share.amount)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Log a payment */}
-        <h3 className="font-bold text-lg mb-3 mt-2">Log a payment</h3>
+        <h3 className="font-bold text-lg mb-3">Log a payment</h3>
         <div className="flex gap-2 mb-3">
           <button
             type="button"
@@ -816,12 +851,46 @@ function PersonDetail({
           </button>
         </form>
 
+        {/* Their splits */}
+        <div className="section-head">
+          <h3 className="font-bold text-lg">Their splits</h3>
+          <Pager label="splits" total={shares.length} state={sharePage} />
+        </div>
+        {shares.length === 0 ? (
+          <p className="text-secondary text-sm text-center py-4 glass-panel">
+            No splits yet.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2 mb-6">
+            {shares.slice(sharePage.start, sharePage.end).map((share, idx) => (
+              <div
+                key={`${share.bill.id}-${idx}`}
+                className="flex justify-between items-center glass-panel"
+                style={{ padding: '0.75rem' }}
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{share.bill.title}</p>
+                  <p className="text-xs text-secondary">
+                    {formatRelativeDate(share.bill.date)}
+                  </p>
+                </div>
+                <div className="font-bold text-accent flex-shrink-0 ml-2">
+                  {formatCurrency(share.amount)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Payment history */}
         {payments.length > 0 && (
           <>
-            <h3 className="font-bold text-lg mb-3">Payments</h3>
+            <div className="section-head">
+              <h3 className="font-bold text-lg">Payments</h3>
+              <Pager label="payments" total={payments.length} state={paymentPage} />
+            </div>
             <div className="flex flex-col gap-2 mb-6">
-              {payments.map((pm) => (
+              {payments.slice(paymentPage.start, paymentPage.end).map((pm) => (
                 <div
                   key={pm.id}
                   className="flex justify-between items-center glass-panel"

@@ -23,6 +23,7 @@ export default function ScanDiagnostics({ info }) {
     rotated ? 'rotated upright' : 'upright',
     info.cropped ? 'cropped to receipt' : 'whole photo',
     info.psm === '4' ? 'column mode' : 'block mode',
+    ...(info.relaid ? ['columns re-paired'] : []),
   ];
 
   return (

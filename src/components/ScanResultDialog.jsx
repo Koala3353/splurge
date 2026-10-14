@@ -81,6 +81,7 @@ export default function ScanResultDialog({ open, info, onClose, onRescan }) {
               <Row label="Read as" value={VARIANT_LABEL[info.variant] || info.variant} />
               <Row label="Image used" value={SOURCE_LABEL[info.source] || (info.cropped ? 'cropped' : 'whole photo')} />
               {info.orientation !== 0 && <Row label="Orientation" value={`rotated ${info.orientation > 0 ? '90°' : '-90°'}`} />}
+              {info.relaid && <Row label="Layout" value="prices re-paired from word positions" />}
               <Row label="Attempts" value={`${info.attempts} of ${info.tried}`} last />
             </div>
 

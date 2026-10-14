@@ -2,7 +2,7 @@
 // document-grade image preprocessing (adaptive threshold + auto-orient +
 // deskew) tuned for phone photos of thermal receipts.
 
-import { rateReceiptText } from './receipt';
+import { rateReceiptText } from './receipt.js';
 
 let workerPromise = null;
 let progressCb = null;
@@ -29,7 +29,18 @@ export function warmUpOcr() {
           else if (/load|traineddata|initial/i.test(m.status)) progressCb('Warming up the scanner (one-time)…');
         },
       });
-      await worker.setParameters({ preserve_interword_spaces: '1' });
+      await worker.setParameters({
+        preserve_interword_spaces: '1',
+        // Tesseract guesses the source DPI from the image height and, on a
+        // cropped receipt, guesses low — which makes it treat normal glyphs as
+        // oversized and pick the wrong character models. The preprocessor
+        // already normalises every candidate to roughly 300dpi-equivalent
+        // glyph heights, so state it instead of letting it be inferred.
+        user_defined_dpi: '300',
+        // Our binarizer always outputs dark-on-light, so the engine's own
+        // invert-and-retry pass can only waste time.
+        tessedit_do_invert: '0',
+      });
       return worker;
     })().catch((err) => { workerPromise = null; throw err; });
   }
@@ -80,15 +91,41 @@ export async function scanReceipt(file, onProgress) {
         await worker.setParameters({ tessedit_pageseg_mode: cand.psm });
         appliedPsm = cand.psm;
       }
-      const { data } = await worker.recognize(canvas);
+      const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
       attempts += 1;
-      const rate = rateReceiptText(data.text);
-      const words = data.text.split(/\s+/).filter(Boolean).length;
       const confidence = Number.isFinite(data.confidence) ? data.confidence : 0;
-      const key = keyOf(rate, confidence, words);
+
+      // Two readings of the same pass: the engine's own line breaks, and the
+      // lines rebuilt from word boxes. They differ only when a wide price
+      // column confused the layout analysis, which is exactly the case the
+      // rebuild exists for — so let the rating decide, per scan.
+      let rebuilt = '';
+      try { rebuilt = linesFromBlocks(data.blocks); } catch { /* text still fine */ }
+      let readingText = data.text;
+      let readingKey = keyOf(
+        rateReceiptText(data.text),
+        confidence,
+        data.text.split(/\s+/).filter(Boolean).length,
+      );
+      let rebuiltUsed = false;
+      if (rebuilt) {
+        const altKey = keyOf(
+          rateReceiptText(rebuilt),
+          confidence,
+          rebuilt.split(/\s+/).filter(Boolean).length,
+        );
+        if (gt(altKey, readingKey)) {
+          readingText = rebuilt;
+          readingKey = altKey;
+          rebuiltUsed = true;
+        }
+      }
+
+      const rate = rateReceiptText(readingText);
+      const key = readingKey;
       if (gt(key, best.key)) {
         best = {
-          text: data.text,
+          text: readingText,
           key,
           diagnostics: {
             variant: cand.variant,
@@ -97,6 +134,7 @@ export async function scanReceipt(file, onProgress) {
             cropped: cand.cropped,
             psm: cand.psm,
             confidence: Math.round(confidence),
+            relaid: rebuiltUsed,
             width: canvas.width,
             height: canvas.height,
             preview: thumbnail(canvas),
@@ -115,6 +153,80 @@ export async function scanReceipt(file, onProgress) {
   } finally {
     progressCb = null;
   }
+}
+
+// --- Rebuilding lines from word boxes -------------------------------------
+//
+// PSM 6 usually keeps an item name and its price on one text line, but not
+// always: when the gap between the two columns is wide enough, the engine
+// decides it is looking at two separate blocks and emits them as separate
+// lines. The parser then sees a name with no amount followed by an orphan
+// number, and drops the item.
+//
+// The word boxes don't have that ambiguity. Two words printed on the same row
+// of the paper overlap vertically no matter how far apart they sit, so
+// regrouping every word on the page by vertical overlap reconstructs the
+// physical lines regardless of how the engine chose to block them.
+const WORD_MIN_CONFIDENCE = 30;
+
+function collectWords(blocks) {
+  const words = [];
+  const walk = (node) => {
+    if (!node) return;
+    if (Array.isArray(node)) { node.forEach(walk); return; }
+    if (node.words) { node.words.forEach(walk); return; }
+    if (node.paragraphs) { node.paragraphs.forEach(walk); return; }
+    if (node.lines) { node.lines.forEach(walk); return; }
+    if (typeof node.text === 'string' && node.bbox) {
+      const text = node.text.trim();
+      if (text && (node.confidence ?? 100) >= WORD_MIN_CONFIDENCE) {
+        words.push({ text, ...node.bbox });
+      }
+    }
+  };
+  walk(blocks);
+  return words;
+}
+
+export function linesFromBlocks(blocks) {
+  const words = collectWords(blocks);
+  if (words.length < 4) return '';
+
+  // Typical glyph height sets the tolerance: half a line is close enough to
+  // count as "the same row", which absorbs the baseline wobble of a photo
+  // without merging two genuinely adjacent lines.
+  const heights = words.map((w) => w.y1 - w.y0).sort((a, b) => a - b);
+  const median = heights[Math.floor(heights.length / 2)] || 1;
+  const tol = Math.max(2, median * 0.5);
+
+  const byTop = [...words].sort((a, b) => (a.y0 + a.y1) - (b.y0 + b.y1));
+  const rows = [];
+  for (const w of byTop) {
+    const mid = (w.y0 + w.y1) / 2;
+    const row = rows[rows.length - 1];
+    if (row && Math.abs(mid - row.mid) <= tol) {
+      row.words.push(w);
+      // Running centre, so a row drifting across a tilted photo stays one row.
+      row.mid = (row.mid * (row.words.length - 1) + mid) / row.words.length;
+    } else {
+      rows.push({ mid, words: [w] });
+    }
+  }
+
+  return rows
+    .map((row) => {
+      const sorted = row.words.sort((a, b) => a.x0 - b.x0);
+      let out = sorted[0].text;
+      for (let i = 1; i < sorted.length; i++) {
+        // A gap wider than a couple of characters is a column boundary, not a
+        // word space — pad it so the parser's "name … amount" split is clean.
+        const gap = sorted[i].x0 - sorted[i - 1].x1;
+        out += gap > median * 1.5 ? '   ' : ' ';
+        out += sorted[i].text;
+      }
+      return out;
+    })
+    .join('\n');
 }
 
 // A small JPEG of exactly what the engine saw. This is the fastest way to
