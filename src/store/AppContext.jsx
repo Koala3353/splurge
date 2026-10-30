@@ -29,6 +29,9 @@ export function AppProvider({ children }) {
   // How much detail outbound messages carry — set in the share sheet, remembered
   // between sends so you configure it once.
   const [shareOptions, setShareOptions] = useLocalStorage('split-shareopts', DEFAULT_SHARE_OPTIONS);
+  // Splits you deliberately saved to repeat. Distinct from the ones inferred
+  // from history: these you chose, so they outrank anything guessed.
+  const [templates, setTemplates] = useLocalStorage('split-templates', []);
 
   // --- People ---
   const addPerson = useCallback((name) => {
@@ -222,10 +225,10 @@ export function AppProvider({ children }) {
 
   // --- Backup / restore ---
   const exportData = useCallback(() => JSON.stringify(
-    { version: 1, exportedAt: new Date().toISOString(), people, groups, bills, payments, meId, payInfo },
+    { version: 2, exportedAt: new Date().toISOString(), people, groups, bills, payments, meId, payInfo, templates },
     null,
     2,
-  ), [people, groups, bills, payments, meId, payInfo]);
+  ), [people, groups, bills, payments, meId, payInfo, templates]);
 
   const importData = useCallback((json) => {
     const data = typeof json === 'string' ? JSON.parse(json) : json;
@@ -237,7 +240,9 @@ export function AppProvider({ children }) {
     setPayments(arr(data.payments));
     setMeId(typeof data.meId === 'string' ? data.meId : null);
     setPayInfo(data.payInfo && typeof data.payInfo === 'object' ? data.payInfo : null);
-  }, [setPeople, setGroups, setBills, setPayments, setMeId, setPayInfo]);
+    // Absent from a version-1 backup, which is fine: no templates existed then.
+    setTemplates(arr(data.templates));
+  }, [setPeople, setGroups, setBills, setPayments, setMeId, setPayInfo, setTemplates]);
 
   const clearAll = useCallback(() => {
     setPeople([]);
@@ -246,7 +251,50 @@ export function AppProvider({ children }) {
     setPayments([]);
     setMeId(null);
     setPayInfo(null);
-  }, [setPeople, setGroups, setBills, setPayments, setMeId, setPayInfo]);
+    setTemplates([]);
+  }, [setPeople, setGroups, setBills, setPayments, setMeId, setPayInfo, setTemplates]);
+
+  // --- Templates & quick repeat ---
+  const addTemplate = useCallback((tpl) => {
+    const id = uid();
+    setTemplates((prev) => [...prev, {
+      id,
+      title: (tpl.title || '').trim() || 'Quick split',
+      people: tpl.people || [],
+      amount: Number(tpl.amount) || 0,
+      lastUsed: null,
+    }]);
+    return id;
+  }, [setTemplates]);
+
+  const removeTemplate = useCallback((id) => {
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+  }, [setTemplates]);
+
+  const updateTemplate = useCallback((id, patch) => {
+    setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }, [setTemplates]);
+
+  /**
+   * Logs a whole split in one call: one item covering the amount, split
+   * evenly between the named people. This is the entire point of the
+   * suggestion row — anything needing per-item detail belongs in the wizard.
+   */
+  const logQuickSplit = useCallback(({ title, people: ids, amount, templateId }) => {
+    const amt = Number(amount) || 0;
+    const participants = (ids || []).filter(Boolean);
+    if (amt <= 0 || participants.length === 0) return null;
+
+    const billId = addBill({
+      title,
+      participants,
+      fees: [],
+      items: [{ id: uid(), name: title, price: amt, people: participants }],
+    });
+    // Using a template counts as using it, so it keeps its place in the row.
+    if (templateId) updateTemplate(templateId, { lastUsed: Date.now() });
+    return billId;
+  }, [addBill, updateTemplate]);
 
   const value = useMemo(() => ({
     people, addPerson, removePerson, renamePerson,
@@ -258,6 +306,7 @@ export function AppProvider({ children }) {
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
     billPersonStatus, unpaidBillShares, settledBillShares,
     shareOptions, setShareOptions,
+    templates, addTemplate, removeTemplate, updateTemplate, logQuickSplit,
     totalOwedToYou,
     buildShareText, buildGroupReminderText, exportData, importData, clearAll,
   }), [
@@ -270,6 +319,7 @@ export function AppProvider({ children }) {
     balances, personBillShares, lifetimePayments, paymentsByPerson, billDuesById,
     billPersonStatus, unpaidBillShares, settledBillShares,
     shareOptions, setShareOptions,
+    templates, addTemplate, removeTemplate, updateTemplate, logQuickSplit,
     totalOwedToYou,
     buildShareText, buildGroupReminderText, exportData, importData, clearAll,
   ]);

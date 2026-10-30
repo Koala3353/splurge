@@ -6,12 +6,14 @@ import { formatCurrency, formatRelativeDate } from '../utils/format';
 import { Settings, Plus, ChevronRight, Receipt, Wallet } from 'lucide-react';
 import BillDetailModal from '../components/BillDetailModal';
 import SettingsModal from '../components/SettingsModal';
+import SuggestionRow from '../components/SuggestionRow';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { bills, people, balances, meId, totalOwedToYou, lifetimePayments } = useAppContext();
   const [detailBillId, setDetailBillId] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [toast, setToast] = useState('');
   const animatedOwed = useCountUp(totalOwedToYou);
 
   const owingCount = people.filter((p) => p.id !== meId && (balances[p.id] || 0) > 0.005).length;
@@ -55,6 +57,13 @@ export default function HomePage() {
             {collected > 0.005 && ` · ${formatCurrency(collected)} collected`}
           </p>
         </div>
+
+        <SuggestionRow
+          onLogged={(title) => {
+            setToast(`${title} logged`);
+            setTimeout(() => setToast(''), 2200);
+          }}
+        />
 
         {bills.length === 0 ? (
           /* Center the call-to-action in the space below the hero so the
@@ -115,6 +124,8 @@ export default function HomePage() {
       </main>
 
       <BillDetailModal billId={detailBillId} onClose={() => setDetailBillId(null)} />
+      {toast && <div className="toast" role="status">{toast}</div>}
+
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
