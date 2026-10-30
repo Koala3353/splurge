@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
-import { X, UserCheck, Download, Upload, Trash2, Check, Wallet, QrCode } from 'lucide-react';
+import { X, UserCheck, Download, Upload, Trash2, Check, Wallet, QrCode, Sun, Moon, SunMoon } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
 import { useAppContext } from '../store/AppContext';
 
 const PAY_METHODS = ['GCash', 'Maya', 'Bank'];
@@ -35,6 +36,7 @@ export default function SettingsModal({ open, onClose }) {
   const [confirmClear, setConfirmClear] = useState(false);
   const [toast, setToast] = useState('');
   const [qrOpen, setQrOpen] = useState(false);
+  const { theme, resolved, setTheme } = useTheme();
 
   useEffect(() => {
     const d = dialogRef.current;
@@ -113,6 +115,38 @@ export default function SettingsModal({ open, onClose }) {
         </div>
 
         <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
+          {/* Appearance. Auto is first and is the default: matching the phone
+              is what most people want, and the override exists for the ones
+              who deliberately run one app against the grain. */}
+          <div className="flex items-center gap-2 mb-1">
+            <SunMoon size={16} className="text-accent" />
+            <h3 className="font-bold">Appearance</h3>
+          </div>
+          <p className="text-sm text-secondary mb-3">
+            {theme === 'auto'
+              ? `Following your phone — currently ${resolved}.`
+              : `Always ${theme}, whatever your phone is set to.`}
+          </p>
+          <div className="segmented mb-6" role="radiogroup" aria-label="Appearance">
+            {[
+              { id: 'auto', label: 'Auto', icon: <SunMoon size={15} /> },
+              { id: 'light', label: 'Light', icon: <Sun size={15} /> },
+              { id: 'dark', label: 'Dark', icon: <Moon size={15} /> },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                role="radio"
+                aria-checked={theme === opt.id}
+                className={`segmented-option pressable ${theme === opt.id ? 'is-on' : ''}`}
+                onClick={() => setTheme(opt.id)}
+              >
+                {opt.icon}
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           {/* Who is "you" */}
           <div className="flex items-center gap-2 mb-1">
             <UserCheck size={16} className="text-accent" />

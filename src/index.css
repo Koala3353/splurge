@@ -1,108 +1,158 @@
+/* ==========================================================================
+   TOKENS
+
+   Three layers, as before: primitives → semantic → component. What's new is
+   that the semantic layer is declared TWICE — once for dark, once for light —
+   and nothing below this block knows which mode is active. Adding a mode is
+   editing one block; it never reaches into a component.
+
+   Mode resolution, in order:
+     :root                                 dark, the default
+     @media (prefers-color-scheme: light)  follows the OS, unless overridden
+     [data-theme="light" | "dark"]         an explicit choice in Settings
+
+   The guard `:root:not([data-theme="dark"])` on the media query is what lets
+   "force dark" survive a light OS; without it the media query would win.
+   ========================================================================== */
+
 :root {
-  /* ======================================================================
-     LAYER 1 — PRIMITIVES. Raw values, named for what they are, nothing else.
-     A future retheme edits this block and stops; every rule in the file
-     reaches colour through the semantic layer below, never through a hex.
-     Ratios in comments are measured against --ink-900.
-     ====================================================================== */
-  --ink-900: #100D0A;        /* warm charcoal base                          */
-  --ink-800: #1B1613;        /* elevated surface                            */
-  --ink-700: #2A231D;        /* hairline / divider base                     */
-  --ink-100: #F7F4EF;        /* warm white                         17.7:1   */
-  --ink-300: #BCB2A6;        /* warm secondary                      9.3:1   */
-  --ink-500: #8A8076;        /* warm tertiary                       5.0:1   */
+  /* ---------------------------------------------------------------------
+     LAYER 1 — PRIMITIVES. Raw values, named for what they are.
+     Ratios are measured, not estimated: `node scripts/check-contrast.mjs`
+     re-checks all 32 shipping pairs in both modes.
+     --------------------------------------------------------------------- */
 
-  --bronze-400: #E0A458;     /* light bronze — glows, focus         8.9:1   */
-  --bronze-500: #C9913D;     /* signature bronze                    7.0:1   */
-  --bronze-600: #A8752C;     /* pressed / hover                             */
+  /* Neutrals — never pure black. #000 smears on OLED during scroll. */
+  --slate-950: #050507;
+  --slate-900: #0A0A0C;      /* dark base                                   */
+  --slate-850: #121318;      /* dark elevated                               */
+  --slate-100: #EDEDEF;      /* dark primary text          16.9:1 on 900    */
+  --slate-300: #A9AAB4;      /* dark secondary text         8.6:1           */
+  --slate-400: #8A8F98;      /* dark tertiary / labels      6.1:1           */
 
-  --leaf-400: #7CC474;       /* paid, money in                      9.2:1   */
-  --leaf-600: #4E9A56;       /* deeper leaf, gradient end                   */
-  --rose-400: #F2726A;       /* owed, debts                         6.8:1   */
-  --rose-600: #C4453F;       /* rose fill, white text               4.9:1   */
-  --rose-700: #9E2F2B;       /* deep rose, gradient end             7.3:1   */
+  --porcelain-50: #FFFFFF;   /* light elevated                              */
+  --porcelain-100: #F5F6F8;  /* light base                                  */
+  --porcelain-900: #14161A;  /* light primary text         16.8:1 on 100    */
+  --porcelain-700: #4C525C;  /* light secondary text        7.3:1           */
+  --porcelain-500: #767D89;  /* light tertiary / labels     3.8:1           */
 
-  /* Channels for tinting surfaces and shadows in the base hue rather than
-     with flat black, which is what makes a dark UI read as cheap. */
-  --tint-ink: 16, 13, 10;
-  --tint-warm: 233, 214, 186;
-  --tint-bronze: 201, 145, 61;
-  --tint-bronze-deep: 120, 82, 34;
-  --tint-leaf: 124, 196, 116;
-  --tint-rose: 242, 114, 106;
+  /* Indigo. Two values per role because an accent that is legible on a dark
+     background is, by definition, not legible on a light one. */
+  --indigo-300: #A7AFF0;     /* dark focus ring             9.5:1           */
+  --indigo-400: #8B95E8;     /* dark accent                 7.1:1           */
+  --indigo-500: #5E6AD2;     /* shared mid — gradients, washes              */
+  --indigo-600: #4A55B8;     /* light accent                5.9:1           */
+  --indigo-700: #3B46A3;     /* light focus ring            7.5:1           */
 
-  /* ======================================================================
-     LAYER 2 — SEMANTIC. What a colour MEANS in this app. Components use
-     these names only.
+  /* Money status. One hue per state, and neither is ever chrome. */
+  --mint-400: #5FD39A;       /* settled, on dark           10.6:1           */
+  --mint-700: #137B52;       /* settled, on light           4.9:1           */
+  --coral-400: #FF8B7A;      /* owed, on dark               8.7:1           */
+  --coral-700: #C0392B;      /* owed, on light              5.0:1           */
 
-     House rule: bronze is chrome — controls, nav, focus, brand — and never
-     touches a money figure. Amounts stay neutral, turn leaf when paid and
-     rose when owed. The previous palette lost exactly this: green was the
-     background, the brand AND the status at once, so no single green meant
-     anything. One colour, one job.
-     ====================================================================== */
-  --bg-color: var(--ink-900);
-  --bg-elevated: var(--ink-800);
-  --text-primary: var(--ink-100);
-  --text-secondary: var(--ink-300);
-  --text-tertiary: var(--ink-500);
+  /* Tint channels, for rgba() surfaces and washes. */
+  --tint-ink: 10, 10, 12;
+  --tint-paper: 255, 255, 255;
+  --tint-indigo: 94, 106, 210;
+  --tint-mint: 95, 211, 154;
+  --tint-coral: 255, 139, 122;
 
-  --accent-color: var(--bronze-500);
-  --accent-bright: var(--bronze-400);
-  --accent-hover: var(--bronze-600);
-  /* Bronze is far too light to carry white text (2.8:1 — the old emerald
-     button shipped at 2.3:1). Anything filled with an accent takes dark ink
-     instead: 7.0:1 on bronze-500, 8.9:1 on bronze-400. */
-  --on-accent: var(--ink-900);
+  /* ---------------------------------------------------------------------
+     LAYER 2 — SEMANTIC, DARK. What a colour MEANS. Components use only
+     these names.
 
-  --success: var(--leaf-400);   /* settled */
-  --danger: var(--rose-400);    /* outstanding — text/status on dark */
-  /* Filled destructive surfaces need a darker rose: white fails on
-     rose-400 (2.8:1) but clears on rose-600 (4.9:1). */
-  --danger-fill: var(--rose-600);
-  --warning: var(--bronze-400); /* rank / attention, never an amount */
+     House rule, unchanged and load-bearing: indigo is chrome — controls,
+     nav, focus, brand — and never touches a money figure. Amounts stay
+     neutral, turn mint when settled and coral when owed. One colour, one job.
+     --------------------------------------------------------------------- */
+  --bg-color: var(--slate-900);
+  --bg-deep: var(--slate-950);
+  --bg-elevated: var(--slate-850);
+  --text-primary: var(--slate-100);
+  --text-secondary: var(--slate-300);
+  --text-tertiary: var(--slate-400);
 
-  /* Surfaces — warm smoked glass, tinted off the base hue. */
-  --glass-bg: rgba(38, 31, 25, 0.55);
-  --glass-bg-strong: rgba(24, 19, 15, 0.86);
-  --glass-border: rgba(var(--tint-warm), 0.10);
-  --glass-highlight: rgba(var(--tint-warm), 0.07);
+  --accent-color: var(--indigo-400);
+  --accent-bright: var(--indigo-300);
+  --accent-hover: var(--indigo-300);
+  /* Indigo-400 is light enough to need dark ink on top — 7.1:1 this way,
+     2.9:1 with white. The filled-button foreground is always a token. */
+  --on-accent: var(--slate-900);
 
-  /* Gradients. Primary runs light-to-lighter so dark ink clears contrast at
-     both ends; --gradient-data is neutral because it renders money magnitude
-     and must stay out of the paid/owed colour channel. */
-  --gradient-primary: linear-gradient(135deg, var(--bronze-500) 0%, var(--bronze-400) 100%);
-  --gradient-danger: linear-gradient(135deg, var(--rose-600), var(--rose-700));
-  --gradient-success: linear-gradient(135deg, var(--leaf-400), var(--leaf-600));
-  --gradient-data: linear-gradient(90deg, var(--ink-500), var(--ink-300));
+  --success: var(--mint-400);
+  --danger: var(--coral-400);
+  --danger-fill: var(--coral-400);
+  --on-danger-fill: var(--slate-900);
+  --warning: var(--indigo-300);
 
-  /* ======================================================================
-     LAYER 3 — COMPONENT. Soft fills and hairlines that JSX inline styles
-     reach for. They exist as tokens purely so no component has to write a
-     raw rgba() again; that habit is what left ~27 stale literals behind
-     the last time this app was rethemed.
-     ====================================================================== */
-  --fill-accent-soft: rgba(var(--tint-bronze), 0.12);
-  --fill-success-soft: rgba(var(--tint-leaf), 0.12);
-  --fill-danger-soft: rgba(var(--tint-rose), 0.12);
-  --border-success: rgba(var(--tint-leaf), 0.50);
-  --border-danger: rgba(var(--tint-rose), 0.50);
-  --glow-danger: 0 0 20px rgba(var(--tint-rose), 0.22);
-  --border-warning: rgba(var(--tint-bronze), 0.35);
+  /* Glass. Neutral white at low alpha — NOT a tinted surface. Tinting the
+     glass itself is what makes blur read as a filter instead of a material;
+     the colour belongs in --wash, behind it. */
+  --glass-bg: rgba(var(--tint-paper), 0.085);
+  --glass-bg-strong: rgba(var(--tint-paper), 0.12);
+  --glass-border: rgba(var(--tint-paper), 0.14);
+  --glass-border-bright: rgba(var(--tint-paper), 0.18);
+  --glass-highlight: rgba(var(--tint-paper), 0.10);
+  --scrim: rgba(var(--tint-ink), 0.62);
 
-  /* Typography — native system stack for body (fast + offline-safe), a
-     characterful display face for the wordmark, headings, and money figures. */
-  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-display: 'Sora', var(--font-family);
+  /* The ambient wash the glass has something to blur. */
+  --wash-a: rgba(var(--tint-indigo), 0.42);
+  --wash-b: rgba(126, 96, 214, 0.30);
 
-  /* Radii — slightly softer/larger for a premium feel */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.125rem;
-  --radius-xl: 1.5rem;
+  --gradient-primary: linear-gradient(135deg, var(--indigo-500) 0%, var(--indigo-400) 100%);
+  --gradient-danger: linear-gradient(135deg, #D4564A, var(--coral-400));
+  --gradient-success: linear-gradient(135deg, var(--mint-700), var(--mint-400));
+  --gradient-data: linear-gradient(90deg, var(--slate-400), var(--slate-300));
+
+  /* ---------------------------------------------------------------------
+     LAYER 3 — COMPONENT. Soft fills and hairlines JSX inline styles reach
+     for, so no component has to write a raw rgba() again.
+     --------------------------------------------------------------------- */
+  --fill-accent-soft: rgba(var(--tint-indigo), 0.20);
+  --fill-success-soft: rgba(var(--tint-mint), 0.14);
+  --fill-danger-soft: rgba(var(--tint-coral), 0.14);
+  --border-success: rgba(var(--tint-mint), 0.45);
+  --border-danger: rgba(var(--tint-coral), 0.45);
+  --border-warning: rgba(var(--tint-indigo), 0.40);
+  --glow-danger: none;
+
+  /* Depth. Neutral only — a coloured halo under a button is the single most
+     reliable tell of a generated interface, and Apple never ships one.
+     Layered, long and soft rather than one hard drop. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.26), 0 12px 32px rgba(0, 0, 0, 0.30);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.40);
+  --shadow-float: 0 10px 34px rgba(0, 0, 0, 0.52), 0 2px 8px rgba(0, 0, 0, 0.30);
+  --shadow-glow: var(--shadow-md);
+  --shadow-danger: var(--shadow-md);
+  --shadow-success: var(--shadow-md);
+
+  /* ---------------------------------------------------------------------
+     NON-COLOUR TOKENS — identical in both modes.
+     --------------------------------------------------------------------- */
+
+  /* On iOS this resolves to San Francisco, which already ships optical
+     sizing and tracking tables; Inter is the fallback everywhere else, and
+     is the pairing the design database gives for glass interfaces. */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-family);
+
+  /* Tracking is size-specific — one letter-spacing value is wrong somewhere.
+     Large type reads too loose as it grows, small type too tight. */
+  --track-display: -0.035em;
+  --track-title: -0.022em;
+  --track-body: -0.005em;
+  --track-label: 0.085em;
+
+  --glass-blur: 40px;
+  --glass-saturate: 180%;
+
+  --radius-sm: 0.625rem;   /* 10px — chips, inputs                          */
+  --radius-md: 1rem;       /* 16px — rows, small cards                      */
+  --radius-lg: 1.25rem;    /* 20px — panels                                 */
+  --radius-xl: 1.5rem;     /* 24px — hero cards, sheets                     */
   --radius-full: 9999px;
 
-  /* Spacing scale (4px base) */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -111,14 +161,149 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
 
-  /* Shadows — depth from darkness, tinted warm rather than flat black, plus
-     one bronze glow reserved for the primary action. */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
-  --shadow-glow: 0 0 24px rgba(var(--tint-bronze), 0.30);
-  --shadow-danger: 0 6px 18px rgba(158, 47, 43, 0.45);
-  --shadow-success: 0 6px 18px rgba(78, 154, 86, 0.35);
-  --shadow-glass: 0 14px 40px rgba(0, 0, 0, 0.5);
+  /* One easing for everything that isn't gesture-driven. Expo-out: leaves
+     immediately, settles gently — it reads as a thing moving, not a value
+     being interpolated. Gestures use springs instead, which can be grabbed
+     mid-flight; a CSS transition cannot. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur: 250ms;
+  --dur-slow: 400ms;
+
+  /* Clearance for the floating tab bar, so content never ends underneath it. */
+  --tabbar-height: 3.75rem;
+  --tabbar-clearance: calc(var(--tabbar-height) + 1.75rem + env(safe-area-inset-bottom));
+}
+
+/* ==========================================================================
+   LIGHT MODE. Only the semantic + component layers are restated; primitives
+   and every non-colour token above are shared.
+   ========================================================================== */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg-color: var(--porcelain-100);
+    --bg-deep: var(--porcelain-100);
+    --bg-elevated: var(--porcelain-50);
+    --text-primary: var(--porcelain-900);
+    --text-secondary: var(--porcelain-700);
+    --text-tertiary: var(--porcelain-500);
+
+    --accent-color: var(--indigo-600);
+    --accent-bright: var(--indigo-700);
+    --accent-hover: var(--indigo-700);
+    --on-accent: var(--porcelain-50);
+
+    --success: var(--mint-700);
+    --danger: var(--coral-700);
+    --danger-fill: var(--coral-700);
+    --on-danger-fill: var(--porcelain-50);
+    --warning: var(--indigo-600);
+
+    /* Light glass is white at HIGH alpha over a tinted page. Never stack a
+       light translucent surface on another light translucent surface —
+       legibility collapses. */
+    --glass-bg: rgba(var(--tint-paper), 0.62);
+    --glass-bg-strong: rgba(var(--tint-paper), 0.80);
+    --glass-border: rgba(var(--tint-paper), 0.80);
+    --glass-border-bright: rgba(var(--tint-paper), 0.95);
+    --glass-highlight: rgba(var(--tint-paper), 0.90);
+    --scrim: rgba(20, 22, 26, 0.26);
+
+    --wash-a: rgba(var(--tint-indigo), 0.26);
+    --wash-b: rgba(126, 96, 214, 0.20);
+
+    --gradient-primary: linear-gradient(135deg, var(--indigo-700) 0%, var(--indigo-600) 100%);
+    --gradient-danger: linear-gradient(135deg, #9E2F23, var(--coral-700));
+    --gradient-success: linear-gradient(135deg, #0C5E3E, var(--mint-700));
+    --gradient-data: linear-gradient(90deg, var(--porcelain-500), var(--porcelain-700));
+
+    --fill-accent-soft: rgba(var(--tint-indigo), 0.12);
+    --fill-success-soft: rgba(19, 123, 82, 0.12);
+    --fill-danger-soft: rgba(192, 57, 43, 0.10);
+    --border-success: rgba(19, 123, 82, 0.35);
+    --border-danger: rgba(192, 57, 43, 0.30);
+    --border-warning: rgba(var(--tint-indigo), 0.30);
+
+    --shadow-sm: 0 1px 2px rgba(16, 20, 28, 0.06);
+    --shadow-md: 0 4px 12px rgba(16, 20, 28, 0.06), 0 12px 32px rgba(16, 20, 28, 0.08);
+    --shadow-glass: 0 8px 32px rgba(16, 20, 28, 0.10);
+    --shadow-float: 0 10px 34px rgba(16, 20, 28, 0.14), 0 2px 8px rgba(16, 20, 28, 0.06);
+    --shadow-glow: var(--shadow-md);
+    --shadow-danger: var(--shadow-md);
+    --shadow-success: var(--shadow-md);
+  }
+}
+
+/* Forced light, regardless of the OS. Same declarations; the duplication is
+   deliberate — a CSS custom property set inside a media query cannot be
+   re-applied from outside one. */
+:root[data-theme='light'] {
+  --bg-color: var(--porcelain-100);
+  --bg-deep: var(--porcelain-100);
+  --bg-elevated: var(--porcelain-50);
+  --text-primary: var(--porcelain-900);
+  --text-secondary: var(--porcelain-700);
+  --text-tertiary: var(--porcelain-500);
+
+  --accent-color: var(--indigo-600);
+  --accent-bright: var(--indigo-700);
+  --accent-hover: var(--indigo-700);
+  --on-accent: var(--porcelain-50);
+
+  --success: var(--mint-700);
+  --danger: var(--coral-700);
+  --danger-fill: var(--coral-700);
+  --on-danger-fill: var(--porcelain-50);
+  --warning: var(--indigo-600);
+
+  --glass-bg: rgba(var(--tint-paper), 0.62);
+  --glass-bg-strong: rgba(var(--tint-paper), 0.80);
+  --glass-border: rgba(var(--tint-paper), 0.80);
+  --glass-border-bright: rgba(var(--tint-paper), 0.95);
+  --glass-highlight: rgba(var(--tint-paper), 0.90);
+  --scrim: rgba(20, 22, 26, 0.26);
+
+  --wash-a: rgba(var(--tint-indigo), 0.26);
+  --wash-b: rgba(126, 96, 214, 0.20);
+
+  --gradient-primary: linear-gradient(135deg, var(--indigo-700) 0%, var(--indigo-600) 100%);
+  --gradient-danger: linear-gradient(135deg, #9E2F23, var(--coral-700));
+  --gradient-success: linear-gradient(135deg, #0C5E3E, var(--mint-700));
+  --gradient-data: linear-gradient(90deg, var(--porcelain-500), var(--porcelain-700));
+
+  --fill-accent-soft: rgba(var(--tint-indigo), 0.12);
+  --fill-success-soft: rgba(19, 123, 82, 0.12);
+  --fill-danger-soft: rgba(192, 57, 43, 0.10);
+  --border-success: rgba(19, 123, 82, 0.35);
+  --border-danger: rgba(192, 57, 43, 0.30);
+  --border-warning: rgba(var(--tint-indigo), 0.30);
+
+  --shadow-sm: 0 1px 2px rgba(16, 20, 28, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 20, 28, 0.06), 0 12px 32px rgba(16, 20, 28, 0.08);
+  --shadow-glass: 0 8px 32px rgba(16, 20, 28, 0.10);
+  --shadow-float: 0 10px 34px rgba(16, 20, 28, 0.14), 0 2px 8px rgba(16, 20, 28, 0.06);
+  --shadow-glow: var(--shadow-md);
+  --shadow-danger: var(--shadow-md);
+  --shadow-success: var(--shadow-md);
+}
+
+/* Accessibility adaptations. Reduced transparency is not cosmetic: a frosted
+   surface over moving content is exactly what makes some people unable to
+   read it. Frost it solid rather than dropping the surface. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: var(--bg-elevated);
+    --glass-bg-strong: var(--bg-elevated);
+    --glass-blur: 0px;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --glass-bg: var(--bg-elevated);
+    --glass-border: var(--text-tertiary);
+    --text-secondary: var(--text-primary);
+  }
 }
 
 * {
@@ -190,8 +375,8 @@ p {
 /* Glassmorphism Utilities */
 .glass-panel {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-glass), inset 0 1px 0 var(--glass-highlight);
@@ -204,7 +389,11 @@ button {
   border: none;
   background: transparent;
   color: inherit;
-  transition: all 0.2s ease;
+  transition: background-color var(--dur) var(--ease-out),
+              color var(--dur) var(--ease-out),
+              border-color var(--dur) var(--ease-out),
+              box-shadow var(--dur) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
 }
 
 .btn {
@@ -240,8 +429,8 @@ button:disabled:hover {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 18px rgba(var(--tint-bronze), 0.32);
-  filter: brightness(1.08);
+  box-shadow: var(--shadow-float);
+  filter: brightness(1.06);
 }
 
 .btn-secondary {
@@ -282,7 +471,7 @@ input, select {
   font-family: inherit;
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(var(--tint-ink), 0.5);
+  background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -293,7 +482,7 @@ input, select {
 input:focus, select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--tint-bronze), 0.26);
+  box-shadow: 0 0 0 3px rgba(var(--tint-indigo), 0.32);
 }
 
 /* Animations */
@@ -317,8 +506,8 @@ input:focus, select:focus {
 /* Custom Components */
 .card {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-glass), inset 0 1px 0 var(--glass-highlight);
@@ -339,9 +528,9 @@ input:focus, select:focus {
 }
 
 .pill-active {
-  background: rgba(var(--tint-bronze), 0.18);
+  background: var(--fill-accent-soft);
   color: var(--text-primary);
-  border-color: rgba(var(--tint-bronze), 0.55);
+  border-color: var(--border-warning);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -526,11 +715,14 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   margin: 0 auto;
   width: 100%;
   background-color: var(--bg-color);
-  /* Aurora: soft emerald vault-glow so the backdrop has depth, not a flat
-     black void. Painted on the (static) shell; content scrolls over it. */
+  /* The ambient wash. Glass is only a material if there is something behind
+     it worth blurring; on a flat background backdrop-filter renders as grey.
+     Painted on the (static) shell, so content scrolls over it. */
   background-image:
-    radial-gradient(85% 40% at 50% -10%, rgba(var(--tint-bronze), 0.10), transparent 70%),
-    radial-gradient(70% 45% at 50% 115%, rgba(var(--tint-bronze-deep), 0.16), transparent 72%);
+    radial-gradient(74% 42% at 12% -6%, var(--wash-a), transparent 72%),
+    radial-gradient(66% 38% at 96% 12%, var(--wash-b), transparent 74%),
+    radial-gradient(58% 30% at 86% 58%, var(--wash-a), transparent 76%),
+    radial-gradient(96% 40% at 40% 108%, var(--wash-b), transparent 76%);
   background-repeat: no-repeat;
 }
 
@@ -541,7 +733,7 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   overscroll-behavior: contain;
   /* Clear the status bar / notch on header-less pages (standalone PWA uses a
      translucent status bar, so content would otherwise sit underneath it). */
-  padding: calc(1.5rem + env(safe-area-inset-top)) 1.5rem 1.5rem;
+  padding: calc(1.5rem + env(safe-area-inset-top)) 1.5rem var(--tabbar-clearance);
   scroll-timeline-name: --main-scroll;
 }
 
@@ -554,9 +746,9 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
 .app-header {
   flex-shrink: 0;
   padding: calc(1rem + env(safe-area-inset-top)) 1.5rem 1rem 1.5rem;
-  background-color: rgba(var(--tint-ink), 0.6);
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  background-color: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   z-index: 10;
   border-bottom: 1px solid var(--glass-border);
 }
@@ -576,20 +768,31 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   }
   to {
     box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-    background-color: rgba(var(--tint-ink), 0.82);
-    backdrop-filter: blur(16px) saturate(1.3);
+    background-color: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   }
 }
 
+/* The tab bar floats above the content rather than consuming a strip of it:
+   pinned to the viewport, centred, pill-shaped, with the page visible through
+   it. `.app-main` reserves --tabbar-clearance at the bottom so nothing ever
+   ends underneath it, and the safe-area inset keeps it off the home indicator. */
 .app-footer {
-  flex-shrink: 0;
-  padding: 1rem 1.5rem calc(1rem + env(safe-area-inset-bottom)) 1.5rem;
-  background-color: var(--bg-color);
-  z-index: 10;
-  border-top: 1px solid var(--glass-border);
+  position: fixed;
+  left: 50%;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 40;
   display: flex;
-  gap: 1rem;
-  box-shadow: 0 -10px 20px rgba(0,0,0,0.5);
+  gap: 0.125rem;
+  padding: 0.3125rem;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  /* The bright hairline is the light catching the top edge of the material. */
+  border: 1px solid var(--glass-border-bright);
+  box-shadow: var(--shadow-float);
 }
 
 /* Legacy Container (keep for backwards compat on simple pages if needed) */
@@ -697,8 +900,8 @@ dialog {
   border-radius: var(--radius-xl);
   border: 1px solid var(--glass-border);
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(24px) saturate(1.3);
-  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   color: var(--text-primary);
   box-shadow: var(--shadow-glass);
   max-width: 90vw;
@@ -706,18 +909,25 @@ dialog {
 }
 
 dialog::backdrop {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: var(--scrim);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 dialog[open] {
-  animation: dialog-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: dialog-fade-in var(--dur-slow) var(--ease-out) forwards;
 }
 
 @keyframes dialog-fade-in {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Reduced motion keeps the dialog's arrival legible without the vestibular
+   part: it still appears, it just doesn't travel or scale. */
+@media (prefers-reduced-motion: reduce) {
+  dialog[open] { animation: dialog-appear var(--dur) ease forwards; }
+  @keyframes dialog-appear { from { opacity: 0; } to { opacity: 1; } }
 }
 
 /* Popover */
@@ -726,8 +936,8 @@ dialog[open] {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   color: var(--text-primary);
   box-shadow: var(--shadow-md);
   margin: auto;
@@ -781,11 +991,54 @@ dialog[open] {
   border-color: rgba(255, 255, 255, 0.16);
 }
 
-/* Sticky Footer Polish */
-.app-footer {
-  background-color: rgba(var(--tint-ink), 0.72) !important;
-  backdrop-filter: blur(18px) saturate(1.3);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+/* Tab items. The active one takes a filled accent pill; the rest stay quiet,
+   so which tab you are on is readable at a glance rather than by comparing
+   two shades of grey. */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-full);
+  color: var(--text-tertiary);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: var(--track-body);
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur) var(--ease-out),
+              background-color var(--dur) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+
+/* The label only rides along on the selected tab. Four labelled items would
+   not fit a pill at 320px, and an icon alone is ambiguous — so the one tab
+   that needs naming is the one you are on. */
+.nav-item .nav-label {
+  display: none;
+  white-space: nowrap;
+}
+
+.nav-item-active {
+  background: var(--accent-color);
+  color: var(--on-accent);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.nav-item-active .nav-label { display: inline; }
+
+/* Feedback on press, not on release — waiting for the tap to complete reads
+   as lag however fast the navigation is. */
+.nav-item:active { transform: scale(0.94); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-item:active { transform: none; }
+}
+
+/* Narrow phones: drop the label rather than let the pill reach the bezel. */
+@media (max-width: 359px) {
+  .nav-item-active .nav-label { display: none; }
 }
 
 /* Scanner Overlay */
@@ -793,9 +1046,7 @@ dialog[open] {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background-color: rgba(var(--tint-ink), 0.97);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background-color: var(--bg-color);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -988,15 +1239,19 @@ dialog[open] {
   border-radius: var(--radius-xl);
   border: 1px solid var(--glass-border);
   background:
-    radial-gradient(120% 130% at 50% -10%, rgba(var(--tint-warm), 0.07), transparent 60%),
+    radial-gradient(120% 130% at 50% -10%, var(--glass-highlight), transparent 60%),
     var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   box-shadow: var(--shadow-glass), inset 0 1px 0 var(--glass-highlight);
 }
 
+/* The headline figure earns its weight from size, tracking and weight alone.
+   It used to carry a glow; a coloured halo behind text is the same tell as a
+   coloured halo under a button, and it hurts legibility over glass. */
 .balance-hero .balance-amount {
-  text-shadow: 0 0 30px rgba(var(--tint-warm), 0.16);
+  letter-spacing: var(--track-display);
+  font-weight: 700;
 }
 
 /* Gradient feature card (e.g. the Stats "You're owed" hero). */
@@ -1005,7 +1260,7 @@ dialog[open] {
   overflow: hidden;
   border: none !important;
   background: var(--gradient-primary);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(var(--tint-warm), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-float), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .feature-card::after {
@@ -1019,20 +1274,14 @@ dialog[open] {
   pointer-events: none;
 }
 
-/* Active bottom-nav item gets a soft accent chip behind it. */
-.nav-item-active {
-  background: rgba(var(--tint-bronze), 0.16);
-  box-shadow: inset 0 0 0 1px rgba(var(--tint-bronze), 0.30);
-}
-
 /* --- Share sheet ---------------------------------------------------------- */
 
 /* The outbound message shown the way it will actually land: an outgoing chat
    bubble, accent-tinted because it's yours, squared at the corner it sends
    from. Reading it here is the whole point of the sheet. */
 .share-preview {
-  background: linear-gradient(180deg, rgba(var(--tint-bronze), 0.15), rgba(var(--tint-bronze), 0.07));
-  border: 1px solid rgba(var(--tint-bronze), 0.26);
+  background: linear-gradient(180deg, var(--fill-accent-soft), rgba(var(--tint-indigo), 0.08));
+  border: 1px solid var(--border-warning);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   padding: 0.9rem 1rem;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
@@ -1184,4 +1433,89 @@ dialog[open] {
 .pager-btn:disabled {
   opacity: 0.35;
   pointer-events: none;
+}
+
+/* --- Segmented control ----------------------------------------------------
+   iOS's own shape for a small, mutually-exclusive choice: one track, the
+   selection filled. Reads faster than three separate buttons because the
+   track itself says "pick one of these". */
+.segmented {
+  display: flex;
+  gap: 0.125rem;
+  padding: 0.1875rem;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.segmented-option {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: var(--track-body);
+  color: var(--text-secondary);
+  /* 44px min touch target, counting the track's own padding. */
+  min-height: 2.375rem;
+}
+
+.segmented-option.is-on {
+  background: var(--accent-color);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.segmented-option:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .segmented-option:active { transform: none; }
+}
+
+/* --- Typography scale -----------------------------------------------------
+   Tracking is size-specific. One letter-spacing value across a whole app is
+   necessarily wrong somewhere: large type reads too loose as it grows and
+   small type too tight, so each step carries its own. */
+h1, .text-3xl, .text-4xl { letter-spacing: var(--track-display); line-height: 1.08; }
+h2, .text-2xl, .text-xl   { letter-spacing: var(--track-title); line-height: 1.2; }
+h3, .text-lg              { letter-spacing: var(--track-title); line-height: 1.3; }
+body, p, .text-sm         { letter-spacing: var(--track-body); }
+
+/* Uppercase micro-labels need the opposite treatment — they fall apart
+   without extra space between the letters. */
+.uppercase { letter-spacing: var(--track-label); }
+
+/* Tabular figures everywhere money appears, so a column of amounts lines up
+   on the decimal instead of shimmering as the digits change. */
+.tabular-nums, .balance-amount { font-variant-numeric: tabular-nums; }
+
+/* --- Press feedback -------------------------------------------------------
+   On pointer-down, not on release. The moment feedback waits for touch-up the
+   interface reads as laggy however fast it actually is. */
+.pressable:active,
+.btn:active:not(:disabled) { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active,
+  .btn:active:not(:disabled) { transform: none; filter: brightness(0.94); }
+}
+
+/* --- Scroll edge ----------------------------------------------------------
+   Content passing under the floating tab bar fades out rather than being cut
+   by a hard line — the bar is a layer above the page, not a wall at the end
+   of it. */
+.app-shell::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--tabbar-clearance);
+  background: linear-gradient(to top, var(--bg-color) 18%, transparent);
+  pointer-events: none;
+  z-index: 30;
 }

@@ -4,11 +4,11 @@ import { flushSync } from 'react-dom';
 
 export default function Navigation() {
   return (
-    <nav className="app-footer" aria-label="Primary" style={{ padding: '0.75rem', justifyContent: 'space-around' }}>
-      <NavItem to="/" icon={<Home size={24} />} label="Home" />
-      <NavItem to="/people" icon={<Users size={24} />} label="People" />
-      <NavItem to="/new-bill" icon={<Receipt size={24} />} label="New Bill" />
-      <NavItem to="/stats" icon={<PieChart size={24} />} label="Stats" />
+    <nav className="app-footer" aria-label="Primary">
+      <NavItem to="/" icon={<Home size={20} />} label="Home" />
+      <NavItem to="/people" icon={<Users size={20} />} label="People" />
+      <NavItem to="/new-bill" icon={<Receipt size={20} />} label="New" />
+      <NavItem to="/stats" icon={<PieChart size={20} />} label="Stats" />
     </nav>
   );
 }
@@ -40,24 +40,14 @@ function NavItem({ to, icon, label }) {
       onClick={handleClick}
       aria-label={label}
       aria-current={isActive ? 'page' : undefined}
-      className={`select-none ${isActive ? 'nav-item-active' : ''}`}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '4px',
-        color: isActive ? 'var(--accent-color)' : 'var(--text-secondary)',
-        textDecoration: 'none',
-        fontSize: '0.75rem',
-        fontWeight: isActive ? 600 : 400,
-        transition: 'color 0.2s, background 0.2s',
-        padding: '0.4rem 0.9rem',
-        borderRadius: 'var(--radius-md)',
-        minWidth: '56px'
-      }}
+      className={`nav-item select-none ${isActive ? 'nav-item-active' : ''}`}
     >
       {icon}
-      <span>{label}</span>
+      {/* Shown only on the selected tab — four labels will not fit a pill at
+          phone width. CSS hides it with display:none, which takes it out of
+          the accessibility tree as well, so the name every tab is announced
+          by is the aria-label above, not this. */}
+      <span className="nav-label" aria-hidden="true">{label}</span>
     </a>
   );
 }
