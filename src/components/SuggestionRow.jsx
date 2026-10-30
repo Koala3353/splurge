@@ -32,8 +32,8 @@ export default function SuggestionRow({ onLogged }) {
 
   return (
     <>
-      <div className="section-head" style={{ marginTop: '1.5rem' }}>
-        <h3 className="font-bold text-lg">Split again</h3>
+      <div className="section-head" style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>
+        <span className="lab">Split again</span>
       </div>
 
       <div className="suggestion-row" role="list">

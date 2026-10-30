@@ -21,18 +21,20 @@ function StatCard({ icon, label, value, format = (n) => n, hero = false }) {
   return (
     <div
       className={`glass-panel flex-col justify-between card-hover relative overflow-hidden min-w-0 ${hero ? 'feature-card' : ''}`}
-      style={{ padding: '1.25rem 1rem' }}
+      style={{ padding: '0.8rem 0.85rem' }}
     >
       <div
-        className={`flex items-center gap-2 mb-3 ${hero ? 'text-on-accent' : 'text-secondary'}`}
-        style={{ opacity: hero ? 0.95 : 1, position: 'relative', zIndex: 1 }}
+        className={`flex items-center gap-2 ${hero ? 'text-on-accent' : 'text-secondary'}`}
+        // Tighter than it was: the label and the figure are one unit, and the
+        // gap between them was doing nothing but costing a row of pixels.
+        style={{ opacity: hero ? 0.95 : 1, position: 'relative', zIndex: 1, marginBottom: '0.55rem' }}
       >
         <span className="flex-shrink-0 flex items-center">{icon}</span>
-        <span className="text-xs font-semibold uppercase tracking-wider truncate">{label}</span>
+        <span className="uppercase truncate">{label}</span>
       </div>
       <div
         className={`font-display font-black tabular-nums truncate min-w-0 ${hero ? 'text-on-accent' : 'text-primary'}`}
-        style={{ fontSize: 'clamp(1.35rem, 7vw, 2rem)', lineHeight: 1.1, position: 'relative', zIndex: 1 }}
+        style={{ fontSize: 'clamp(1.3rem, 6.4vw, 1.8rem)', lineHeight: 1.05, letterSpacing: 'var(--track-display)', position: 'relative', zIndex: 1 }}
       >
         {format(animated)}
       </div>
@@ -173,11 +175,11 @@ export default function StatsPage() {
 
         {/* Headline stats — 2x2 grid; numbers use formatCompact so they never clip. */}
         <div
-          className="mb-8"
+          className="mb-5"
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '0.75rem',
+            gap: '0.5rem',
           }}
         >
           <StatCard
@@ -209,8 +211,8 @@ export default function StatsPage() {
 
         {/* Light-touch insights — only when the data supports them. */}
         {bills.length > 0 && (
-          <div className="flex gap-3 mb-8 min-w-0">
-            <div className="glass-panel flex-1 min-w-0" style={{ padding: '0.875rem 1rem' }}>
+          <div className="flex gap-2 mb-5 min-w-0">
+            <div className="glass-panel flex-1 min-w-0" style={{ padding: '0.7rem 0.85rem' }}>
               <p className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1 truncate">
                 Avg per outing
               </p>
@@ -219,7 +221,7 @@ export default function StatsPage() {
               </p>
             </div>
             {biggestSplit && (
-              <div className="glass-panel flex-1 min-w-0" style={{ padding: '0.875rem 1rem' }}>
+              <div className="glass-panel flex-1 min-w-0" style={{ padding: '0.7rem 0.85rem' }}>
                 <p className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1 truncate">
                   Biggest split
                 </p>
@@ -236,8 +238,8 @@ export default function StatsPage() {
             one a splitting app can actually answer, and nothing here answered
             it before. Empty months are drawn, not skipped. */}
         {monthsPeak > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg mb-3 font-bold">Month by month</h2>
+          <section className="mb-6">
+            <h2 className="lab" style={{ marginBottom: '0.6rem' }}>Month by month</h2>
             <div className="glass-panel month-chart" style={{ padding: '1.25rem 1rem 1rem' }}>
               {months.map((m) => (
                 <div key={m.key} className="month-col">
@@ -259,8 +261,8 @@ export default function StatsPage() {
 
         {/* Collection rate — how much of what you fronted has come back. */}
         {collection.rate !== null && (
-          <section className="mb-8">
-            <h2 className="text-lg mb-3 font-bold">Getting paid back</h2>
+          <section className="mb-6">
+            <h2 className="lab" style={{ marginBottom: '0.6rem' }}>Getting paid back</h2>
             <div className="glass-panel" style={{ padding: '1.25rem 1rem' }}>
               <div className="flex items-baseline justify-between mb-3">
                 <span className="text-3xl font-bold tabular-nums">
@@ -287,8 +289,8 @@ export default function StatsPage() {
 
         {/* Who you actually go out with — counted in splits, not pesos. */}
         {companions.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg mb-3 font-bold">Who you split with</h2>
+          <section className="mb-6">
+            <h2 className="lab" style={{ marginBottom: '0.6rem' }}>Who you split with</h2>
             <div className="glass-panel flex-col gap-4" style={{ padding: '1.25rem 1rem' }}>
               {companions.map((c) => (
                 <OwesBar
@@ -306,8 +308,8 @@ export default function StatsPage() {
 
         {/* Who owes you most — custom animated bars. */}
         {topOwers.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg mb-3 font-bold">Who owes you most</h2>
+          <section className="mb-6">
+            <h2 className="lab" style={{ marginBottom: '0.6rem' }}>Who owes you most</h2>
             <div className="glass-panel flex-col gap-4" style={{ padding: '1.25rem 1rem' }}>
               {topOwers.map((item) => (
                 <OwesBar
@@ -322,8 +324,8 @@ export default function StatsPage() {
         )}
 
         {/* The running tab — tappable leaderboard with per-bill drill-down. */}
-        <section className="mb-10">
-          <h2 className="text-lg mb-4 font-bold">The running tab</h2>
+        <section className="mb-7">
+          <h2 className="lab" style={{ marginBottom: '0.7rem' }}>The running tab</h2>
 
           {owers.length === 0 ? (
             <div className="empty-state">
@@ -444,8 +446,8 @@ export default function StatsPage() {
 
         {/* All-time spending — settled or not, yourself included. */}
         {allTime.length > 0 && (
-          <section className="mb-10">
-            <h2 className="text-lg mb-1 font-bold">All-time spending</h2>
+          <section className="mb-7">
+            <h2 className="lab" style={{ marginBottom: '0.4rem' }}>All-time spending</h2>
             <p className="text-sm text-secondary mb-3">
               Everything ever billed — paid or not — so you can see who splurges hardest.
             </p>

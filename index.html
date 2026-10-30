@@ -7,7 +7,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#0A0A0C" />
+    <meta name="theme-color" content="#0B0B0D" />
     <meta name="description" content="Splurge — scan receipts, split bills, and track who owes you. A fast, offline-ready PWA." />
 
     <!-- iOS standalone web app -->
@@ -16,10 +16,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Splurge" />
 
-    <!-- No webfont. The stack resolves to San Francisco on iOS — which already
-         ships the optical sizing and tracking tables a display face would be
-         loaded for — and to Inter or the platform UI font elsewhere. That is
-         two fewer network requests on a cold, offline-first launch. -->
+    <!-- Geist and Geist Mono, the same pair as koala3353.github.io/portfolio.
+         The mono face is doing real work here, not decoration: every micro-
+         label in the app is set in it, and that voice change is most of what
+         makes the reference look the way it does. Loaded with display=swap so
+         it never blocks render, and cached by the service worker after the
+         first visit; the system fallbacks behind both are metrically close
+         enough that nothing moves when it lands. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
 
     <title>Splurge — Split Bills</title>
     <style>
@@ -30,11 +39,11 @@
       }
       /* Pre-hydration backdrop, so the launch flash matches whichever theme
          is about to render rather than always being dark. */
-      html { background-color: #0A0A0C; }
+      html { background-color: #0B0B0D; }
       @media (prefers-color-scheme: light) {
-        html:not([data-theme='dark']) { background-color: #F5F6F8; }
+        html:not([data-theme='dark']) { background-color: #FAFAF9; }
       }
-      html[data-theme='light'] { background-color: #F5F6F8; }
+      html[data-theme='light'] { background-color: #FAFAF9; }
     </style>
     <script>
       // Runs before first paint: a saved "force light"/"force dark" choice has
@@ -49,7 +58,7 @@
           var dark = t === 'dark' || (t !== 'light' &&
             window.matchMedia('(prefers-color-scheme: dark)').matches);
           document.querySelector('meta[name="theme-color"]')
-            .setAttribute('content', dark ? '#0A0A0C' : '#F5F6F8');
+            .setAttribute('content', dark ? '#0B0B0D' : '#FAFAF9');
         } catch (e) { /* private mode — fall through to the CSS default */ }
       })();
     </script>

@@ -5,7 +5,7 @@ export const THEMES = ['auto', 'light', 'dark'];
 
 // Matches the --bg-color of each mode, so the browser chrome and the
 // pre-paint backdrop agree with the app instead of flashing against it.
-const BAR = { light: '#F5F6F8', dark: '#0A0A0C' };
+const BAR = { light: '#FAFAF9', dark: '#0B0B0D' };
 
 const read = () => {
   try {

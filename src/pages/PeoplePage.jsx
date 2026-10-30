@@ -202,7 +202,7 @@ export default function PeoplePage() {
         {activeTab === 'friends' && (
           <>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Who&apos;s paid?</h3>
+              <span className="lab">Who&apos;s paid?</span>
               <div className="flex items-center gap-3">
                 {owingCount > 0 && (
                   <button
@@ -258,7 +258,7 @@ export default function PeoplePage() {
                 <p className="text-sm">No friends match &ldquo;{search}&rdquo;.</p>
               </div>
             ) : (
-              <ul className="SwipeableList">
+              <ul className="SwipeableList list-dense">
                 {visibleFriends.map((person) => {
                   const balance = balances[person.id] || 0;
                   const isSettled = balance <= 0.005;
@@ -269,28 +269,31 @@ export default function PeoplePage() {
                       onDelete={() => removePerson(person.id)}
                     >
                       <div
-                        className="card p-0 overflow-hidden"
-                        style={{ padding: 0, marginBottom: 0 }}
+                        className="overflow-hidden"
+                        style={{ padding: 0, marginBottom: 0, background: 'var(--bg-color)' }}
                       >
                         <div
-                          className="flex justify-between items-center p-4 cursor-pointer card-hover pressable"
-                          style={{ opacity: isSettled ? 0.6 : 1 }}
+                          className="flex justify-between items-center cursor-pointer pressable"
+                          style={{ opacity: isSettled ? 0.55 : 1, padding: '0.625rem 0' }}
                           onClick={() => openDetail(person.id)}
                         >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="avatar bg-accent flex-shrink-0">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div
+                              className="avatar bg-accent flex-shrink-0"
+                              style={{ width: 30, height: 30, borderRadius: 'var(--radius-sm)', fontSize: '0.7rem' }}
+                            >
                               {initialsOf(person.name)}
                             </div>
                             <div className="min-w-0">
-                              <h3 className="font-semibold text-lg leading-tight truncate">
+                              <h3 className="font-medium leading-tight truncate" style={{ fontSize: '0.92rem' }}>
                                 {person.name}
                               </h3>
                               <div
-                                className="flex items-center gap-1 text-xs font-medium mt-1"
+                                className="flex items-center gap-1 mt-1 lab"
                                 style={{
                                   color: isSettled
                                     ? 'var(--success)'
-                                    : 'var(--text-secondary)',
+                                    : 'var(--text-tertiary)',
                                 }}
                               >
                                 {isSettled ? (
@@ -304,16 +307,17 @@ export default function PeoplePage() {
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <div
-                              className="font-bold text-lg leading-tight"
+                              className="font-semibold leading-tight tabular-nums"
                               style={{
+                                fontSize: '0.92rem',
                                 color: isSettled
-                                  ? 'var(--text-secondary)'
+                                  ? 'var(--text-tertiary)'
                                   : 'var(--text-primary)',
                               }}
                             >
                               {formatCurrency(balance > 0 ? balance : 0)}
                             </div>
-                            <ChevronRight size={16} className="text-secondary" />
+                            <ChevronRight size={15} className="text-tertiary" />
                           </div>
                         </div>
                       </div>
@@ -917,7 +921,7 @@ function PersonDetail({
         </div>
 
         {/* Log a payment */}
-        <h3 className="font-bold text-lg mb-3">Log a payment</h3>
+        <span className="lab" style={{ display: 'block', marginBottom: '0.6rem' }}>Log a payment</span>
         <div className="flex gap-2 mb-3">
           <button
             type="button"
@@ -963,7 +967,7 @@ function PersonDetail({
 
         {/* Their splits */}
         <div className="section-head">
-          <h3 className="font-bold text-lg">Their splits</h3>
+          <span className="lab">Their splits</span>
           <Pager label="splits" total={shares.length} state={sharePage} />
         </div>
         {shares.length === 0 ? (
@@ -996,7 +1000,7 @@ function PersonDetail({
         {payments.length > 0 && (
           <>
             <div className="section-head">
-              <h3 className="font-bold text-lg">Payments</h3>
+              <span className="lab">Payments</span>
               <Pager label="payments" total={payments.length} state={paymentPage} />
             </div>
             <div className="flex flex-col gap-2 mb-6">

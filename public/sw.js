@@ -1,4 +1,4 @@
-const CACHE_NAME = 'splurge-v7';
+const CACHE_NAME = 'splurge-v8';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

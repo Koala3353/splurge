@@ -14,19 +14,24 @@ const ratio = (a, b) => {
 };
 
 const THEMES = {
+  // Lifted from the portfolio at koala3353.github.io/portfolio so the two
+  // products read as the same person's work: zinc neutrals, one hot orange,
+  // dark ink on top of it.
   dark: {
-    bg: '#0A0A0C', elevated: '#121318',
-    primary: '#EDEDEF', secondary: '#A9AAB4', tertiary: '#8A8F98',
-    accent: '#8B95E8', accentBright: '#A7AFF0', onAccent: '#0A0A0C',
-    success: '#5FD39A', danger: '#FF8B7A',
-    successFill: '#5FD39A', dangerFill: '#FF8B7A', onFill: '#0A0A0C',
+    bg: '#0B0B0D', elevated: '#131316',
+    primary: '#ECECEE', secondary: '#A1A1AA', tertiary: '#8A8A93',
+    accent: '#F97316', accentBright: '#FB923C', onAccent: '#0B0B0D',
+    success: '#4ADE80', danger: '#FB7185',
+    successFill: '#4ADE80', dangerFill: '#FB7185', onFill: '#0B0B0D',
   },
+  // Orange-500 only reaches 3.0:1 on white, so the light mode steps down to
+  // orange-700 and flips the fill foreground to white.
   light: {
-    bg: '#F5F6F8', elevated: '#FFFFFF',
-    primary: '#14161A', secondary: '#4C525C', tertiary: '#767D89',
-    accent: '#4A55B8', accentBright: '#3B46A3', onAccent: '#FFFFFF',
-    success: '#137B52', danger: '#C0392B',
-    successFill: '#137B52', dangerFill: '#C0392B', onFill: '#FFFFFF',
+    bg: '#FAFAF9', elevated: '#FFFFFF',
+    primary: '#18181B', secondary: '#52525B', tertiary: '#71717A',
+    accent: '#C2410C', accentBright: '#9A3412', onAccent: '#FFFFFF',
+    success: '#15803D', danger: '#BE123C',
+    successFill: '#15803D', dangerFill: '#BE123C', onFill: '#FFFFFF',
   },
 };
 

@@ -22,40 +22,42 @@
      re-checks all 32 shipping pairs in both modes.
      --------------------------------------------------------------------- */
 
-  /* Neutrals — never pure black. #000 smears on OLED during scroll. */
-  --slate-950: #050507;
-  --slate-900: #0A0A0C;      /* dark base                                   */
-  --slate-850: #121318;      /* dark elevated                               */
-  --slate-100: #EDEDEF;      /* dark primary text          16.9:1 on 900    */
-  --slate-300: #A9AAB4;      /* dark secondary text         8.6:1           */
-  --slate-400: #8A8F98;      /* dark tertiary / labels      6.1:1           */
+  /* Zinc neutrals. Near-black, never pure #000 — it smears on OLED during
+     scroll, and the portfolio these are taken from doesn't use it either. */
+  --zinc-950: #0B0B0D;       /* dark base                                   */
+  --zinc-900: #131316;       /* dark elevated                               */
+  --zinc-850: #1B1B1F;       /* dark raised                                 */
+  --zinc-800: #27272C;       /* dark hairline                               */
+  --zinc-100: #ECECEE;       /* dark primary text          16.7:1 on 950    */
+  --zinc-400: #A1A1AA;       /* dark secondary text         7.7:1           */
+  --zinc-500: #8A8A93;       /* dark tertiary / labels      5.8:1           */
 
-  --porcelain-50: #FFFFFF;   /* light elevated                              */
-  --porcelain-100: #F5F6F8;  /* light base                                  */
-  --porcelain-900: #14161A;  /* light primary text         16.8:1 on 100    */
-  --porcelain-700: #4C525C;  /* light secondary text        7.3:1           */
-  --porcelain-500: #767D89;  /* light tertiary / labels     3.8:1           */
+  --paper-50: #FFFFFF;       /* light elevated                              */
+  --paper-100: #FAFAF9;      /* light base                                  */
+  --paper-200: #E4E4E7;      /* light hairline                              */
+  --paper-900: #18181B;      /* light primary text         17.0:1 on 100    */
+  --paper-600: #52525B;      /* light secondary text        7.4:1           */
+  --paper-500: #71717A;      /* light tertiary / labels     4.6:1           */
 
-  /* Indigo. Two values per role because an accent that is legible on a dark
-     background is, by definition, not legible on a light one. */
-  --indigo-300: #A7AFF0;     /* dark focus ring             9.5:1           */
-  --indigo-400: #8B95E8;     /* dark accent                 7.1:1           */
-  --indigo-500: #5E6AD2;     /* shared mid — gradients, washes              */
-  --indigo-600: #4A55B8;     /* light accent                5.9:1           */
-  --indigo-700: #3B46A3;     /* light focus ring            7.5:1           */
+  /* One hot orange, straight off the portfolio. It carries dark ink, not
+     white: orange-500 under white text is 2.3:1. */
+  --orange-400: #FB923C;     /* dark focus ring             8.7:1           */
+  --orange-500: #F97316;     /* dark accent                 7.0:1           */
+  --orange-700: #C2410C;     /* light accent                5.0:1           */
+  --orange-800: #9A3412;     /* light focus ring            7.0:1           */
 
   /* Money status. One hue per state, and neither is ever chrome. */
-  --mint-400: #5FD39A;       /* settled, on dark           10.6:1           */
-  --mint-700: #137B52;       /* settled, on light           4.9:1           */
-  --coral-400: #FF8B7A;      /* owed, on dark               8.7:1           */
-  --coral-700: #C0392B;      /* owed, on light              5.0:1           */
+  --green-400: #4ADE80;      /* settled, on dark           11.3:1           */
+  --green-700: #15803D;      /* settled, on light           4.8:1           */
+  --rose-400: #FB7185;       /* owed, on dark               7.3:1           */
+  --rose-700: #BE123C;       /* owed, on light              6.0:1           */
 
   /* Tint channels, for rgba() surfaces and washes. */
-  --tint-ink: 10, 10, 12;
+  --tint-ink: 11, 11, 13;
   --tint-paper: 255, 255, 255;
-  --tint-indigo: 94, 106, 210;
-  --tint-mint: 95, 211, 154;
-  --tint-coral: 255, 139, 122;
+  --tint-orange: 249, 115, 22;
+  --tint-green: 74, 222, 128;
+  --tint-rose: 251, 113, 133;
 
   /* ---------------------------------------------------------------------
      LAYER 2 — SEMANTIC, DARK. What a colour MEANS. Components use only
@@ -65,64 +67,69 @@
      nav, focus, brand — and never touches a money figure. Amounts stay
      neutral, turn mint when settled and coral when owed. One colour, one job.
      --------------------------------------------------------------------- */
-  --bg-color: var(--slate-900);
-  --bg-deep: var(--slate-950);
-  --bg-elevated: var(--slate-850);
-  --text-primary: var(--slate-100);
-  --text-secondary: var(--slate-300);
-  --text-tertiary: var(--slate-400);
+  --bg-color: var(--zinc-950);
+  --bg-deep: var(--zinc-950);
+  --bg-elevated: var(--zinc-900);
+  --text-primary: var(--zinc-100);
+  --text-secondary: var(--zinc-400);
+  --text-tertiary: var(--zinc-500);
 
-  --accent-color: var(--indigo-400);
-  --accent-bright: var(--indigo-300);
-  --accent-hover: var(--indigo-300);
+  --accent-color: var(--orange-500);
+  --accent-bright: var(--orange-400);
+  --accent-hover: var(--orange-400);
   /* Indigo-400 is light enough to need dark ink on top — 7.1:1 this way,
      2.9:1 with white. The filled-button foreground is always a token. */
-  --on-accent: var(--slate-900);
+  --on-accent: var(--zinc-950);
 
-  --success: var(--mint-400);
-  --danger: var(--coral-400);
-  --danger-fill: var(--coral-400);
-  --on-danger-fill: var(--slate-900);
-  --warning: var(--indigo-300);
+  --success: var(--green-400);
+  --danger: var(--rose-400);
+  --danger-fill: var(--rose-400);
+  --on-danger-fill: var(--zinc-950);
+  --warning: var(--orange-400);
 
-  /* Glass. Neutral white at low alpha — NOT a tinted surface. Tinting the
-     glass itself is what makes blur read as a filter instead of a material;
-     the colour belongs in --wash, behind it. */
-  --glass-bg: rgba(var(--tint-paper), 0.085);
-  --glass-bg-strong: rgba(var(--tint-paper), 0.12);
-  --glass-border: rgba(var(--tint-paper), 0.14);
-  --glass-border-bright: rgba(var(--tint-paper), 0.18);
-  --glass-highlight: rgba(var(--tint-paper), 0.10);
-  --scrim: rgba(var(--tint-ink), 0.62);
+  /* Surfaces are flat and separated by a hairline, not by translucency.
+     The token names are kept so no component had to change, but there is no
+     glass here any more: the reference this palette comes from builds depth
+     from a 1px border and a value step, which stays legible at any size and
+     costs nothing to composite. */
+  --glass-bg: var(--zinc-900);
+  --glass-bg-strong: rgba(19, 19, 22, 0.94);  /* floating chrome only */
+  --glass-border: var(--zinc-800);
+  --glass-border-bright: #34343A;
+  --glass-highlight: transparent;
+  --scrim: rgba(var(--tint-ink), 0.72);
+  --surface-raised: var(--zinc-850);
 
-  /* The ambient wash the glass has something to blur. */
-  --wash-a: rgba(var(--tint-indigo), 0.42);
-  --wash-b: rgba(126, 96, 214, 0.30);
+  /* No ambient wash. A flat near-black is the point — a coloured glow behind
+     everything is what the previous concept used to make blur legible, and
+     without blur it is just a stain. */
+  --wash-a: transparent;
+  --wash-b: transparent;
 
-  --gradient-primary: linear-gradient(135deg, var(--indigo-500) 0%, var(--indigo-400) 100%);
-  --gradient-danger: linear-gradient(135deg, #D4564A, var(--coral-400));
-  --gradient-success: linear-gradient(135deg, var(--mint-700), var(--mint-400));
-  --gradient-data: linear-gradient(90deg, var(--slate-400), var(--slate-300));
+  --gradient-primary: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-500) 100%);
+  --gradient-danger: linear-gradient(135deg, #D4564A, var(--rose-400));
+  --gradient-success: linear-gradient(135deg, var(--green-700), var(--green-400));
+  --gradient-data: linear-gradient(90deg, var(--zinc-500), var(--zinc-400));
 
   /* ---------------------------------------------------------------------
      LAYER 3 — COMPONENT. Soft fills and hairlines JSX inline styles reach
      for, so no component has to write a raw rgba() again.
      --------------------------------------------------------------------- */
-  --fill-accent-soft: rgba(var(--tint-indigo), 0.20);
-  --fill-success-soft: rgba(var(--tint-mint), 0.14);
-  --fill-danger-soft: rgba(var(--tint-coral), 0.14);
-  --border-success: rgba(var(--tint-mint), 0.45);
-  --border-danger: rgba(var(--tint-coral), 0.45);
-  --border-warning: rgba(var(--tint-indigo), 0.40);
+  --fill-accent-soft: rgba(var(--tint-orange), 0.20);
+  --fill-success-soft: rgba(var(--tint-green), 0.14);
+  --fill-danger-soft: rgba(var(--tint-rose), 0.14);
+  --border-success: rgba(var(--tint-green), 0.45);
+  --border-danger: rgba(var(--tint-rose), 0.45);
+  --border-warning: rgba(var(--tint-orange), 0.40);
   --glow-danger: none;
 
   /* Depth. Neutral only — a coloured halo under a button is the single most
      reliable tell of a generated interface, and Apple never ships one.
      Layered, long and soft rather than one hard drop. */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.26), 0 12px 32px rgba(0, 0, 0, 0.30);
-  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.40);
-  --shadow-float: 0 10px 34px rgba(0, 0, 0, 0.52), 0 2px 8px rgba(0, 0, 0, 0.30);
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-glass: none;
+  --shadow-float: 0 8px 28px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
   --shadow-glow: var(--shadow-md);
   --shadow-danger: var(--shadow-md);
   --shadow-success: var(--shadow-md);
@@ -131,27 +138,40 @@
      NON-COLOUR TOKENS — identical in both modes.
      --------------------------------------------------------------------- */
 
-  /* On iOS this resolves to San Francisco, which already ships optical
-     sizing and tracking tables; Inter is the fallback everywhere else, and
-     is the pairing the design database gives for glass interfaces. */
-  --font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* Geist and Geist Mono, the same pair the portfolio uses, so the two
+     products are recognisably the same hand. System stacks sit behind both:
+     if the webfont hasn't landed the layout is already correct, because the
+     fallback metrics are close and nothing is sized off the face. */
+  --font-family: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
   --font-display: var(--font-family);
 
   /* Tracking is size-specific — one letter-spacing value is wrong somewhere.
-     Large type reads too loose as it grows, small type too tight. */
-  --track-display: -0.035em;
-  --track-title: -0.022em;
-  --track-body: -0.005em;
-  --track-label: 0.085em;
+     Large type reads too loose as it grows, small type too tight, and the
+     mono micro-labels want the opposite treatment from either. */
+  --track-display: -0.045em;
+  --track-title: -0.025em;
+  --track-body: -0.008em;
+  --track-label: 0.14em;
 
-  --glass-blur: 40px;
-  --glass-saturate: 180%;
+  /* Blur survives only on floating chrome, where content passes underneath
+     and the bar has to stay readable over whatever is behind it. Every other
+     surface is opaque. */
+  --glass-blur: 20px;
+  --glass-saturate: 140%;
 
-  --radius-sm: 0.625rem;   /* 10px — chips, inputs                          */
-  --radius-md: 1rem;       /* 16px — rows, small cards                      */
-  --radius-lg: 1.25rem;    /* 20px — panels                                 */
-  --radius-xl: 1.5rem;     /* 24px — hero cards, sheets                     */
+  /* Tighter corners than the previous concept. A 24px radius on a dense list
+     reads as a stack of lozenges; the reference keeps panels near 10px and
+     saves the full pill for the things that are genuinely pill-shaped. */
+  --radius-sm: 0.5rem;     /*  8px — chips, inputs                          */
+  --radius-md: 0.625rem;   /* 10px — rows, small cards                      */
+  --radius-lg: 0.75rem;    /* 12px — panels                                 */
+  --radius-xl: 1rem;       /* 16px — sheets                                 */
   --radius-full: 9999px;
+
+  /* One gutter token, so changing the app's breathing room is a single edit
+     rather than a search for every 1.5rem in the file. */
+  --gutter: 1rem;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -181,53 +201,51 @@
    ========================================================================== */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
-    --bg-color: var(--porcelain-100);
-    --bg-deep: var(--porcelain-100);
-    --bg-elevated: var(--porcelain-50);
-    --text-primary: var(--porcelain-900);
-    --text-secondary: var(--porcelain-700);
-    --text-tertiary: var(--porcelain-500);
+    --bg-color: var(--paper-100);
+    --bg-deep: var(--paper-100);
+    --bg-elevated: var(--paper-50);
+    --text-primary: var(--paper-900);
+    --text-secondary: var(--paper-600);
+    --text-tertiary: var(--paper-500);
 
-    --accent-color: var(--indigo-600);
-    --accent-bright: var(--indigo-700);
-    --accent-hover: var(--indigo-700);
-    --on-accent: var(--porcelain-50);
+    --accent-color: var(--orange-700);
+    --accent-bright: var(--orange-800);
+    --accent-hover: var(--orange-800);
+    --on-accent: var(--paper-50);
 
-    --success: var(--mint-700);
-    --danger: var(--coral-700);
-    --danger-fill: var(--coral-700);
-    --on-danger-fill: var(--porcelain-50);
-    --warning: var(--indigo-600);
+    --success: var(--green-700);
+    --danger: var(--rose-700);
+    --danger-fill: var(--rose-700);
+    --on-danger-fill: var(--paper-50);
+    --warning: var(--orange-700);
 
-    /* Light glass is white at HIGH alpha over a tinted page. Never stack a
-       light translucent surface on another light translucent surface —
-       legibility collapses. */
-    --glass-bg: rgba(var(--tint-paper), 0.62);
-    --glass-bg-strong: rgba(var(--tint-paper), 0.80);
-    --glass-border: rgba(var(--tint-paper), 0.80);
-    --glass-border-bright: rgba(var(--tint-paper), 0.95);
-    --glass-highlight: rgba(var(--tint-paper), 0.90);
-    --scrim: rgba(20, 22, 26, 0.26);
+    --glass-bg: var(--paper-50);
+    --glass-bg-strong: rgba(255, 255, 255, 0.94);
+    --glass-border: var(--paper-200);
+    --glass-border-bright: #D4D4D8;
+    --glass-highlight: transparent;
+    --scrim: rgba(24, 24, 27, 0.32);
+    --surface-raised: var(--paper-100);
 
-    --wash-a: rgba(var(--tint-indigo), 0.26);
-    --wash-b: rgba(126, 96, 214, 0.20);
+    --wash-a: transparent;
+    --wash-b: transparent;
 
-    --gradient-primary: linear-gradient(135deg, var(--indigo-700) 0%, var(--indigo-600) 100%);
-    --gradient-danger: linear-gradient(135deg, #9E2F23, var(--coral-700));
-    --gradient-success: linear-gradient(135deg, #0C5E3E, var(--mint-700));
-    --gradient-data: linear-gradient(90deg, var(--porcelain-500), var(--porcelain-700));
+    --gradient-primary: linear-gradient(135deg, var(--orange-800) 0%, var(--orange-700) 100%);
+    --gradient-danger: linear-gradient(135deg, #9E2F23, var(--rose-700));
+    --gradient-success: linear-gradient(135deg, #0C5E3E, var(--green-700));
+    --gradient-data: linear-gradient(90deg, var(--paper-500), var(--paper-600));
 
-    --fill-accent-soft: rgba(var(--tint-indigo), 0.12);
-    --fill-success-soft: rgba(19, 123, 82, 0.12);
-    --fill-danger-soft: rgba(192, 57, 43, 0.10);
-    --border-success: rgba(19, 123, 82, 0.35);
-    --border-danger: rgba(192, 57, 43, 0.30);
-    --border-warning: rgba(var(--tint-indigo), 0.30);
+    --fill-accent-soft: rgba(var(--tint-orange), 0.12);
+    --fill-success-soft: rgba(21, 128, 61, 0.12);
+    --fill-danger-soft: rgba(190, 18, 60, 0.10);
+    --border-success: rgba(21, 128, 61, 0.35);
+    --border-danger: rgba(190, 18, 60, 0.30);
+    --border-warning: rgba(var(--tint-orange), 0.30);
 
-    --shadow-sm: 0 1px 2px rgba(16, 20, 28, 0.06);
-    --shadow-md: 0 4px 12px rgba(16, 20, 28, 0.06), 0 12px 32px rgba(16, 20, 28, 0.08);
-    --shadow-glass: 0 8px 32px rgba(16, 20, 28, 0.10);
-    --shadow-float: 0 10px 34px rgba(16, 20, 28, 0.14), 0 2px 8px rgba(16, 20, 28, 0.06);
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-glass: none;
+    --shadow-float: 0 8px 28px rgba(24, 24, 27, 0.16), 0 2px 6px rgba(24, 24, 27, 0.08);
     --shadow-glow: var(--shadow-md);
     --shadow-danger: var(--shadow-md);
     --shadow-success: var(--shadow-md);
@@ -238,50 +256,51 @@
    deliberate — a CSS custom property set inside a media query cannot be
    re-applied from outside one. */
 :root[data-theme='light'] {
-  --bg-color: var(--porcelain-100);
-  --bg-deep: var(--porcelain-100);
-  --bg-elevated: var(--porcelain-50);
-  --text-primary: var(--porcelain-900);
-  --text-secondary: var(--porcelain-700);
-  --text-tertiary: var(--porcelain-500);
+  --bg-color: var(--paper-100);
+  --bg-deep: var(--paper-100);
+  --bg-elevated: var(--paper-50);
+  --text-primary: var(--paper-900);
+  --text-secondary: var(--paper-600);
+  --text-tertiary: var(--paper-500);
 
-  --accent-color: var(--indigo-600);
-  --accent-bright: var(--indigo-700);
-  --accent-hover: var(--indigo-700);
-  --on-accent: var(--porcelain-50);
+  --accent-color: var(--orange-700);
+  --accent-bright: var(--orange-800);
+  --accent-hover: var(--orange-800);
+  --on-accent: var(--paper-50);
 
-  --success: var(--mint-700);
-  --danger: var(--coral-700);
-  --danger-fill: var(--coral-700);
-  --on-danger-fill: var(--porcelain-50);
-  --warning: var(--indigo-600);
+  --success: var(--green-700);
+  --danger: var(--rose-700);
+  --danger-fill: var(--rose-700);
+  --on-danger-fill: var(--paper-50);
+  --warning: var(--orange-700);
 
-  --glass-bg: rgba(var(--tint-paper), 0.62);
-  --glass-bg-strong: rgba(var(--tint-paper), 0.80);
-  --glass-border: rgba(var(--tint-paper), 0.80);
-  --glass-border-bright: rgba(var(--tint-paper), 0.95);
-  --glass-highlight: rgba(var(--tint-paper), 0.90);
-  --scrim: rgba(20, 22, 26, 0.26);
+  --glass-bg: var(--paper-50);
+  --glass-bg-strong: rgba(255, 255, 255, 0.94);
+  --glass-border: var(--paper-200);
+  --glass-border-bright: #D4D4D8;
+  --glass-highlight: transparent;
+  --scrim: rgba(24, 24, 27, 0.32);
+  --surface-raised: var(--paper-100);
 
-  --wash-a: rgba(var(--tint-indigo), 0.26);
-  --wash-b: rgba(126, 96, 214, 0.20);
+  --wash-a: transparent;
+  --wash-b: transparent;
 
-  --gradient-primary: linear-gradient(135deg, var(--indigo-700) 0%, var(--indigo-600) 100%);
-  --gradient-danger: linear-gradient(135deg, #9E2F23, var(--coral-700));
-  --gradient-success: linear-gradient(135deg, #0C5E3E, var(--mint-700));
-  --gradient-data: linear-gradient(90deg, var(--porcelain-500), var(--porcelain-700));
+  --gradient-primary: linear-gradient(135deg, var(--orange-800) 0%, var(--orange-700) 100%);
+  --gradient-danger: linear-gradient(135deg, #9E2F23, var(--rose-700));
+  --gradient-success: linear-gradient(135deg, #0C5E3E, var(--green-700));
+  --gradient-data: linear-gradient(90deg, var(--paper-500), var(--paper-600));
 
-  --fill-accent-soft: rgba(var(--tint-indigo), 0.12);
-  --fill-success-soft: rgba(19, 123, 82, 0.12);
-  --fill-danger-soft: rgba(192, 57, 43, 0.10);
-  --border-success: rgba(19, 123, 82, 0.35);
-  --border-danger: rgba(192, 57, 43, 0.30);
-  --border-warning: rgba(var(--tint-indigo), 0.30);
+  --fill-accent-soft: rgba(var(--tint-orange), 0.12);
+  --fill-success-soft: rgba(21, 128, 61, 0.12);
+  --fill-danger-soft: rgba(190, 18, 60, 0.10);
+  --border-success: rgba(21, 128, 61, 0.35);
+  --border-danger: rgba(190, 18, 60, 0.30);
+  --border-warning: rgba(var(--tint-orange), 0.30);
 
-  --shadow-sm: 0 1px 2px rgba(16, 20, 28, 0.06);
-  --shadow-md: 0 4px 12px rgba(16, 20, 28, 0.06), 0 12px 32px rgba(16, 20, 28, 0.08);
-  --shadow-glass: 0 8px 32px rgba(16, 20, 28, 0.10);
-  --shadow-float: 0 10px 34px rgba(16, 20, 28, 0.14), 0 2px 8px rgba(16, 20, 28, 0.06);
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-glass: none;
+  --shadow-float: 0 8px 28px rgba(24, 24, 27, 0.16), 0 2px 6px rgba(24, 24, 27, 0.08);
   --shadow-glow: var(--shadow-md);
   --shadow-danger: var(--shadow-md);
   --shadow-success: var(--shadow-md);
@@ -375,11 +394,8 @@ p {
 /* Glassmorphism Utilities */
 .glass-panel {
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-glass), inset 0 1px 0 var(--glass-highlight);
 }
 
 /* Buttons */
@@ -482,7 +498,7 @@ input, select {
 input:focus, select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--tint-indigo), 0.32);
+  box-shadow: 0 0 0 3px rgba(var(--tint-orange), 0.32);
 }
 
 /* Animations */
@@ -733,19 +749,19 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   overscroll-behavior: contain;
   /* Clear the status bar / notch on header-less pages (standalone PWA uses a
      translucent status bar, so content would otherwise sit underneath it). */
-  padding: calc(1.5rem + env(safe-area-inset-top)) 1.5rem var(--tabbar-clearance);
+  padding: calc(1rem + env(safe-area-inset-top)) var(--gutter) var(--tabbar-clearance);
   scroll-timeline-name: --main-scroll;
 }
 
 /* When a header is present (e.g. New Bill) it already clears the safe area,
    so the scroll body below it doesn't need the extra top inset. */
 .app-header + .app-main {
-  padding-top: 1.5rem;
+  padding-top: 1rem;
 }
 
 .app-header {
   flex-shrink: 0;
-  padding: calc(1rem + env(safe-area-inset-top)) 1.5rem 1rem 1.5rem;
+  padding: calc(0.75rem + env(safe-area-inset-top)) var(--gutter) 0.75rem;
   background-color: var(--glass-bg-strong);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
@@ -1280,7 +1296,7 @@ dialog[open] {
    bubble, accent-tinted because it's yours, squared at the corner it sends
    from. Reading it here is the whole point of the sheet. */
 .share-preview {
-  background: linear-gradient(180deg, var(--fill-accent-soft), rgba(var(--tint-indigo), 0.08));
+  background: linear-gradient(180deg, var(--fill-accent-soft), rgba(var(--tint-orange), 0.08));
   border: 1px solid var(--border-warning);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   padding: 0.9rem 1rem;
@@ -1526,40 +1542,38 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
    not the main content. */
 .suggestion-row {
   display: flex;
-  gap: 0.625rem;
+  gap: 0.375rem;
   overflow-x: auto;
   scroll-snap-type: x proximity;
-  /* Bleed to the screen edges so the last chip is visibly cut off, which is
-     what tells you the row scrolls. A row that ends flush looks complete. */
-  margin: 0 -1.5rem 0.5rem;
-  padding: 0.25rem 1.5rem 0.75rem;
+  /* Bleed to the gutters so the last chip is visibly cut off — that overhang
+     is what tells you the row scrolls. A row ending flush looks complete. */
+  margin: 0 calc(var(--gutter) * -1) 0.5rem;
+  padding: 0.125rem var(--gutter) 0.5rem;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 
 .suggestion-row::-webkit-scrollbar { display: none; }
 
+/* Two lines, like the object pills in the reference: what it is, then what
+   kind of thing it is, in the mono voice. */
 .suggestion-chip {
   flex: 0 0 auto;
   scroll-snap-align: start;
-  width: 10.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.75rem 0.875rem;
+  gap: 0.15rem;
+  padding: 0.5rem 0.7rem;
   text-align: left;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-sm);
 }
 
 .suggestion-chip-top {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 0.3rem;
   color: var(--accent-color);
   min-width: 0;
 }
@@ -1570,25 +1584,31 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
   letter-spacing: var(--track-body);
   color: var(--text-primary);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .suggestion-chip-amount {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 0.86rem;
+  font-weight: 600;
   letter-spacing: var(--track-title);
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
-/* The reason wraps to two lines rather than truncating — "you usually split
-   this on weekday evenings" is the entire justification for the chip being
-   there, so cutting it off defeats the point. */
+/* The reason is the entire justification for the chip being there, so it gets
+   the mono label voice and one line — truncated, because at this density a
+   wrapping chip would set the height of the whole row. */
 .suggestion-chip-reason {
-  font-size: 0.68rem;
-  line-height: 1.35;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
   color: var(--text-tertiary);
+  white-space: nowrap;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- Quick split sheet ---------------------------------------------------- */
@@ -1791,3 +1811,80 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 @media (prefers-reduced-motion: reduce) {
   .month-bar, .rate-fill { transition: none; }
 }
+
+/* --- Micro-labels ---------------------------------------------------------
+   Mono, uppercase, widely tracked. The strongest single signal in the
+   reference: a small label in a different voice from the content reads as
+   annotation, instead of as more content competing for the same attention. */
+.lab,
+.app-main .uppercase {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Colour is set separately from the voice above, because a label sitting on a
+   filled accent surface must take that surface's foreground. Setting it in the
+   rule above turned every label on the orange tile into grey-on-orange. */
+.lab { color: var(--text-tertiary); }
+
+.text-on-accent .lab,
+.text-on-accent .uppercase,
+.gradient-primary .lab,
+.gradient-primary .uppercase,
+.bg-accent .uppercase {
+  color: inherit;
+  opacity: 0.78;
+}
+
+/* --- Dense list -----------------------------------------------------------
+   Rows separated by a hairline rather than floating in their own cards. A
+   card per row spends roughly 20px of vertical space on margin and radius to
+   say "this is a separate thing", which a 1px rule says in one pixel. */
+.list-dense {
+  list-style: none;
+  border-top: 1px solid var(--glass-border);
+}
+
+.list-dense > li { border-bottom: 1px solid var(--glass-border); }
+
+.row-dense {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0;
+  width: 100%;
+  text-align: left;
+}
+
+/* --- Stat strip -----------------------------------------------------------
+   Three figures sharing one rule instead of three cards, so they fit beside
+   the balance rather than pushing the list below the fold. */
+.stat-strip {
+  display: flex;
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 0.6rem;
+}
+
+.stat-strip > div { flex: 1; min-width: 0; }
+
+.stat-strip > div + div {
+  border-left: 1px solid var(--glass-border);
+  padding-left: 0.7rem;
+}
+
+.stat-strip b {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--track-title);
+}
+
+/* Utility for the tertiary colour, which the dense rows reach for. */
+.text-tertiary { color: var(--text-tertiary); }
