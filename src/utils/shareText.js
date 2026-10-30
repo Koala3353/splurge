@@ -1,13 +1,22 @@
 // Every string here gets pasted into a real group chat, so the voice stays
-// plain: no app signature, no filler pleasantries, no em-dash asides. Read each
-// one back as if a friend typed it on their phone — if it sounds composed, it's
+// plain: no app signature, no filler pleasantries, no em-dashes. Read each one
+// back as if a friend typed it on their phone — if it sounds composed, it's
 // wrong. Shape comes from the share sheet's options, which persist between sends.
+//
+// Three habits in particular make a message read as machine-written, and all
+// three are avoided here:
+//   1. Narrating a status instead of asking. "You're at ₱800 across 3 splits"
+//      is a dashboard reading itself aloud. A person asks for the money.
+//   2. A colon-header over every block. One list needs no label at all; two
+//      need the shortest possible one.
+//   3. Explaining its own arithmetic. "That's after the ₱205 you already sent"
+//      is the app defending its maths to someone who never doubted it.
 //
 // One rule drives most of the wording below: the reader has no app and no
 // context. Every number has to say what it is, because a bare "₱800 (₱205 paid)"
 // reads as if the ₱205 were still inside the ₱800 when it has already come off.
 
-import { formatCurrency } from './format';
+import { formatCurrency } from './format.js';
 
 export const DEFAULT_SHARE_OPTIONS = {
   detail: 'bills',      // 'summary' (totals only) | 'bills' (per split) | 'items' (per line)
@@ -100,21 +109,27 @@ export function buildPersonRequest({
   const name = person?.name || 'there';
 
   if (num(amount) <= 0.005) {
-    return o.greeting ? `Hey ${name}, you're all settled up.` : "You're all settled up.";
+    return o.greeting ? `Hey ${name}, you're all settled.` : "You're all settled.";
   }
 
   const count = unpaid.length;
   // With a single split, naming it in the opener beats a one-row list below.
   const namesTheSplit = count === 1 && o.detail === 'bills';
 
-  // Only cite the split count when the list below actually backs it up.
+  // Ask, don't report. "whenever you can" is the softener people actually
+  // type; without it a bare amount reads as a demand, and with anything longer
+  // it reads as a letter. When a list follows, the lead ends on a colon and
+  // the list is its own label — a "Here's the breakdown:" header on top of a
+  // breakdown is the app talking about itself.
   const lead = namesTheSplit
-    ? `your share for ${billLabel(unpaid[0].bill, o)} is ${money(unpaid[0].remaining)}`
+    ? `${money(unpaid[0].remaining)} for ${billLabel(unpaid[0].bill, o)} whenever you can`
     : o.detail !== 'summary' && count > 1
-      ? `you're at ${money(amount)} across ${count} splits`
-      : `you're at ${money(amount)}`;
+      ? `${money(amount)} from ${count} splits`
+      : `${money(amount)} whenever you can`;
 
-  const blocks = [o.greeting ? `Hey ${name}, ${lead}.` : `${upperFirst(lead)}.`];
+  const opensAList = o.detail !== 'summary' && count > 1;
+  const punct = opensAList ? ':' : '.';
+  const blocks = [o.greeting ? `Hey ${name}, ${lead}${punct}` : `${upperFirst(lead)}${punct}`];
 
   if (o.detail !== 'summary' && count > 0 && !namesTheSplit) {
     blocks.push(unpaid.map((s) => {
@@ -124,15 +139,15 @@ export function buildPersonRequest({
     }).join('\n'));
   }
 
-  // Says plainly that the balance above is already net, which a bare
-  // "paid: ₱205" line does not.
+  // The point is that the number above is already net, not that the app did
+  // subtraction. Parenthesised and short, the way someone adds an aside.
   if (o.showPaid && num(paidTotal) > 0.005) {
-    blocks.push(`That's after the ${money(paidTotal)} you already sent.`);
+    blocks.push(`(${money(paidTotal)} you already sent is off this)`);
   }
 
   if (o.showHistory && settled.length > 0) {
     blocks.push([
-      'Already covered:',
+      'Sorted already:',
       ...settled.map((s) => `${billLabel(s.bill, o)}: ${money(s.amount)}`),
     ].join('\n'));
   }
@@ -151,7 +166,7 @@ export function buildGroupReminder({ rows = [], label, payInfo, options }) {
   const o = withDefaults(options);
 
   if (rows.length === 0) {
-    return label ? `Everyone in ${label} is settled up.` : "Everyone's settled up.";
+    return label ? `${label}, everyone's settled.` : "Everyone's settled.";
   }
 
   const total = rows.reduce((sum, r) => sum + num(r.amount), 0);
@@ -164,9 +179,11 @@ export function buildGroupReminder({ rows = [], label, payInfo, options }) {
   });
 
   return joinBlocks([
-    label ? `${label}, where we're at:` : "Where we're at:",
+    label ? `${label}, still open:` : 'Still open:',
     lines.join('\n'),
-    rows.length > 1 ? `Total: ${money(total)}` : null,
+    // "Total: ₱X" is a spreadsheet footer. A sentence is a person adding
+    // the numbers up out loud, and only earns its place past two rows.
+    rows.length > 2 ? `${money(total)} altogether.` : null,
     payLine(payInfo, o),
   ]);
 }
@@ -197,10 +214,10 @@ export function buildBillBreakdown({ bill, dues = {}, nameOf, payInfo, options }
     : [];
 
   return joinBlocks([
-    `${billLabel(bill, o)}, ${money(bill.total)}`,
+    `${billLabel(bill, o)} came to ${money(bill.total)}.`,
     items.length ? items.join('\n') : null,
     rows.length
-      ? [items.length ? 'The split:' : null,
+      ? [items.length ? 'Which works out as:' : null,
         // Inline, the organizer reads as "me"; starting a row, "Me".
         ...rows.map((r) => `${upperFirst(r.name)}: ${money(r.amount)}`)]
         .filter(Boolean).join('\n')
@@ -234,7 +251,7 @@ export function buildPaymentStatus({ bill, statusByPerson = {}, nameOf, meId, pa
   const unpaid = rows.filter((r) => !r.isPaid).sort((a, b) => b.remaining - a.remaining);
 
   if (unpaid.length === 0) {
-    return `${billLabel(bill, o)}: everyone's settled up.`;
+    return `${billLabel(bill, o)}, everyone's settled.`;
   }
 
   const lines = unpaid.map((r) => (
@@ -245,9 +262,11 @@ export function buildPaymentStatus({ bill, statusByPerson = {}, nameOf, meId, pa
   ));
 
   return joinBlocks([
-    `${billLabel(bill, o)}, still open:`,
+    `${billLabel(bill, o)}, still waiting on:`,
     lines.join('\n'),
-    o.showPaid && paid.length ? `Fully paid: ${listOf(paid.map((r) => r.name))}` : null,
+    o.showPaid && paid.length
+      ? `${upperFirst(listOf(paid.map((r) => r.name)))} ${paid.length > 1 ? 'are' : 'is'} sorted.`
+      : null,
     payLine(payInfo, o),
   ]);
 }

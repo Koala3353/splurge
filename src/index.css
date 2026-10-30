@@ -1674,3 +1674,120 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 @media (prefers-reduced-motion: reduce) {
   .toast { animation: none; }
 }
+
+/* --- Rapid-add confirmation chips -----------------------------------------
+   What just went in, so a pasted list is visibly accounted for rather than
+   disappearing into a closed sheet. */
+.added-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 1rem;
+  max-height: 7.5rem;
+  overflow-y: auto;
+}
+
+.added-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.625rem;
+  border-radius: var(--radius-full);
+  background: var(--fill-success-soft);
+  border: 1px solid var(--border-success);
+  color: var(--success);
+  font-size: 0.78rem;
+  font-weight: 500;
+  animation: chip-in var(--dur) var(--ease-out);
+}
+
+@keyframes chip-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .added-chip { animation: none; }
+}
+
+/* --- Group card -----------------------------------------------------------
+   A group is only worth keeping if you can act on it, so the card carries its
+   own outstanding total and the two actions anyone opens one for. */
+.group-card {
+  padding: 1rem;
+}
+
+.group-card .stacked-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 0.68rem;
+}
+
+/* --- Month-by-month chart -------------------------------------------------
+   Bars share one baseline and are scaled against the busiest month in view,
+   so the shape is comparable across the window rather than per column. */
+.month-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 9.5rem;
+}
+
+.month-col {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.month-value {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.month-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: var(--radius-sm) var(--radius-sm) 2px 2px;
+  background: var(--gradient-primary);
+  transition: height var(--dur-slow) var(--ease-out);
+}
+
+/* A month with nothing in it still occupies its column — the gap is the
+   information. */
+.month-bar[style*='height: 0'] {
+  background: var(--glass-bg);
+  min-height: 2px;
+}
+
+.month-label {
+  font-size: 0.66rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+/* --- Collection rate ------------------------------------------------------ */
+.rate-track {
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  overflow: hidden;
+}
+
+.rate-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--gradient-success);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .month-bar, .rate-fill { transition: none; }
+}

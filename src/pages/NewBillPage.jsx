@@ -25,9 +25,17 @@ export default function NewBillPage() {
   // synchronously, so it's available on first render — no effect needed).
   const editBill = editId ? bills.find((b) => b.id === editId) : null;
 
-  const [step, setStep] = useState(editBill ? 2 : 1); // 1: People, 2: Items, 3: Review
-  const [splitName, setSplitName] = useState(editBill?.title || '');
-  const [selectedPeople, setSelectedPeople] = useState(editBill?.participants || []);
+  // Arriving from a group ("Split with them") hands the people over, so the
+  // wizard opens on the items step with the crew already picked — which is the
+  // whole reason to keep a group in the first place.
+  const preset = location.state?.peopleIds || null;
+  const presetName = location.state?.presetName || '';
+
+  const [step, setStep] = useState(editBill || preset ? 2 : 1); // 1: People, 2: Items, 3: Review
+  const [splitName, setSplitName] = useState(editBill?.title || presetName);
+  const [selectedPeople, setSelectedPeople] = useState(
+    editBill?.participants || preset || [],
+  );
   const [newPersonName, setNewPersonName] = useState('');
   const [image, setImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -396,7 +404,7 @@ export default function NewBillPage() {
                       </p>
                       {/* Progress through the candidate list, so a long scan
                           reads as deliberate work rather than a hang. */}
-                      <div style={{ marginTop: '0.5rem', height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                      <div style={{ marginTop: '0.5rem', height: 4, borderRadius: 2, background: 'var(--glass-bg)', overflow: 'hidden' }}>
                         <div style={{
                           width: `${Math.round((ocrStep.attempt / Math.max(1, ocrStep.total)) * 100)}%`,
                           height: '100%', background: 'var(--gradient-primary)',

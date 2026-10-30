@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { monthlySpend, collectionRate, splitCompanions } from '../utils/stats';
 import { useAppContext } from '../store/AppContext';
 import { useCountUp } from '../hooks/useCountUp';
 import { formatCurrency, formatCompact, formatDate, initialsOf } from '../utils/format';
@@ -44,13 +45,15 @@ function StatCard({ icon, label, value, format = (n) => n, hero = false }) {
 // overridden (e.g. --gradient-data for all-time totals, which are magnitude
 // rather than paid/owed and so stay out of the status colour channel). `sub` renders a
 // quiet caption under the bar.
-function OwesBar({ name, amount, pct, fill, sub }) {
+// `display` overrides the formatted amount, for bars measuring something
+// that isn't money (a count of splits, say).
+function OwesBar({ name, amount, pct, fill, sub, display }) {
   return (
     <div className="flex-col gap-1 min-w-0">
       <div className="flex items-center justify-between gap-3 min-w-0">
         <span className="text-sm font-semibold text-primary truncate min-w-0">{name}</span>
         <span className="text-sm font-bold text-primary tabular-nums flex-shrink-0">
-          {formatCompact(amount)}
+          {display ?? formatCompact(amount)}
         </span>
       </div>
       <div
@@ -58,7 +61,7 @@ function OwesBar({ name, amount, pct, fill, sub }) {
         style={{
           height: '10px',
           borderRadius: 'var(--radius-full)',
-          background: 'rgba(255,255,255,0.06)',
+          background: 'var(--glass-bg)',
         }}
       >
         <div
@@ -133,6 +136,17 @@ export default function StatsPage() {
   ), [people, personBillShares, lifetimePayments]);
 
   const maxAllTime = allTime.length > 0 ? allTime[0].total : 0;
+
+  const months = useMemo(() => monthlySpend(bills, { months: 6 }), [bills]);
+  const monthsPeak = months.reduce((m, b) => Math.max(m, b.total), 0);
+  const collection = useMemo(
+    () => collectionRate({ balances, lifetimePayments, people, meId }),
+    [balances, lifetimePayments, people, meId],
+  );
+  const companions = useMemo(
+    () => splitCompanions({ bills, people, meId, limit: 5 }),
+    [bills, people, meId],
+  );
 
   // Designed empty state — nothing to compute until the first split exists.
   if (bills.length === 0) {
@@ -216,6 +230,78 @@ export default function StatsPage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Month by month — the question "am I spending more lately?" is the
+            one a splitting app can actually answer, and nothing here answered
+            it before. Empty months are drawn, not skipped. */}
+        {monthsPeak > 0 && (
+          <section className="mb-8">
+            <h2 className="text-lg mb-3 font-bold">Month by month</h2>
+            <div className="glass-panel month-chart" style={{ padding: '1.25rem 1rem 1rem' }}>
+              {months.map((m) => (
+                <div key={m.key} className="month-col">
+                  <span className="month-value">
+                    {m.total > 0 ? formatCompact(m.total) : ''}
+                  </span>
+                  <div
+                    className="month-bar"
+                    style={{ height: `${Math.max(m.pct, m.total > 0 ? 4 : 0)}%` }}
+                    role="img"
+                    aria-label={`${m.label}: ${formatCurrency(m.total)} across ${m.count} ${m.count === 1 ? 'split' : 'splits'}`}
+                  />
+                  <span className="month-label">{m.label}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Collection rate — how much of what you fronted has come back. */}
+        {collection.rate !== null && (
+          <section className="mb-8">
+            <h2 className="text-lg mb-3 font-bold">Getting paid back</h2>
+            <div className="glass-panel" style={{ padding: '1.25rem 1rem' }}>
+              <div className="flex items-baseline justify-between mb-3">
+                <span className="text-3xl font-bold tabular-nums">
+                  {Math.round(collection.rate * 100)}%
+                </span>
+                <span className="text-sm text-secondary">
+                  {formatCompact(collection.collected)} of {formatCompact(collection.billed)} back
+                </span>
+              </div>
+              <div className="rate-track">
+                <div
+                  className="rate-fill"
+                  style={{ width: `${Math.max(2, collection.rate * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-secondary" style={{ marginTop: '0.6rem' }}>
+                {collection.outstanding > 0.005
+                  ? `${formatCompact(collection.outstanding)} still out there.`
+                  : 'Everyone has settled up.'}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Who you actually go out with — counted in splits, not pesos. */}
+        {companions.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-lg mb-3 font-bold">Who you split with</h2>
+            <div className="glass-panel flex-col gap-4" style={{ padding: '1.25rem 1rem' }}>
+              {companions.map((c) => (
+                <OwesBar
+                  key={c.person.id}
+                  name={c.person.name}
+                  amount={c.count}
+                  display={`${c.count} ${c.count === 1 ? 'split' : 'splits'}`}
+                  pct={c.pct}
+                  fill="var(--gradient-primary)"
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Who owes you most — custom animated bars. */}
@@ -312,7 +398,7 @@ export default function StatsPage() {
                         style={{
                           padding: '0.875rem 1rem',
                           marginLeft: '0.75rem',
-                          background: 'rgba(255,255,255,0.02)',
+                          background: 'var(--glass-bg)',
                           borderLeft: '2px solid var(--accent-color)',
                         }}
                       >
