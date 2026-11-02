@@ -26,13 +26,20 @@ export default function StatsDetailPage() {
   const months = useMemo(() => monthlySpend(bills, { months: 12 }), [bills]);
   const peak = Math.max(...months.map((m) => m.total), 1);
   const peopleTotals = useMemo(() => people
-    .map((person) => ({
-      ...person,
-      total: (personBillShares[person.id] || []).reduce((sum, share) => sum + share.amount, 0),
-      owed: balances[person.id] || 0,
-    }))
+    .map((person) => {
+      const derived = (personBillShares[person.id] || []).reduce((sum, share) => sum + share.amount, 0);
+      const fallback = bills.reduce((sum, bill) => {
+        if (!(bill.participants || []).includes(person.id)) return sum;
+        return sum + ((bill.total || 0) / Math.max(1, bill.participants.length));
+      }, 0);
+      return {
+        ...person,
+        total: derived > 0.005 ? derived : fallback,
+        owed: balances[person.id] || 0,
+      };
+    })
     .filter((person) => person.total > 0.005 || person.owed > 0.005)
-    .sort((a, b) => b.total - a.total), [people, personBillShares, balances]);
+    .sort((a, b) => b.total - a.total), [bills, people, personBillShares, balances]);
 
   return (
     <main className="app-main">
@@ -58,15 +65,19 @@ export default function StatsDetailPage() {
       {view === 'trends' ? (
         <>
           <ChartCard title="Monthly total" note="Last 12 months">
-            <div className="chart-bars chart-bars-tall">
-              {months.map((month) => (
+            {bills.length === 0 ? (
+              <p className="text-sm text-secondary">Add your first split to see spending trends here.</p>
+            ) : (
+              <div className="chart-bars chart-bars-tall">
+                {months.map((month) => (
                 <div className="chart-bar-column" key={month.key} title={`${month.label}: ${formatCurrency(month.total)}`}>
                   <span className="chart-bar-value">{month.total > 0 ? formatCompact(month.total) : ''}</span>
                   <div className="chart-bar-track"><div className="chart-bar-fill" style={{ height: `${Math.max(month.total ? 5 : 0, (month.total / peak) * 100)}%` }} /></div>
                   <span className="chart-bar-label">{month.label}</span>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </ChartCard>
           <ChartCard title="Bill mix" note="Where totals come from">
             <div className="metric-list">

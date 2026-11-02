@@ -168,7 +168,7 @@
   --track-display: -0.045em;
   --track-title: -0.025em;
   --track-body: -0.008em;
-  --track-label: 0.14em;
+  --track-label: 0.10em;
 
   /* Blur survives only on floating chrome, where content passes underneath
      and the bar has to stay readable over whatever is behind it. Every other
@@ -1359,6 +1359,13 @@ dialog[open] {
   font-size: 0.8125rem;
 }
 
+.stats-header-actions { display: contents; }
+
+.stats-header-actions .btn:first-child::before,
+.stats-header-actions .btn:last-child::before {
+  content: '';
+}
+
 .stats-tabs {
   display: flex;
   gap: 0.25rem;
@@ -1385,6 +1392,10 @@ dialog[open] {
 .stats-tabs button.is-active {
   color: var(--on-accent);
   background: var(--gradient-primary);
+}
+
+.stats-overview-tabs {
+  margin-bottom: var(--space-5);
 }
 
 .stats-section {
@@ -2104,7 +2115,7 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
   /* Room to wrap. A label that ellipsises ("AVG PER OUTI…") costs the reader
      the meaning of the number above it, which is the one thing the label is
      for — so these wrap to a second line instead of truncating. */
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 /* Colour is set separately from the voice above, because a label sitting on a
