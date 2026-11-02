@@ -159,13 +159,26 @@ export default function StatsPage() {
     return (
       <>
         <main className="app-main">
-          <h1 className="text-2xl mb-6 font-black">Stats</h1>
+          <div className="stats-page-header">
+            <div>
+              <h1 className="text-2xl font-black">Stats</h1>
+              <p className="text-sm text-secondary">A quick read on your splitting habits.</p>
+            </div>
+          </div>
+          <div className="stats-tabs stats-overview-tabs" role="tablist" aria-label="Stats sections">
+            <button className="is-active" role="tab" aria-selected="true">Overview</button>
+            <button onClick={() => navigate('/stats/trends')} role="tab" aria-selected="false"><BarChart3 size={16} /> Trends</button>
+            <button onClick={() => navigate('/stats/people')} role="tab" aria-selected="false"><Users size={16} /> People</button>
+          </div>
           <div className="empty-state">
             <div className="flex justify-center mb-3 text-secondary">
               <Receipt size={40} />
             </div>
             <h2 className="text-lg font-bold text-primary mb-1">Nothing to crunch yet</h2>
             <p className="text-sm text-secondary">Numbers show up after your first split.</p>
+            <button className="btn btn-primary pressable mt-4" onClick={() => navigate('/new-bill')}>
+              Start a split
+            </button>
           </div>
         </main>
       </>
@@ -180,10 +193,11 @@ export default function StatsPage() {
             <h1 className="text-2xl font-black">Stats</h1>
             <p className="text-sm text-secondary">A quick read on your splitting habits.</p>
           </div>
-          <div className="stats-header-actions">
-            <button className="btn btn-secondary pressable" onClick={() => navigate('/stats/trends')}><BarChart3 size={16} /> Trends</button>
-            <button className="btn btn-secondary pressable" onClick={() => navigate('/stats/people')}><Users size={16} /> People</button>
-          </div>
+        </div>
+        <div className="stats-tabs stats-overview-tabs" role="tablist" aria-label="Stats sections">
+          <button className="is-active" role="tab" aria-selected="true">Overview</button>
+          <button onClick={() => navigate('/stats/trends')} role="tab" aria-selected="false"><BarChart3 size={16} /> Trends</button>
+          <button onClick={() => navigate('/stats/people')} role="tab" aria-selected="false"><Users size={16} /> People</button>
         </div>
 
         {/* Headline stats — 2x2 grid; numbers use formatCompact so they never clip. */}
