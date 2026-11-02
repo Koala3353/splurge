@@ -22,41 +22,44 @@
      re-checks all 32 shipping pairs in both modes.
      --------------------------------------------------------------------- */
 
-  /* Zinc neutrals. Near-black, never pure #000 — it smears on OLED during
-     scroll, and the portfolio these are taken from doesn't use it either. */
-  --zinc-950: #0B0B0D;       /* dark base                                   */
-  --zinc-900: #131316;       /* dark elevated                               */
-  --zinc-850: #1B1B1F;       /* dark raised                                 */
-  --zinc-800: #27272C;       /* dark hairline                               */
-  --zinc-100: #ECECEE;       /* dark primary text          16.7:1 on 950    */
-  --zinc-400: #A1A1AA;       /* dark secondary text         7.7:1           */
-  --zinc-500: #8A8A93;       /* dark tertiary / labels      5.8:1           */
+  /* Near-black, never pure #000 — it smears on OLED during scroll, and a
+     pure black page gives the wash nothing to sit in. */
+  --ink-950: #0A0A0C;       /* dark base                                   */
+  --ink-900: #141418;       /* dark elevated (opaque fallback)             */
+  --ink-850: #1C1C22;       /* dark raised                                 */
+  --ink-100: #F2F2F4;       /* dark primary text         17.7:1 on 950     */
+  --ink-400: #AFAFBA;       /* dark secondary text        5.7:1 on glass   */
+  --ink-500: #9898A4;       /* dark tertiary / labels     4.4:1 on glass   */
 
   --paper-50: #FFFFFF;       /* light elevated                              */
-  --paper-100: #FAFAF9;      /* light base                                  */
-  --paper-200: #E4E4E7;      /* light hairline                              */
+  --paper-100: #FAFAFB;      /* light base                                  */
+  --paper-200: #E4E4EA;      /* light hairline                              */
   --paper-900: #18181B;      /* light primary text         17.0:1 on 100    */
-  --paper-600: #52525B;      /* light secondary text        7.4:1           */
-  --paper-500: #71717A;      /* light tertiary / labels     4.6:1           */
+  --paper-600: #4F4F59;      /* light secondary text        6.7:1 on wash   */
+  --paper-500: #67676F;      /* light tertiary / labels     4.7:1 on wash   */
 
-  /* One hot orange, straight off the portfolio. It carries dark ink, not
-     white: orange-500 under white text is 2.3:1. */
-  --orange-400: #FB923C;     /* dark focus ring             8.7:1           */
-  --orange-500: #F97316;     /* dark accent                 7.0:1           */
-  --orange-700: #C2410C;     /* light accent                5.0:1           */
-  --orange-800: #9A3412;     /* light focus ring            7.0:1           */
+  /* Indigo is chrome. Two steps, because they do different jobs: indigo-400
+     is a FILL (dark ink reads 6.6:1 on it) and indigo-300 is the TEXT
+     version. Using the fill colour as text gives 4.16:1 on glass, which is
+     the kind of near-miss that only shows up when it is measured. */
+  --indigo-300: #A5B4FC;     /* dark accent as text        6.2:1 on glass   */
+  --indigo-400: #818CF8;     /* dark accent as fill                         */
+  --indigo-200: #C7D2FE;     /* dark focus ring            8.3:1 on glass   */
+  --indigo-600: #4F46E5;     /* light accent              6.0:1 on glass    */
+  --indigo-700: #4338CA;     /* light focus ring          7.5:1 on glass    */
 
   /* Money status. One hue per state, and neither is ever chrome. */
-  --green-400: #4ADE80;      /* settled, on dark           11.3:1           */
-  --green-700: #15803D;      /* settled, on light           4.8:1           */
-  --rose-400: #FB7185;       /* owed, on dark               7.3:1           */
-  --rose-700: #BE123C;       /* owed, on light              6.0:1           */
+  --mint-300: #5EEAD4;       /* settled, on dark           8.4:1 on glass   */
+  --teal-800: #115E59;       /* settled, on light          5.9:1 on wash    */
+  --rose-300: #FDA4AF;       /* owed, on dark              6.6:1 on glass   */
+  --rose-400: #FB7185;       /* owed fill, on dark                          */
+  --rose-700: #BE123C;       /* owed, on light             5.2:1 on wash    */
 
   /* Tint channels, for rgba() surfaces and washes. */
-  --tint-ink: 11, 11, 13;
+  --tint-ink: 10, 10, 12;
   --tint-paper: 255, 255, 255;
-  --tint-orange: 249, 115, 22;
-  --tint-green: 74, 222, 128;
+  --tint-indigo: 129, 140, 248;
+  --tint-mint: 94, 234, 212;
   --tint-rose: 251, 113, 133;
 
   /* ---------------------------------------------------------------------
@@ -67,60 +70,71 @@
      nav, focus, brand — and never touches a money figure. Amounts stay
      neutral, turn mint when settled and coral when owed. One colour, one job.
      --------------------------------------------------------------------- */
-  --bg-color: var(--zinc-950);
-  --bg-deep: var(--zinc-950);
-  --bg-elevated: var(--zinc-900);
-  --text-primary: var(--zinc-100);
-  --text-secondary: var(--zinc-400);
-  --text-tertiary: var(--zinc-500);
+  --bg-color: var(--ink-950);
+  --bg-deep: var(--ink-950);
+  --bg-elevated: var(--ink-900);
+  --text-primary: var(--ink-100);
+  --text-secondary: var(--ink-400);
+  --text-tertiary: var(--ink-500);
 
-  --accent-color: var(--orange-500);
-  --accent-bright: var(--orange-400);
-  --accent-hover: var(--orange-400);
-  /* Indigo-400 is light enough to need dark ink on top — 7.1:1 this way,
-     2.9:1 with white. The filled-button foreground is always a token. */
-  --on-accent: var(--zinc-950);
+  --accent-color: var(--indigo-300);
+  --accent-fill: var(--indigo-400);
+  --accent-bright: var(--indigo-200);
+  --accent-hover: var(--indigo-200);
+  --on-accent: var(--ink-950);
 
-  --success: var(--green-400);
-  --danger: var(--rose-400);
+  --success: var(--mint-300);
+  --danger: var(--rose-300);
   --danger-fill: var(--rose-400);
-  --on-danger-fill: var(--zinc-950);
-  --warning: var(--orange-400);
+  --on-danger-fill: var(--ink-950);
+  --warning: var(--indigo-200);
 
-  /* Surfaces are flat and separated by a hairline, not by translucency.
-     The token names are kept so no component had to change, but there is no
-     glass here any more: the reference this palette comes from builds depth
-     from a 1px border and a value step, which stays legible at any size and
-     costs nothing to composite. */
-  --glass-bg: var(--zinc-900);
-  --glass-bg-strong: rgba(19, 19, 22, 0.94);  /* floating chrome only */
-  --glass-border: var(--zinc-800);
-  --glass-border-bright: #34343A;
-  --glass-highlight: transparent;
+  /* Glass. The panel is NEUTRAL white at low alpha — never tinted. A tinted
+     pane reads as coloured plastic rather than as glass, because real glass
+     takes its colour from whatever is behind it, which is exactly what
+     backdrop-filter already does. All the colour lives in the wash below. */
+  --glass-bg: rgba(255, 255, 255, 0.075);
+  --glass-bg-strong: rgba(255, 255, 255, 0.10);   /* floating chrome */
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-border-bright: rgba(255, 255, 255, 0.20);
+  /* The inset top edge: light catching the lip of the pane. One pixel, and
+     it is most of what separates glass from a translucent rectangle. This is
+     a COLOUR, not a shadow — it is composed into a box-shadow list below. */
+  --glass-highlight: rgba(255, 255, 255, 0.22);
   --scrim: rgba(var(--tint-ink), 0.72);
-  --surface-raised: var(--zinc-850);
+  --surface-raised: rgba(255, 255, 255, 0.11);
+  /* Where blur is unavailable or switched off, glass has to become opaque or
+     the text under it sits on raw page. See the @supports fallback below. */
+  --glass-opaque: #1E1F2B;
+  --glass-opaque-strong: #262735;
 
-  /* No ambient wash. A flat near-black is the point — a coloured glow behind
-     everything is what the previous concept used to make blur legible, and
-     without blur it is just a stain. */
-  --wash-a: transparent;
-  --wash-b: transparent;
+  /* The ambient wash. This is what the glass is for — without something
+     coloured behind it, backdrop-filter renders as grey. Alphas are measured,
+     not chosen: a first pass composited to #484b7b at full overlap and failed
+     12 contrast pairs. The saturate() on the glass does more to make this
+     read as colour than the alpha does. */
+  --wash-indigo: rgba(129, 140, 248, 0.099);
+  --wash-pink: rgba(236, 72, 153, 0.072);
+  --wash-teal: rgba(45, 212, 191, 0.063);
+  --wash-violet: rgba(99, 102, 241, 0.090);
+  --wash-a: var(--wash-indigo);
+  --wash-b: var(--wash-violet);
 
-  --gradient-primary: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-500) 100%);
-  --gradient-danger: linear-gradient(135deg, #D4564A, var(--rose-400));
-  --gradient-success: linear-gradient(135deg, var(--green-700), var(--green-400));
-  --gradient-data: linear-gradient(90deg, var(--zinc-500), var(--zinc-400));
+  --gradient-primary: linear-gradient(135deg, var(--indigo-400) 0%, #9D8CFA 100%);
+  --gradient-danger: linear-gradient(135deg, #E05570, var(--rose-400));
+  --gradient-success: linear-gradient(135deg, #2BB8A3, var(--mint-300));
+  --gradient-data: linear-gradient(90deg, var(--ink-500), var(--ink-400));
 
   /* ---------------------------------------------------------------------
      LAYER 3 — COMPONENT. Soft fills and hairlines JSX inline styles reach
      for, so no component has to write a raw rgba() again.
      --------------------------------------------------------------------- */
-  --fill-accent-soft: rgba(var(--tint-orange), 0.20);
-  --fill-success-soft: rgba(var(--tint-green), 0.14);
+  --fill-accent-soft: rgba(var(--tint-indigo), 0.22);
+  --fill-success-soft: rgba(var(--tint-mint), 0.14);
   --fill-danger-soft: rgba(var(--tint-rose), 0.14);
-  --border-success: rgba(var(--tint-green), 0.45);
+  --border-success: rgba(var(--tint-mint), 0.45);
   --border-danger: rgba(var(--tint-rose), 0.45);
-  --border-warning: rgba(var(--tint-orange), 0.40);
+  --border-warning: rgba(var(--tint-indigo), 0.40);
   --glow-danger: none;
 
   /* Depth. Neutral only — a coloured halo under a button is the single most
@@ -128,8 +142,10 @@
      Layered, long and soft rather than one hard drop. */
   --shadow-sm: none;
   --shadow-md: none;
-  --shadow-glass: none;
-  --shadow-float: 0 8px 28px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+  /* Glass needs a shadow to float; an unshadowed pane reads as a hole cut in
+     the page rather than a sheet above it. Neutral, long, and layered. */
+  --shadow-glass: 0 4px 24px rgba(0, 0, 0, 0.36);
+  --shadow-float: 0 10px 36px rgba(0, 0, 0, 0.58), 0 2px 8px rgba(0, 0, 0, 0.38);
   --shadow-glow: var(--shadow-md);
   --shadow-danger: var(--shadow-md);
   --shadow-success: var(--shadow-md);
@@ -157,16 +173,16 @@
   /* Blur survives only on floating chrome, where content passes underneath
      and the bar has to stay readable over whatever is behind it. Every other
      surface is opaque. */
-  --glass-blur: 20px;
-  --glass-saturate: 140%;
+  --glass-blur: 40px;
+  --glass-saturate: 185%;
 
   /* Tighter corners than the previous concept. A 24px radius on a dense list
      reads as a stack of lozenges; the reference keeps panels near 10px and
      saves the full pill for the things that are genuinely pill-shaped. */
-  --radius-sm: 0.5rem;     /*  8px — chips, inputs                          */
-  --radius-md: 0.625rem;   /* 10px — rows, small cards                      */
-  --radius-lg: 0.75rem;    /* 12px — panels                                 */
-  --radius-xl: 1rem;       /* 16px — sheets                                 */
+  --radius-sm: 0.625rem;   /* 10px — chips, inputs                          */
+  --radius-md: 0.875rem;   /* 14px — rows, small cards                      */
+  --radius-lg: 1.375rem;   /* 22px — panels                                 */
+  --radius-xl: 1.625rem;   /* 26px — sheets                                 */
   --radius-full: 9999px;
 
   /* One gutter token, so changing the app's breathing room is a single edit
@@ -208,47 +224,55 @@
     --text-secondary: var(--paper-600);
     --text-tertiary: var(--paper-500);
 
-    --accent-color: var(--orange-700);
-    --accent-bright: var(--orange-800);
-    --accent-hover: var(--orange-800);
+    --accent-color: var(--indigo-600);
+    --accent-fill: var(--indigo-600);
+    --accent-bright: var(--indigo-700);
+    --accent-hover: var(--indigo-700);
     --on-accent: var(--paper-50);
 
-    --success: var(--green-700);
+    --success: var(--teal-800);
     --danger: var(--rose-700);
     --danger-fill: var(--rose-700);
     --on-danger-fill: var(--paper-50);
-    --warning: var(--orange-700);
+    --warning: var(--indigo-700);
 
-    --glass-bg: var(--paper-50);
-    --glass-bg-strong: rgba(255, 255, 255, 0.94);
-    --glass-border: var(--paper-200);
-    --glass-border-bright: #D4D4D8;
-    --glass-highlight: transparent;
+    /* Light glass is white at HIGH opacity, not low. Below about 0.6 the
+       wash shows through enough to darken the pane, and dark text on a
+       darkened pane is the light-mode failure mode — the mirror image of
+       dark mode, where the risk is the page getting lighter. */
+    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-bg-strong: rgba(255, 255, 255, 0.80);
+    --glass-border: rgba(24, 24, 27, 0.10);
+    --glass-border-bright: rgba(255, 255, 255, 0.90);
+    --glass-highlight: rgba(255, 255, 255, 0.85);
     --scrim: rgba(24, 24, 27, 0.32);
-    --surface-raised: var(--paper-100);
+    --surface-raised: rgba(255, 255, 255, 0.86);
+    --glass-opaque: #F4F4F8;
+    --glass-opaque-strong: #FAFAFC;
 
-    --wash-a: transparent;
-    --wash-b: transparent;
+    --wash-indigo: rgba(99, 102, 241, 0.084);
+    --wash-pink: rgba(236, 72, 153, 0.060);
+    --wash-teal: rgba(20, 184, 166, 0.060);
+    --wash-violet: rgba(99, 102, 241, 0.072);
+    --wash-a: var(--wash-indigo);
+    --wash-b: var(--wash-violet);
 
-    --gradient-primary: linear-gradient(135deg, var(--orange-800) 0%, var(--orange-700) 100%);
-    --gradient-danger: linear-gradient(135deg, #9E2F23, var(--rose-700));
-    --gradient-success: linear-gradient(135deg, #0C5E3E, var(--green-700));
+    --gradient-primary: linear-gradient(135deg, var(--indigo-700) 0%, var(--indigo-600) 100%);
+    --gradient-danger: linear-gradient(135deg, #9E1033, var(--rose-700));
+    --gradient-success: linear-gradient(135deg, #0A4F4B, var(--teal-800));
     --gradient-data: linear-gradient(90deg, var(--paper-500), var(--paper-600));
 
-    --fill-accent-soft: rgba(var(--tint-orange), 0.12);
-    --fill-success-soft: rgba(21, 128, 61, 0.12);
+    --fill-accent-soft: rgba(79, 70, 229, 0.12);
+    --fill-success-soft: rgba(17, 94, 89, 0.12);
     --fill-danger-soft: rgba(190, 18, 60, 0.10);
-    --border-success: rgba(21, 128, 61, 0.35);
+    --border-success: rgba(17, 94, 89, 0.35);
     --border-danger: rgba(190, 18, 60, 0.30);
-    --border-warning: rgba(var(--tint-orange), 0.30);
+    --border-warning: rgba(79, 70, 229, 0.30);
 
     --shadow-sm: none;
     --shadow-md: none;
-    --shadow-glass: none;
-    --shadow-float: 0 8px 28px rgba(24, 24, 27, 0.16), 0 2px 6px rgba(24, 24, 27, 0.08);
-    --shadow-glow: var(--shadow-md);
-    --shadow-danger: var(--shadow-md);
-    --shadow-success: var(--shadow-md);
+    --shadow-glass: 0 4px 24px rgba(24, 24, 27, 0.08);
+    --shadow-float: 0 10px 36px rgba(24, 24, 27, 0.14), 0 2px 8px rgba(24, 24, 27, 0.07);
   }
 }
 
@@ -256,54 +280,62 @@
    deliberate — a CSS custom property set inside a media query cannot be
    re-applied from outside one. */
 :root[data-theme='light'] {
-  --bg-color: var(--paper-100);
+--bg-color: var(--paper-100);
   --bg-deep: var(--paper-100);
   --bg-elevated: var(--paper-50);
   --text-primary: var(--paper-900);
   --text-secondary: var(--paper-600);
   --text-tertiary: var(--paper-500);
 
-  --accent-color: var(--orange-700);
-  --accent-bright: var(--orange-800);
-  --accent-hover: var(--orange-800);
+  --accent-color: var(--indigo-600);
+  --accent-fill: var(--indigo-600);
+  --accent-bright: var(--indigo-700);
+  --accent-hover: var(--indigo-700);
   --on-accent: var(--paper-50);
 
-  --success: var(--green-700);
+  --success: var(--teal-800);
   --danger: var(--rose-700);
   --danger-fill: var(--rose-700);
   --on-danger-fill: var(--paper-50);
-  --warning: var(--orange-700);
+  --warning: var(--indigo-700);
 
-  --glass-bg: var(--paper-50);
-  --glass-bg-strong: rgba(255, 255, 255, 0.94);
-  --glass-border: var(--paper-200);
-  --glass-border-bright: #D4D4D8;
-  --glass-highlight: transparent;
+  /* Light glass is white at HIGH opacity, not low. Below about 0.6 the
+     wash shows through enough to darken the pane, and dark text on a
+     darkened pane is the light-mode failure mode — the mirror image of
+     dark mode, where the risk is the page getting lighter. */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.80);
+  --glass-border: rgba(24, 24, 27, 0.10);
+  --glass-border-bright: rgba(255, 255, 255, 0.90);
+  --glass-highlight: rgba(255, 255, 255, 0.85);
   --scrim: rgba(24, 24, 27, 0.32);
-  --surface-raised: var(--paper-100);
+  --surface-raised: rgba(255, 255, 255, 0.86);
+  --glass-opaque: #F4F4F8;
+  --glass-opaque-strong: #FAFAFC;
 
-  --wash-a: transparent;
-  --wash-b: transparent;
+  --wash-indigo: rgba(99, 102, 241, 0.084);
+  --wash-pink: rgba(236, 72, 153, 0.060);
+  --wash-teal: rgba(20, 184, 166, 0.060);
+  --wash-violet: rgba(99, 102, 241, 0.072);
+  --wash-a: var(--wash-indigo);
+  --wash-b: var(--wash-violet);
 
-  --gradient-primary: linear-gradient(135deg, var(--orange-800) 0%, var(--orange-700) 100%);
-  --gradient-danger: linear-gradient(135deg, #9E2F23, var(--rose-700));
-  --gradient-success: linear-gradient(135deg, #0C5E3E, var(--green-700));
+  --gradient-primary: linear-gradient(135deg, var(--indigo-700) 0%, var(--indigo-600) 100%);
+  --gradient-danger: linear-gradient(135deg, #9E1033, var(--rose-700));
+  --gradient-success: linear-gradient(135deg, #0A4F4B, var(--teal-800));
   --gradient-data: linear-gradient(90deg, var(--paper-500), var(--paper-600));
 
-  --fill-accent-soft: rgba(var(--tint-orange), 0.12);
-  --fill-success-soft: rgba(21, 128, 61, 0.12);
+  --fill-accent-soft: rgba(79, 70, 229, 0.12);
+  --fill-success-soft: rgba(17, 94, 89, 0.12);
   --fill-danger-soft: rgba(190, 18, 60, 0.10);
-  --border-success: rgba(21, 128, 61, 0.35);
+  --border-success: rgba(17, 94, 89, 0.35);
   --border-danger: rgba(190, 18, 60, 0.30);
-  --border-warning: rgba(var(--tint-orange), 0.30);
+  --border-warning: rgba(79, 70, 229, 0.30);
 
   --shadow-sm: none;
   --shadow-md: none;
-  --shadow-glass: none;
-  --shadow-float: 0 8px 28px rgba(24, 24, 27, 0.16), 0 2px 6px rgba(24, 24, 27, 0.08);
-  --shadow-glow: var(--shadow-md);
-  --shadow-danger: var(--shadow-md);
-  --shadow-success: var(--shadow-md);
+  --shadow-glass: 0 4px 24px rgba(24, 24, 27, 0.08);
+  --shadow-float: 0 10px 36px rgba(24, 24, 27, 0.14), 0 2px 8px rgba(24, 24, 27, 0.07);
 }
 
 /* Accessibility adaptations. Reduced transparency is not cosmetic: a frosted
@@ -498,7 +530,7 @@ input, select {
 input:focus, select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--tint-orange), 0.32);
+  box-shadow: 0 0 0 3px rgba(var(--tint-indigo), 0.32);
 }
 
 /* Animations */
@@ -674,7 +706,39 @@ input:focus, select:focus {
 .bg-success { background-color: var(--success); color: var(--on-accent); }
 .bg-accent { background-color: var(--accent-color); color: var(--on-accent); }
 .text-bg { color: var(--bg-color); }
-.bg-glass { background-color: var(--glass-bg); }
+/* Glass has two ways of failing, and both strand text on a bare page:
+   the browser may not support backdrop-filter, and the user may have asked
+   the OS for less transparency. In either case the panes go opaque — the
+   layout, hierarchy and contrast are unchanged, only the material is. The
+   --glass-opaque tokens are the composited colour of a pane over the wash,
+   so nothing visibly jumps. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-bg: var(--glass-opaque);
+    --glass-bg-strong: var(--glass-opaque-strong);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: var(--glass-opaque);
+    --glass-bg-strong: var(--glass-opaque-strong);
+    --wash-indigo: transparent;
+    --wash-pink: transparent;
+    --wash-teal: transparent;
+    --wash-violet: transparent;
+  }
+  .card, .bg-glass, .app-header, .app-footer {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.bg-glass {
+  background-color: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
 
 /* View transitions */
 ::view-transition-group(root) {
@@ -718,6 +782,14 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   }
 }
 
+/* A route that owns the bottom of the screen (the new-bill wizard) hides the
+   tab bar, so there is nothing left to clear and nothing to fade behind. */
+.app-shell-no-nav {
+  --tabbar-clearance: 0px;
+}
+
+.app-shell-no-nav::after { content: none; }
+
 /* App Shell Architecture */
 .app-shell {
   display: flex;
@@ -735,10 +807,10 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
      it worth blurring; on a flat background backdrop-filter renders as grey.
      Painted on the (static) shell, so content scrolls over it. */
   background-image:
-    radial-gradient(74% 42% at 12% -6%, var(--wash-a), transparent 72%),
-    radial-gradient(66% 38% at 96% 12%, var(--wash-b), transparent 74%),
-    radial-gradient(58% 30% at 86% 58%, var(--wash-a), transparent 76%),
-    radial-gradient(96% 40% at 40% 108%, var(--wash-b), transparent 76%);
+    radial-gradient(64% 36% at 6% -6%, var(--wash-indigo), transparent 70%),
+    radial-gradient(56% 32% at 96% 6%, var(--wash-pink), transparent 72%),
+    radial-gradient(60% 34% at 88% 62%, var(--wash-teal), transparent 72%),
+    radial-gradient(96% 44% at 38% 116%, var(--wash-violet), transparent 74%);
   background-repeat: no-repeat;
 }
 
@@ -795,9 +867,15 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
    ends underneath it, and the safe-area inset keeps it off the home indicator. */
 .app-footer {
   position: fixed;
+  /* Spans the gutters rather than hugging four icons. A pill that reaches
+     the same edges as the content reads as part of the layout instead of a
+     widget dropped on top of it, and the wider tap targets are the point:
+     each tab gets a quarter of the screen instead of 44px of it. */
   left: 50%;
   bottom: calc(0.75rem + env(safe-area-inset-bottom));
   transform: translateX(-50%);
+  width: calc(100% - var(--gutter) * 2);
+  max-width: calc(600px - var(--gutter) * 2);
   z-index: 40;
   display: flex;
   gap: 0.125rem;
@@ -1012,9 +1090,17 @@ dialog[open] {
    two shades of grey. */
 .nav-item {
   display: flex;
+  /* Content-sized basis, surplus shared equally — NOT flex:1. An equal
+     quarter each starves the longest label ("People" needs 75px) while
+     handing "New" 12px it has no use for. The four together need 279 of the
+     331 available at 375px, so every name fits; it is only the distribution
+     that has to be right. */
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: center;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.75rem;
+  gap: 0.3rem;
+  padding: 0.5rem 0.375rem;
   border-radius: var(--radius-full);
   color: var(--text-tertiary);
   text-decoration: none;
@@ -1027,22 +1113,27 @@ dialog[open] {
               transform var(--dur-fast) var(--ease-out);
 }
 
-/* The label only rides along on the selected tab. Four labelled items would
-   not fit a pill at 320px, and an icon alone is ambiguous — so the one tab
-   that needs naming is the one you are on. */
+/* Now that the pill spans the gutters there is room to name every tab, which
+   is the honest version — an icon alone is ambiguous, and naming only the tab
+   you are already on tells you the one thing you knew. The label is 12px, the
+   floor for a tab bar, and it still folds away on the narrowest phones below
+   rather than shrinking past readable. */
 .nav-item .nav-label {
-  display: none;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* The selected tab needs no special width rule — it is bolder and carries a
+   filled pill, and a content-sized basis already accounts for both. */
 .nav-item-active {
-  background: var(--accent-color);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font-weight: 600;
   box-shadow: none;
 }
 
-.nav-item-active .nav-label { display: inline; }
+
 
 /* Feedback on press, not on release — waiting for the tap to complete reads
    as lag however fast the navigation is. */
@@ -1052,9 +1143,11 @@ dialog[open] {
   .nav-item:active { transform: none; }
 }
 
-/* Narrow phones: drop the label rather than let the pill reach the bezel. */
+/* Narrow phones: four names will not fit without shrinking the type, so fall
+   back to naming only the tab you are on rather than setting 10px labels. */
 @media (max-width: 359px) {
-  .nav-item-active .nav-label { display: none; }
+  .nav-item .nav-label { display: none; }
+  .nav-item-active .nav-label { display: inline; }
 }
 
 /* Scanner Overlay */
@@ -1296,7 +1389,7 @@ dialog[open] {
    bubble, accent-tinted because it's yours, squared at the corner it sends
    from. Reading it here is the whole point of the sheet. */
 .share-preview {
-  background: linear-gradient(180deg, var(--fill-accent-soft), rgba(var(--tint-orange), 0.08));
+  background: linear-gradient(180deg, var(--fill-accent-soft), rgba(var(--tint-indigo), 0.08));
   border: 1px solid var(--border-warning);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   padding: 0.9rem 1rem;

@@ -640,7 +640,19 @@ export default function NewBillPage() {
       </main>
 
       {/* ACTION BUTTONS */}
-      <div className="p-4 bg-glass flex gap-4" style={{ flexShrink: 0, zIndex: 10, borderTop: '1px solid var(--glass-border)' }}>
+      {/* The wizard's own bottom bar. The tab bar is hidden on this route
+          (see AppLayout), so this is the only chrome down here and it takes
+          the home-indicator inset itself. */}
+      <div
+        className="bg-glass flex gap-4"
+        style={{
+          flexShrink: 0,
+          zIndex: 10,
+          borderTop: '1px solid var(--glass-border)',
+          padding: '1rem',
+          paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
+        }}
+      >
         {step > 1 && (
           <button className="btn btn-secondary flex-1 pressable" style={{ borderRadius: 'var(--radius-lg)' }} onClick={() => handleStepChange(step - 1)}>
             <ChevronLeft size={20} className="inline mr-1" /> Back
