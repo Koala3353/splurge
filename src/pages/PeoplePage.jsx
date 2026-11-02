@@ -51,6 +51,7 @@ export default function PeoplePage() {
   const [detailPersonId, setDetailPersonId] = useState(null);
   // Which slice of people the group reminder covers, once chosen: { peopleIds, label }.
   const [remindScope, setRemindScope] = useState(null);
+  const [remindSelection, setRemindSelection] = useState([]);
   // Named in this sitting, so the sheet can show what it just took in.
   const [justAdded, setJustAdded] = useState([]);
 
@@ -125,11 +126,6 @@ export default function PeoplePage() {
   // saved group) — meant to be posted once into a group chat, not sent 1:1
   // like the per-person "Send request". Picking a scope hands off to the share
   // sheet, where the message gets shaped and read before it goes out.
-  const shareReminder = (scope = {}) => {
-    remindDialogRef.current?.close();
-    setRemindScope(scope);
-  };
-
   const buildReminderBody = useCallback(
     (options) => buildGroupReminderText(remindScope || {}, options),
     [buildGroupReminderText, remindScope],
@@ -138,11 +134,14 @@ export default function PeoplePage() {
   // Tapping "Remind" goes straight to everyone if there's nothing to filter
   // by; with saved groups, it opens a quick chooser first.
   const handleRemindTap = () => {
-    if (groups.length === 0) {
-      shareReminder();
-    } else {
-      remindDialogRef.current?.showModal();
-    }
+    setRemindSelection(friends.filter((p) => (balances[p.id] || 0) > 0.005).map((p) => p.id));
+    remindDialogRef.current?.showModal();
+  };
+
+  const chooseReminderPeople = (ids, label = '') => {
+    remindDialogRef.current?.close();
+    setRemindSelection(ids);
+    setRemindScope({ peopleIds: ids, label });
   };
 
   return (
@@ -220,7 +219,7 @@ export default function PeoplePage() {
               </div>
             </div>
 
-            {friends.length >= 5 && (
+            {(
               <div
                 className="flex items-center gap-2 mb-4 glass-panel"
                 style={{ padding: '0.5rem 0.85rem' }}
@@ -492,7 +491,9 @@ export default function PeoplePage() {
             type="button"
             className="btn btn-secondary w-full pressable"
             style={{ justifyContent: 'space-between' }}
-            onClick={() => shareReminder()}
+            onClick={() => chooseReminderPeople(
+              friends.filter((p) => (balances[p.id] || 0) > 0.005).map((p) => p.id),
+            )}
           >
             <span className="flex items-center gap-2">
               <Users size={16} /> Everyone who owes you
@@ -510,7 +511,10 @@ export default function PeoplePage() {
                 className="btn btn-secondary w-full pressable"
                 style={{ justifyContent: 'space-between' }}
                 disabled={groupOwingCount === 0}
-                onClick={() => shareReminder({ peopleIds: g.peopleIds, label: g.name })}
+                onClick={() => chooseReminderPeople(
+                  g.peopleIds.filter((id) => (balances[id] || 0) > 0.005),
+                  g.name,
+                )}
               >
                 <span className="flex items-center gap-2 min-w-0 truncate">
                   <Users size={16} /> {g.name}
@@ -521,6 +525,38 @@ export default function PeoplePage() {
               </button>
             );
           })}
+          <div className="remind-people-list">
+            <p className="text-xs text-secondary uppercase tracking-wider mb-2">Select individually</p>
+            {friends.filter((p) => (balances[p.id] || 0) > 0.005).map((person) => {
+              const selected = remindSelection.includes(person.id);
+              return (
+                <button
+                  key={person.id}
+                  type="button"
+                  className={`share-row ${selected ? 'is-selected' : ''}`}
+                  onClick={() => setRemindSelection((prev) => (
+                    selected ? prev.filter((id) => id !== person.id) : [...prev, person.id]
+                  ))}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="avatar bg-accent" style={{ width: 30, height: 30, fontSize: '0.7rem' }}>
+                      {initialsOf(person.name)}
+                    </span>
+                    <span className="font-semibold truncate">{person.name}</span>
+                  </span>
+                  <span className={`selection-check ${selected ? 'is-on' : ''}`}>{selected ? '✓' : ''}</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="btn btn-primary w-full pressable"
+              disabled={remindSelection.length === 0}
+              onClick={() => chooseReminderPeople(remindSelection)}
+            >
+              Continue with {remindSelection.length} {remindSelection.length === 1 ? 'person' : 'people'}
+            </button>
+          </div>
         </div>
       </dialog>
 

@@ -19,13 +19,14 @@ const ICON = {
 export default function SuggestionRow({ onLogged }) {
   const { bills, templates, people, meId } = useAppContext();
   const [active, setActive] = useState(null);
+  const [now] = useState(() => Date.now());
 
   // Recomputed when the data changes, not on a timer: a minute-by-minute
   // reshuffle of the row under the user's thumb would be worse than slightly
   // stale ranking.
   const suggestions = useMemo(
-    () => buildSuggestions({ bills, templates, people, meId, now: Date.now(), limit: 6 }),
-    [bills, templates, people, meId],
+    () => buildSuggestions({ bills, templates, people, meId, now, limit: 6 }),
+    [bills, templates, people, meId, now],
   );
 
   if (suggestions.length === 0) return null;

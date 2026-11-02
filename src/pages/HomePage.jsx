@@ -97,7 +97,7 @@ export default function HomePage() {
         {bills.length === 0 ? (
           /* Center the call-to-action in the space below the hero so the
              screen doesn't read as top-cramped with an empty bottom. */
-          <div className="flex flex-col justify-center" style={{ minHeight: '42vh' }}>
+          <div className="flex flex-col justify-center" style={{ minHeight: '28vh' }}>
             <div className="empty-state">
               <div className="avatar bg-glass mx-auto mb-3" style={{ width: 48, height: 48 }}>
                 <Receipt size={24} className="text-secondary" />
