@@ -140,27 +140,27 @@ export default function HomePage() {
                     <span
                       className="avatar flex-shrink-0"
                       style={{
-                        width: 26,
-                        height: 26,
+                        width: 30,
+                        height: 30,
                         borderRadius: 'var(--radius-sm)',
                         background: 'var(--fill-accent-soft)',
                         border: '1px solid var(--border-warning)',
                       }}
                     >
-                      <Receipt size={13} className="text-accent" />
+                      <Receipt size={15} className="text-accent" />
                     </span>
                     <span className="min-w-0" style={{ flex: 1 }}>
-                      <span className="block font-medium truncate" style={{ fontSize: '0.88rem' }}>
+                      <span className="block font-semibold truncate" style={{ fontSize: '1rem' }}>
                         {bill.title}
                       </span>
                       <span className="lab block" style={{ marginTop: '0.2rem' }}>
                         {formatRelativeDate(bill.date)} · {bill.items.length} {bill.items.length === 1 ? 'item' : 'items'}
                       </span>
                     </span>
-                    <span className="font-semibold tabular-nums flex-shrink-0" style={{ fontSize: '0.9rem' }}>
+                    <span className="font-semibold tabular-nums flex-shrink-0" style={{ fontSize: '1rem' }}>
                       {formatCurrency(bill.total || 0)}
                     </span>
-                    <ChevronRight size={15} className="text-tertiary flex-shrink-0" />
+                    <ChevronRight size={16} className="text-tertiary flex-shrink-0" />
                   </button>
                 </li>
               ))}

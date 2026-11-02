@@ -628,7 +628,11 @@ input:focus, select:focus {
 .flex { display: flex; }
 .flex-col { display: flex; flex-direction: column; }
 .flex-wrap { flex-wrap: wrap; }
-.flex-1 { flex: 1 1 0%; }
+/* min-width:0 is not optional here. flex-basis:0 sets the preferred size,
+   but min-width still defaults to auto, so a flex item will not shrink below
+   its content's minimum — an <input> keeps its default ~20-character width
+   and shoves whatever is next to it out of the card. */
+.flex-1 { flex: 1 1 0%; min-width: 0; }
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
 .justify-center { justify-content: center; }
@@ -1693,9 +1697,9 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
    wrapping chip would set the height of the whole row. */
 .suggestion-chip-reason {
   font-family: var(--font-mono);
-  font-size: 0.55rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: var(--track-label);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-tertiary);
   white-space: nowrap;
@@ -1747,7 +1751,7 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 .stacked-avatar {
   width: 26px;
   height: 26px;
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   margin-left: -0.4rem;
   box-shadow: 0 0 0 2px var(--bg-elevated);
 }
@@ -1833,7 +1837,7 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 .group-card .stacked-avatar {
   width: 28px;
   height: 28px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
 }
 
 /* --- Month-by-month chart -------------------------------------------------
@@ -1858,7 +1862,7 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 }
 
 .month-value {
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
@@ -1881,7 +1885,7 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 }
 
 .month-label {
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   color: var(--text-tertiary);
   font-weight: 500;
 }
@@ -1912,11 +1916,16 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 .lab,
 .app-main .uppercase {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  /* 11px, not 9.6px. Mono uppercase at a wide track is already hard work to
+     read; below 11px it stops being a label and becomes texture. */
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  line-height: 1;
+  /* Room to wrap. A label that ellipsises ("AVG PER OUTI…") costs the reader
+     the meaning of the number above it, which is the one thing the label is
+     for — so these wrap to a second line instead of truncating. */
+  line-height: 1.25;
 }
 
 /* Colour is set separately from the voice above, because a label sitting on a
@@ -1944,11 +1953,16 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 
 .list-dense > li { border-bottom: 1px solid var(--glass-border); }
 
+/* Dense, not small. These rows were tightened to fit eight on a screen, but
+   the type came down with the padding — and a row title is the primary
+   content of the main screen, so it reads at 1rem like body text rather than
+   at 0.88rem like a caption. The row height comes back from padding instead,
+   which costs nothing legibility-wise. */
 .row-dense {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  padding: 0.625rem 0;
+  gap: 0.7rem;
+  padding: 0.7rem 0;
   width: 100%;
   text-align: left;
 }
@@ -1972,8 +1986,8 @@ body, p, .text-sm         { letter-spacing: var(--track-body); }
 
 .stat-strip b {
   display: block;
-  margin-top: 0.15rem;
-  font-size: 0.95rem;
+  margin-top: 0.2rem;
+  font-size: 1.125rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--track-title);

@@ -8,8 +8,15 @@ export function formatCurrency(amount) {
   return pesoFormatter.format(n);
 }
 
-// Compact form for large headline figures, e.g. ₱12.3k — keeps big balances
-// from overflowing fixed-width cards on small phones.
+// Compact form for headline figures, e.g. ₱12.3K — keeps balances from
+// overflowing fixed-width cards and chart columns on small phones.
+//
+// Centavos are dropped at EVERY size, not only above ₱1,000. Falling through
+// to the full formatter under a thousand produced "₱480.00" in a 37px chart
+// column, which overflowed it and collided with the next month — and two
+// decimals are noise in a figure that is already rounded to one significant
+// place above it. Exact amounts use formatCurrency; this is for glanceable
+// ones.
 export function formatCompact(amount) {
   const n = Number.isFinite(amount) ? amount : 0;
   if (Math.abs(n) >= 1000) {
@@ -18,7 +25,9 @@ export function formatCompact(amount) {
       maximumFractionDigits: 1,
     }).format(n);
   }
-  return formatCurrency(n);
+  return '₱' + new Intl.NumberFormat('en-PH', {
+    maximumFractionDigits: 0,
+  }).format(n);
 }
 
 export function formatDate(iso) {

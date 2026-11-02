@@ -30,7 +30,7 @@ function StatCard({ icon, label, value, format = (n) => n, hero = false }) {
         style={{ opacity: hero ? 0.95 : 1, position: 'relative', zIndex: 1, marginBottom: '0.55rem' }}
       >
         <span className="flex-shrink-0 flex items-center">{icon}</span>
-        <span className="uppercase truncate">{label}</span>
+        <span className="uppercase">{label}</span>
       </div>
       <div
         className={`font-display font-black tabular-nums truncate min-w-0 ${hero ? 'text-on-accent' : 'text-primary'}`}
@@ -213,7 +213,7 @@ export default function StatsPage() {
         {bills.length > 0 && (
           <div className="flex gap-2 mb-5 min-w-0">
             <div className="glass-panel flex-1 min-w-0" style={{ padding: '0.7rem 0.85rem' }}>
-              <p className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1 truncate">
+              <p className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1">
                 Avg per outing
               </p>
               <p className="text-lg font-bold text-primary tabular-nums truncate">
@@ -222,7 +222,7 @@ export default function StatsPage() {
             </div>
             {biggestSplit && (
               <div className="glass-panel flex-1 min-w-0" style={{ padding: '0.7rem 0.85rem' }}>
-                <p className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1 truncate">
+                <p className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1">
                   Biggest split
                 </p>
                 <p className="text-lg font-bold text-primary tabular-nums truncate">
