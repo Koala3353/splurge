@@ -93,30 +93,30 @@
      pane reads as coloured plastic rather than as glass, because real glass
      takes its colour from whatever is behind it, which is exactly what
      backdrop-filter already does. All the colour lives in the wash below. */
-  --glass-bg: rgba(255, 255, 255, 0.075);
-  --glass-bg-strong: rgba(255, 255, 255, 0.10);   /* floating chrome */
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-border-bright: rgba(255, 255, 255, 0.20);
+  --glass-bg: rgba(28, 29, 36, 0.94);
+  --glass-bg-strong: rgba(35, 36, 46, 0.97);   /* floating chrome */
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border-bright: rgba(255, 255, 255, 0.26);
   /* The inset top edge: light catching the lip of the pane. One pixel, and
      it is most of what separates glass from a translucent rectangle. This is
      a COLOUR, not a shadow — it is composed into a box-shadow list below. */
-  --glass-highlight: rgba(255, 255, 255, 0.22);
-  --scrim: rgba(var(--tint-ink), 0.72);
-  --surface-raised: rgba(255, 255, 255, 0.11);
+  --glass-highlight: rgba(255, 255, 255, 0.24);
+  --scrim: rgba(var(--tint-ink), 0.58);
+  --surface-raised: rgba(45, 46, 58, 0.98);
   /* Where blur is unavailable or switched off, glass has to become opaque or
      the text under it sits on raw page. See the @supports fallback below. */
-  --glass-opaque: #1E1F2B;
-  --glass-opaque-strong: #262735;
+  --glass-opaque: #1C1D24;
+  --glass-opaque-strong: #23242E;
 
   /* The ambient wash. This is what the glass is for — without something
      coloured behind it, backdrop-filter renders as grey. Alphas are measured,
      not chosen: a first pass composited to #484b7b at full overlap and failed
      12 contrast pairs. The saturate() on the glass does more to make this
      read as colour than the alpha does. */
-  --wash-indigo: rgba(129, 140, 248, 0.099);
-  --wash-pink: rgba(236, 72, 153, 0.072);
-  --wash-teal: rgba(45, 212, 191, 0.063);
-  --wash-violet: rgba(99, 102, 241, 0.090);
+  --wash-indigo: rgba(129, 140, 248, 0.13);
+  --wash-pink: rgba(236, 72, 153, 0.09);
+  --wash-teal: rgba(45, 212, 191, 0.08);
+  --wash-violet: rgba(99, 102, 241, 0.12);
   --wash-a: var(--wash-indigo);
   --wash-b: var(--wash-violet);
 
@@ -449,10 +449,11 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  min-height: 2.75rem;
+  padding: 0.7rem 1.1rem;
   border-radius: var(--radius-md);
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.9375rem;
 }
 
 .btn:disabled,
@@ -997,19 +998,19 @@ dialog {
   padding: 1.5rem;
   border-radius: var(--radius-xl);
   border: 1px solid var(--glass-border);
-  background: var(--glass-bg-strong);
+  background: var(--glass-opaque-strong);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   color: var(--text-primary);
-  box-shadow: var(--shadow-glass);
+  box-shadow: var(--shadow-float);
   max-width: 90vw;
   width: 400px;
 }
 
 dialog::backdrop {
   background: var(--scrim);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 dialog[open] {
@@ -1150,8 +1151,8 @@ dialog[open] {
 /* Narrow phones: four names will not fit without shrinking the type, so fall
    back to naming only the tab you are on rather than setting 10px labels. */
 @media (max-width: 359px) {
-  .nav-item .nav-label { display: none; }
-  .nav-item-active .nav-label { display: inline; }
+  .nav-item { gap: 0.2rem; padding-left: 0.2rem; padding-right: 0.2rem; }
+  .nav-item .nav-label { font-size: 0.6875rem; }
 }
 
 /* Scanner Overlay */
@@ -1331,11 +1332,189 @@ dialog[open] {
 /* Empty-state block */
 .empty-state {
   text-align: center;
-  padding: 2.5rem 1.5rem;
+  padding: 2rem 1.25rem;
   border: 1px dashed var(--glass-border);
   border-radius: var(--radius-lg);
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.02);
+}
+
+.stats-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.stats-header-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.stats-header-actions .btn {
+  min-height: 2.25rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8125rem;
+}
+
+.stats-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: var(--space-5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+}
+
+.stats-tabs button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stats-tabs button.is-active {
+  color: var(--on-accent);
+  background: var(--gradient-primary);
+}
+
+.stats-section {
+  margin-bottom: var(--space-6);
+}
+
+.stats-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: 0.6rem;
+}
+
+.chart-card {
+  padding: 1rem;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+  min-height: 12rem;
+}
+
+.chart-bars-tall { min-height: 15rem; }
+
+.chart-bar-column {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  min-width: 0;
+  height: 100%;
+}
+
+.chart-bar-value {
+  min-height: 1rem;
+  max-width: 4.5rem;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 0.625rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.chart-bar-track {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 9rem;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+}
+
+.chart-bar-fill {
+  width: 100%;
+  min-height: 0.2rem;
+  border-radius: var(--radius-sm);
+  background: var(--gradient-primary);
+  transition: height var(--dur-slow) var(--ease-out), width var(--dur-slow) var(--ease-out);
+}
+
+.chart-bar-fill-secondary { background: var(--gradient-data); }
+
+.chart-bar-label {
+  color: var(--text-tertiary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.metric-list, .stats-person-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.metric-row:last-child { padding-bottom: 0; border-bottom: 0; }
+
+.stats-person-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stats-person-row .chart-bar-track { height: 0.5rem; }
+
+.remind-people-list {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+.remind-people-list .share-row {
+  padding: 0.65rem 0;
+}
+
+.selection-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 1px solid var(--glass-border-bright);
+  border-radius: 50%;
+  color: var(--on-accent);
+  font-size: 0.75rem;
+}
+
+.selection-check.is-on {
+  border-color: var(--accent-color);
+  background: var(--accent-color);
+}
+
+@media (max-width: 420px) {
+  .stats-page-header { flex-direction: column; }
+  .stats-header-actions { width: 100%; }
+  .stats-header-actions .btn { flex: 1; }
 }
 
 /* ==========================================================================
@@ -1396,7 +1575,7 @@ dialog[open] {
   background: linear-gradient(180deg, var(--fill-accent-soft), rgba(var(--tint-indigo), 0.08));
   border: 1px solid var(--border-warning);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
-  padding: 0.9rem 1rem;
+  padding: 1rem 1.1rem;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
 }
 
@@ -1404,8 +1583,8 @@ dialog[open] {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 0.9375rem;
-  line-height: 1.55;
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--text-primary);
   /* The one authored moment: the message re-settles when its shape changes, so
      you can see what the switch you just flipped actually did. */
@@ -1423,7 +1602,7 @@ dialog[open] {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-secondary);
-  margin: 1.75rem 0 0.6rem;
+  margin: 1.5rem 0 0.65rem;
 }
 
 .share-rows {
@@ -1437,7 +1616,7 @@ dialog[open] {
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
-  padding: 0.85rem 0;
+  padding: 0.95rem 0;
   background: none;
   border: none;
   border-top: 1px solid var(--glass-border);
@@ -1454,14 +1633,14 @@ dialog[open] {
 
 .share-row-label {
   display: block;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .share-row-hint {
   display: block;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.4;
   color: var(--text-secondary);
   margin-top: 2px;

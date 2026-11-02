@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, Copy, Send, X } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
 
@@ -109,7 +110,7 @@ export default function ShareSheet({
   });
   const canShare = typeof navigator !== 'undefined' && !!navigator.share;
 
-  return (
+  const sheet = (
     <dialog
       ref={dialogRef}
       onClose={handleClose}
@@ -198,4 +199,6 @@ export default function ShareSheet({
       </div>
     </dialog>
   );
+
+  return typeof document === 'undefined' ? sheet : createPortal(sheet, document.body);
 }

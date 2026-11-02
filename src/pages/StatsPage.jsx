@@ -10,7 +10,10 @@ import {
   Receipt,
   HandCoins,
   ChevronDown,
+  BarChart3,
+  Users,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // A single headline stat. `hero` flips it to the gradient treatment.
 // `value` is the raw number; `format` renders each animated frame, so the
@@ -83,6 +86,7 @@ function OwesBar({ name, amount, pct, fill, sub, display }) {
 }
 
 export default function StatsPage() {
+  const navigate = useNavigate();
   const {
     bills,
     people,
@@ -171,7 +175,16 @@ export default function StatsPage() {
   return (
     <>
       <main className="app-main">
-        <h1 className="text-2xl mb-5 font-black">Stats</h1>
+        <div className="stats-page-header">
+          <div>
+            <h1 className="text-2xl font-black">Stats</h1>
+            <p className="text-sm text-secondary">A quick read on your splitting habits.</p>
+          </div>
+          <div className="stats-header-actions">
+            <button className="btn btn-secondary pressable" onClick={() => navigate('/stats/trends')}><BarChart3 size={16} /> Trends</button>
+            <button className="btn btn-secondary pressable" onClick={() => navigate('/stats/people')}><Users size={16} /> People</button>
+          </div>
+        </div>
 
         {/* Headline stats — 2x2 grid; numbers use formatCompact so they never clip. */}
         <div

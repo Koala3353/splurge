@@ -42,12 +42,11 @@ function apply(theme) {
 
 export function useTheme() {
   const [theme, setThemeState] = useState(read);
-  const [resolved, setResolved] = useState(() =>
-    theme === 'auto' ? (systemIsDark() ? 'dark' : 'light') : theme,
-  );
+  const [systemDark, setSystemDark] = useState(systemIsDark);
+  const resolved = theme === 'auto' ? (systemDark ? 'dark' : 'light') : theme;
 
   useEffect(() => {
-    setResolved(apply(theme));
+    apply(theme);
     try {
       localStorage.setItem(KEY, theme);
     } catch { /* private mode — the theme just won't persist */ }
@@ -55,9 +54,12 @@ export function useTheme() {
 
   // On 'auto', follow the OS as it changes rather than only at startup.
   useEffect(() => {
-    if (theme !== 'auto' || typeof matchMedia !== 'function') return undefined;
+    if (typeof matchMedia !== 'function') return undefined;
     const mq = matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => setResolved(apply('auto'));
+    const onChange = (event) => {
+      setSystemDark(event.matches);
+      if (theme === 'auto') apply('auto');
+    };
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, [theme]);

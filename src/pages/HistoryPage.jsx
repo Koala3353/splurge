@@ -11,7 +11,10 @@ export default function HistoryPage() {
   const [search, setSearch] = useState('');
   const [detailBillId, setDetailBillId] = useState(null);
 
-  const ordered = useMemo(() => [...bills].reverse(), [bills]);
+  const ordered = useMemo(
+    () => [...bills].sort((a, b) => new Date(b.date) - new Date(a.date)),
+    [bills],
+  );
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -52,7 +55,7 @@ export default function HistoryPage() {
           </div>
         ) : (
           <>
-            {bills.length >= 5 && (
+            {(
               <div
                 className="flex items-center gap-2 mb-4 glass-panel"
                 style={{ padding: '0.5rem 0.85rem' }}

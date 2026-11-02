@@ -495,7 +495,7 @@ export default function NewBillPage() {
         {step === 3 && (
           <>
             <div className="card mb-6 p-0" style={{ padding: 0 }}>
-              <div className="p-4 border-b border-glass flex justify-between items-center cursor-pointer pressable" onClick={addFee}>
+            <div className="p-4 border-b border-glass flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-color)', padding: '0.5rem', borderRadius: '50%' }}><Plus size={20} /></div>
                   <div>
@@ -503,7 +503,12 @@ export default function NewBillPage() {
                     <p className="text-sm text-secondary">Catch service charge or discounts before you send.</p>
                   </div>
                 </div>
-                <div className="font-bold tabular-nums">{formatCurrency(feesTotal)}</div>
+                <div className="flex items-center gap-2">
+                  <div className="font-bold tabular-nums">{formatCurrency(feesTotal)}</div>
+                  <button type="button" className="btn btn-secondary pressable" onClick={addFee}>
+                    <Plus size={16} /> Add fee
+                  </button>
+                </div>
               </div>
 
               {fees.length > 0 && (
