@@ -25,8 +25,22 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+      # `npm install`, not `npm ci`, and deliberately so.
+      #
+      # npm ci is the stricter gate and was tried first. It cannot pass here:
+      # vite 8 pulls rolldown's wasm32-wasi fallback binding, whose optional
+      # transitive deps (@emnapi/core, @emnapi/runtime) resolve to different
+      # versions on linux than on the macOS where this lockfile is generated —
+      # 1.11.3 vs 1.10.0 — so `npm ci` rejects a lockfile that is correct for
+      # the machine that wrote it. Neither --os/--cpu regeneration nor
+      # overrides fixes it from macOS, and the bindings in question are a wasm
+      # fallback neither platform actually loads.
+      #
+      # The lockfile is still committed and still honoured. If you switch this
+      # back to `npm ci`, regenerate the lockfile on linux first or the deploy
+      # will fail on install.
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Test
         run: npm test
       - name: Lint
