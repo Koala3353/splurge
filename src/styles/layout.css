@@ -14,23 +14,27 @@
     padding-inline: var(--space-4);
   }
 
+  /* The top inset belongs to the SHELL, not to one of its children.
+     index.html ships `viewport-fit=cover` with
+     `apple-mobile-web-app-status-bar-style: black-translucent`, so an
+     installed iOS PWA draws its web view under the clock and battery, and
+     env(safe-area-inset-top) did not appear once in this stylesheet.
+     It sat on .app__main first, which fixed four routes and missed the
+     wizard, whose header is a SIBLING of .app__main rather than a child.
+     Here it covers anything the shell ever contains, including a page that
+     puts chrome outside the main element. box-sizing is border-box
+     globally, so this does not add to the 100% height. */
   .app {
     display: flex;
     min-height: 100%;
     flex-direction: column;
+    padding-block-start: env(safe-area-inset-top, 0px);
     background: var(--paper);
   }
 
   .app__main {
     flex: 1;
-    /* The top inset is not optional. index.html ships `viewport-fit=cover`
-       with `apple-mobile-web-app-status-bar-style: black-translucent`, so an
-       installed iOS PWA draws its web view UNDER the clock and battery. With
-       no `safe-area-inset-top` anywhere in the stylesheet, the masthead
-       rendered behind the status bar and read as cropped at scroll top. Every
-       route's header lives in here, so this is the one place it belongs. */
-    padding-block: calc(var(--space-5) + env(safe-area-inset-top, 0px))
-      var(--space-8);
+    padding-block: var(--space-5) var(--space-8);
   }
 
   /* ---- the bill sheet --------------------------------------------- */
