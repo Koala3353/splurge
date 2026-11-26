@@ -153,11 +153,12 @@ point of having two: +10.8pp and +12.3pp item F1, +12.4pp and +9.7pp strict F1.
 
 ### Re-measure before you compare
 
-`results/revamp.json` is **stale**. The pipeline is deterministic — two runs
-over the same eight receipts produced byte-identical text — yet it reproduces
-*none* of revamp.json's texts, so that file was written by code that no longer
-matches the tree. Numbers in it, and the ones derived from it in the repo
-README, describe a pipeline nobody can run any more.
+`results/revamp.json` **was stale, and has been deleted.** The pipeline is
+deterministic — two runs over the same eight receipts produced byte-identical
+text — yet it reproduced *none* of that file's texts, so it had been written by
+code that no longer matched the tree. The numbers in it, and the ones derived
+from it in the repo README, described a pipeline nobody could run any more. It
+is gone rather than left here waiting to be quoted again.
 
 Rule, therefore: **re-run the control in the same session as the candidate.**
 A stored summary is a record, not a baseline.
