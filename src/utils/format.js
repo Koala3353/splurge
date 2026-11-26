@@ -83,7 +83,16 @@ function makeFormatters(config) {
     // The same formatter with the minor units switched off, for amounts that
     // have none — and the only formatter a zero-decimal currency ever needs.
     whole: build(config, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
-    compact: build(config, { notation: 'compact', maximumFractionDigits: 1 }),
+    // `trailingZeroDisplay` is load-bearing, not tidiness. Without it the
+    // same amount renders ₱1K on one ICU build and ₱1.0K on another — macOS
+    // and the linux CI runner genuinely disagree about en-PH compact notation
+    // — so the figure on a user's screen depended on their platform. Stripping
+    // an integer's decimal makes it the same everywhere.
+    compact: build(config, {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+      trailingZeroDisplay: 'stripIfInteger',
+    }),
     // 2 for the peso, 0 for the yen. Everything that "trims decimals" asks
     // the formatter how many there are rather than assuming two.
     digits: full.resolvedOptions().maximumFractionDigits ?? 2,
