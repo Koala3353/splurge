@@ -15,10 +15,14 @@
    * ================================================================== */
 
   /* The bar is 1 hairline + 8 + 20 + 4 + ~16 + 8 = 57px of ink, plus the
-     home-indicator inset underneath it. Main clears that, not a guess. */
+     home-indicator inset underneath it. Main clears that, not a guess —
+     which is what the previous value stopped being: --space-8 + --space-7 is
+     112px for a 57px bar, so the last row cleared the tab bar by a whole
+     extra bar's height and the page ended in dead space. --space-8 alone is
+     64px, which clears the ink with 7px to spare. */
   .app--tabbed .app__main {
     padding-block-end: calc(
-      var(--space-8) + var(--space-7) + env(safe-area-inset-bottom, 0px)
+      var(--space-8) + env(safe-area-inset-bottom, 0px)
     );
   }
 

@@ -23,7 +23,14 @@
 
   .app__main {
     flex: 1;
-    padding-block: var(--space-5) var(--space-8);
+    /* The top inset is not optional. index.html ships `viewport-fit=cover`
+       with `apple-mobile-web-app-status-bar-style: black-translucent`, so an
+       installed iOS PWA draws its web view UNDER the clock and battery. With
+       no `safe-area-inset-top` anywhere in the stylesheet, the masthead
+       rendered behind the status bar and read as cropped at scroll top. Every
+       route's header lives in here, so this is the one place it belongs. */
+    padding-block: calc(var(--space-5) + env(safe-area-inset-top, 0px))
+      var(--space-8);
   }
 
   /* ---- the bill sheet --------------------------------------------- */
