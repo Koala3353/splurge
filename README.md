@@ -136,10 +136,14 @@ npm test && npm run lint && node scripts/check-contrast.mjs
 
 The contrast script composites the real layers and measures every shipping foreground/background pair against WCAG AA in both themes. It exists because a retheme once shipped white-on-emerald CTAs at 2.28:1 — and then nothing ran it, while the stylesheet shipped a hardcoded `color: white` on danger buttons at 2.69:1 that the script could not see, because it measured a token no component used. It now checks the values components actually use.
 
-Scoring the receipt parser needs the corpus fetched first; see [`scripts/ocr-eval/README.md`](scripts/ocr-eval/README.md).
+Scoring the receipt parser needs the corpus fetched first, and a native canvas
+for the pipeline to draw on under Node. That canvas is deliberately **not** a
+dependency of the app — CI should not build a platform binary for a script it
+never runs — so install it only when you want to score the parser. See
+[`scripts/ocr-eval/README.md`](scripts/ocr-eval/README.md).
 
 ```bash
-npm run ocr-eval
+npm i -D @napi-rs/canvas && npm run ocr-eval
 ```
 
 ## Architecture

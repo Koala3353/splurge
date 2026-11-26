@@ -207,8 +207,24 @@ test('the pixel ratio stays between 2 and 3', () => {
 // to prove the op list is executable. Font faces are the browser's problem and
 // are verified there; this only asserts that nothing in the list throws and
 // that the sheet is actually marked.
-test('the plan paints onto a real 2D context', async () => {
-  const { createCanvas } = await import('@napi-rs/canvas');
+//
+// @napi-rs/canvas is a prebuilt NATIVE module and deliberately not a
+// dependency of this app — it exists only so the eval harness and this test
+// can draw under Node. Requiring it in CI meant installing a platform binary
+// for one assertion, and its per-platform optional deps are exactly what a
+// macOS `npm install` omits from the lockfile and a Linux `npm ci` then
+// rejects. So this skips when it is absent rather than failing, and runs for
+// anyone who has installed the harness (`npm i -D @napi-rs/canvas`).
+const canvasBackend = await (async () => {
+  try {
+    return await import('@napi-rs/canvas');
+  } catch {
+    return null;
+  }
+})();
+
+test('the plan paints onto a real 2D context', { skip: canvasBackend ? false : 'needs @napi-rs/canvas' }, async () => {
+  const { createCanvas } = canvasBackend;
   const { measurerFor, paintReceipt } = await import('./receipt-image/paint.js');
 
   const probe = createCanvas(10, 10);
