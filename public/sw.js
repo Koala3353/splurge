@@ -1,21 +1,23 @@
-const CACHE_NAME = 'splurge-v9';
+// Both placeholders are replaced at build time (see stampServiceWorker in
+// vite.config.js). Served unstamped (dev), the cache name is a stable dev one
+// and nothing extra is precached.
+const CACHE_NAME = 'splurge-__BUILD_VERSION__';
+const BUILD_ASSETS = "__PRECACHE_ASSETS__";
+const PRECACHE = ['./', './index.html', './manifest.json'].concat(
+  Array.isArray(BUILD_ASSETS) ? BUILD_ASSETS : []
+);
 
 self.addEventListener('install', (e) => {
-  self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll([
-      './',
-      './index.html',
-      './manifest.json'
-    ]))
-  );
+  // No skipWaiting(): a new worker waits until old tabs close, so assets are
+  // never swapped under a live page.
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)));
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
+        if (key.startsWith('splurge-') && key !== CACHE_NAME) {
           return caches.delete(key);
         }
       }));

@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tesseract language data, downloaded into cwd at runtime by the OCR eval harness
+*.traineddata
+
+# Receipt eval corpus is fetched to a scratch dir, never committed; results are
+scripts/ocr-eval/corpus/

@@ -1,54 +1,77 @@
-import { useEffect, useRef, useState } from 'react';
-import { X, Check, Bookmark, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAppContext } from '../store/AppContext';
-import { formatCurrency, initialsOf } from '../utils/format';
+import { formatCurrency } from '../utils/format';
+import { CADENCES } from '../utils/suggestions';
+import Sheet from './ui/Sheet.jsx';
+import Button from './ui/Button.jsx';
+import Field from './ui/Field.jsx';
+import Row from './ui/Row.jsx';
+
+const AMOUNT_ID = 'quick-split-amount';
 
 /**
  * The whole point of a suggestion is that repeating it costs one number.
- * So this sheet opens with the people already set, the amount prefilled with
- * what this split usually costs and the field focused and selected — type to
- * replace, or just confirm.
+ *
+ * So this opens with the people already set, the amount prefilled with what
+ * this split usually costs, and the field focused and selected — type to
+ * replace it, or just confirm.
  */
 export default function QuickSplitSheet({ suggestion, onClose, onLogged }) {
-  const dialogRef = useRef(null);
-  const amountRef = useRef(null);
+  return (
+    <Sheet
+      open={Boolean(suggestion)}
+      title={suggestion ? suggestion.title : 'Quick split'}
+      size="sm"
+      onClose={onClose}
+      footer={null}
+    >
+      {suggestion ? (
+        // Keyed by the suggestion, so a different one arrives with its own
+        // prefilled amount instead of an effect resetting the last one's.
+        <QuickSplitForm
+          key={suggestion.id}
+          suggestion={suggestion}
+          onClose={onClose}
+          onLogged={onLogged}
+        />
+      ) : null}
+    </Sheet>
+  );
+}
+
+/**
+ * What a tap on "Log the split" also sets up for next time.
+ *
+ * 'off' is the default and writes nothing. 'none' saves the split to the
+ * suggestions row without ever prompting. The rest save it AND set a cadence,
+ * which is what makes a split recurring — there is no separate kind of
+ * object, because a template already carries every field a cadence needs.
+ */
+const REPEATS = [
+  { id: 'off', label: 'Just this once' },
+  { id: 'none', label: 'Keep it handy' },
+  ...CADENCES.filter((c) => c.id !== 'none'),
+];
+
+function QuickSplitForm({ suggestion, onClose, onLogged }) {
   const { people, logQuickSplit, addTemplate, templates } = useAppContext();
+  // A due prompt asks rather than assumes: rent and groceries move every
+  // cycle, and a prefilled figure is one somebody confirms without reading.
+  const [amount, setAmount] = useState(
+    suggestion.askAmount || !suggestion.amount ? '' : String(suggestion.amount),
+  );
+  const [repeat, setRepeat] = useState('off');
 
-  const [amount, setAmount] = useState('');
-  const [saveTemplate, setSaveTemplate] = useState(false);
-
-  const open = Boolean(suggestion);
-
+  // Select rather than just focus: the prefilled amount is a suggestion, and
+  // the most common edit is replacing it outright.
   useEffect(() => {
-    const d = dialogRef.current;
-    if (!d) return;
-    if (open && !d.open) {
-      setAmount(suggestion.amount ? String(suggestion.amount) : '');
-      setSaveTemplate(false);
-      d.showModal();
-      // Select rather than just focus: the prefilled amount is a suggestion,
-      // and the most common edit is replacing it outright.
-      requestAnimationFrame(() => amountRef.current?.select());
-    } else if (!open && d.open) {
-      d.close();
-    }
-  }, [open, suggestion]);
+    const frame = requestAnimationFrame(() => {
+      document.getElementById(AMOUNT_ID)?.select?.();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
-  useEffect(() => {
-    const d = dialogRef.current;
-    if (!d) return undefined;
-    const onCancel = (e) => { e.preventDefault(); onClose(); };
-    d.addEventListener('cancel', onCancel);
-    d.addEventListener('close', onClose);
-    return () => {
-      d.removeEventListener('cancel', onCancel);
-      d.removeEventListener('close', onClose);
-    };
-  }, [onClose]);
-
-  if (!suggestion) return <dialog ref={dialogRef} className="sheet" aria-label="Quick split" />;
-
-  const named = suggestion.people
+  const named = (suggestion.people || [])
     .map((id) => people.find((p) => p.id === id))
     .filter(Boolean);
   const value = parseFloat(amount);
@@ -67,95 +90,86 @@ export default function QuickSplitSheet({ suggestion, onClose, onLogged }) {
       amount: value,
       templateId: suggestion.templateId,
     });
-    if (saveTemplate) {
-      addTemplate({ title: suggestion.title, people: suggestion.people, amount: value });
+    if (repeat !== 'off') {
+      addTemplate({
+        title: suggestion.title,
+        people: suggestion.people,
+        amount: value,
+        cadence: repeat,
+      });
     }
     onLogged?.(suggestion.title);
     onClose();
   };
 
   return (
-    <dialog ref={dialogRef} className="sheet" aria-label={`Split ${suggestion.title}`}>
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-xl font-bold truncate">{suggestion.title}</h2>
-            <p className="text-sm text-secondary">{suggestion.reason}</p>
-          </div>
-          <button
-            type="button"
-            className="bg-glass p-2 rounded-full flex-shrink-0 pressable"
-            aria-label="Close"
-            onClick={onClose}
-          >
-            <X size={18} />
-          </button>
-        </div>
+    <form onSubmit={submit} className="u-stack-loose">
+      <p className="u-ink-2" style={{ margin: 0, fontSize: 'var(--text-sm)' }}>
+        {suggestion.reason}
+      </p>
 
-        <div className="quick-amount">
-          <label htmlFor="quick-amount-input" className="text-xs uppercase text-tertiary">
-            Total
-          </label>
-          <input
-            id="quick-amount-input"
-            ref={amountRef}
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            className="quick-amount-field"
-          />
-        </div>
+      <Field
+        id={AMOUNT_ID}
+        label="Total"
+        type="number"
+        inputMode="decimal"
+        step="0.01"
+        min="0"
+        figure
+        value={amount}
+        onChange={setAmount}
+        placeholder="0.00"
+        hint={suggestion.askAmount && suggestion.amount > 0
+          ? `Last time it was ${formatCurrency(suggestion.amount)}.`
+          : undefined}
+        autoFocus
+      />
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <Users size={14} className="text-tertiary flex-shrink-0" />
-          <div className="flex items-center" style={{ marginLeft: '0.15rem' }}>
-            {named.map((p, i) => (
-              <span
-                key={p.id}
-                className="avatar bg-accent stacked-avatar"
-                title={p.name}
-                style={{ zIndex: named.length - i }}
+      <section>
+        <h3 className="section__label">Split {named.length} ways</h3>
+        <ul>
+          {named.map((p) => (
+            <li key={p.id}>
+              <Row name={p.name} figure={valid ? formatCurrency(each) : '—'} />
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Offered only when it isn't already saved — a second identical
+          template would just be noise in the row. A cadence here is the only
+          way a split becomes recurring, and it is set at the moment the
+          user has just proved the split repeats. */}
+      {!suggestion.templateId && !alreadySaved ? (
+        <section>
+          <h3 className="section__label">Does this come round again?</h3>
+          <div className="chips" role="radiogroup" aria-label="How often this split comes round">
+            {REPEATS.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                role="radio"
+                aria-checked={repeat === r.id}
+                className="chip"
+                onClick={() => setRepeat(r.id)}
               >
-                {initialsOf(p.name)}
-              </span>
+                {r.label}
+              </button>
             ))}
           </div>
-          <span className="text-sm text-secondary">
-            {valid
-              ? `${formatCurrency(each)} each`
-              : `Split ${named.length} ways`}
-          </span>
-        </div>
+          <p className="u-micro u-ink-3" style={{ marginBlockStart: 'var(--space-2)' }}>
+            {repeat === 'off'
+              ? 'Nothing is saved beyond the split itself.'
+              : repeat === 'none'
+                ? 'Kept in the suggestions row, with no reminder.'
+                : 'Home asks you when it comes round. It never makes the split for you.'}
+          </p>
+        </section>
+      ) : null}
 
-        {/* Offered only when it isn't already saved — a second identical
-            template would just be noise in the row. */}
-        {!suggestion.templateId && !alreadySaved && (
-          <label className="flex items-center gap-2 text-sm text-secondary">
-            <input
-              type="checkbox"
-              checked={saveTemplate}
-              onChange={(e) => setSaveTemplate(e.target.checked)}
-              style={{ width: 'auto' }}
-            />
-            <Bookmark size={14} />
-            Keep this one handy
-          </label>
-        )}
-
-        <button
-          type="submit"
-          className="btn btn-primary w-full pressable"
-          style={{ borderRadius: 'var(--radius-full)', opacity: valid ? 1 : 0.45 }}
-          disabled={!valid}
-        >
-          <Check size={18} />
-          Log split
-        </button>
-      </form>
-    </dialog>
+      <Button type="submit" variant="solid" block disabled={!valid}>
+        Log the split
+      </Button>
+    </form>
   );
 }

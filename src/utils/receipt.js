@@ -1,9 +1,8 @@
 // Receipt OCR text -> line items, tuned for Philippine restaurant receipts.
 // Pure (string in, array out) so it can be unit-tested in Node against real
-// receipt OCR output. See /tmp harness or the project tests.
+// receipt OCR output. Scored against CORD-v2 by `npm run ocr-eval`.
 
-const uid = () =>
-  (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `id-${Date.now()}-${Math.round(Math.random() * 1e9)}`);
+import { uid } from './id.js';
 
 // Multi-word phrases that mark totals/taxes/payment/metadata lines (safe to
 // match as substrings — they won't collide with dish names).
@@ -93,6 +92,31 @@ function editDistance(a, b, max) {
   return prev[b.length];
 }
 
+// The summary block's own labels, garbled. "TOVAL", "lotal", "Totals",
+// "CRANDTOTAL" and "ASH" all reached the item list on real photos, each
+// carrying the bill's total as if it were the price of a dish. These are
+// SHORT words, so the ≥5-char fuzzy pass above cannot see them, and matching
+// them loosely would eat real dish names — so the rule is deliberately tight:
+// the garble must be essentially the whole label (one or two tokens), and
+// within one edit of the keyword.
+const SUMMARY_LABELS = ['total', 'grandtotal', 'cash', 'change', 'charge', 'balance'];
+
+function looksLikeSummaryLabel(name) {
+  const normalized = name.toLowerCase()
+    .replace(/0/g, 'o').replace(/1/g, 'l').replace(/5/g, 's').replace(/7/g, 't');
+  const tokens = normalized.match(/[a-z]{3,}/g);
+  if (!tokens || tokens.length > 2) return false;
+  for (const token of tokens) {
+    for (const kw of SUMMARY_LABELS) {
+      if (Math.abs(token.length - kw.length) > 1) continue;
+      if (editDistance(token, kw, 1) <= 1) return true;
+      // "grandtotal" / "subtotal" arrive glued to a neighbour ("gus Toa A").
+      if (kw.length >= 8 && token.includes(kw.slice(0, 5))) return true;
+    }
+  }
+  return false;
+}
+
 // Normalize the digit-for-letter swaps OCR makes inside words, then test each
 // word token against the fuzzy keyword list.
 function hasFuzzyKeyword(lower) {
@@ -136,7 +160,7 @@ const TAXFLAG = '(?:\\s*(?:tx|vat|[veznxta]{1,2}))?\\s*\\*?';
 
 // Find a money amount anchored at the END of the line (item amounts are
 // right-aligned). Returns { raw, value, money } or null.
-function detectTrailingAmount(line) {
+export function detectTrailingAmount(line) {
   // OCR sometimes reads the decimal point as a comma ("82,00 V"). Normalize
   // comma + exactly-two-digits to a dot when not followed by more digits
   // (which would be a thousands separator). Same length, so downstream
@@ -148,6 +172,18 @@ function detectTrailingAmount(line) {
   // 2) currency symbol + whole number: "P 95", "₱120", "₱120V"
   m = line.match(new RegExp(`(${CURRENCY}\\s*-?\\d[\\d,]*)${TAXFLAG}\\s*$`, 'i'));
   if (m) return { raw: m[0], value: parseFloat(fixDigits(stripCurrency(m[1]))), money: true };
+  // 2b) thousands-grouped whole amount: "12,500", "1,250,000" — and, because
+  //     plenty of the world groups with dots, "12.500" too. Grouping is as
+  //     strong a signal of a price column as a ".00" tail is, and treating it
+  //     as a bare integer was costing real items: the bare path caps values at
+  //     9,999, so every five-figure amount was silently discarded. Measured on
+  //     CORD-v2, this is the single largest recall win in the parser.
+  m = line.match(new RegExp(`(${CURRENCY}?\\s*-?\\d{1,3}(?:[.,]\\d{3})+)${TAXFLAG}\\s*$`, 'i'));
+  if (m) {
+    const digits = stripCurrency(m[1]).replace(/[.,\s]/g, '');
+    const value = parseFloat(fixDigits(digits));
+    if (Number.isFinite(value)) return { raw: m[0], value, money: true };
+  }
   // 3) bare trailing integer with a space before it: "Coke 50", "Coke 50V"
   m = line.match(new RegExp(`(\\s-?\\d[\\d,]{0,6})${TAXFLAG}\\s*$`, 'i'));
   if (m) return { raw: m[0], value: parseFloat(fixDigits(m[1])), money: false };
@@ -163,6 +199,99 @@ function detectTrailingAmount(line) {
     }
   }
   return null;
+}
+
+// --- Layout: the price column ---------------------------------------------
+// Receipts differ wildly in what they print, but almost all of them share one
+// structure: amounts are RIGHT-ALIGNED in a column of their own, separated
+// from the item name by a wide run of spaces. Finding that column (or proving
+// it does not exist) is worth more than any per-line heuristic, because it
+// turns an ambiguous trailing number into a positionally-attested price.
+//
+// Why this matters concretely: the bare-integer path caps values at 9,999 to
+// reject ZIP codes, table numbers and order IDs — numbers that appear in the
+// middle of a line, not in a column. A number that lines up with four other
+// amounts on the page is not a table number, so the cap can be lifted for it
+// without reopening that hole. Measured on CORD-v2, undecimalised column
+// prices above the cap were the single largest remaining recall loss.
+
+// Where the amount's LAST digit sits in the line. Right-alignment is the
+// invariant a price column actually has, and the last digit's position is the
+// only part of the match that survives the differences between the patterns
+// in detectTrailingAmount and the OCR junk that trails a garbled column.
+function amountEnd(line, amount) {
+  const at = line.length - amount.raw.length;
+  let last = -1;
+  for (let i = amount.raw.length - 1; i >= 0; i--) {
+    if (amount.raw.charCodeAt(i) >= 48 && amount.raw.charCodeAt(i) <= 57) { last = i; break; }
+  }
+  return last < 0 ? -1 : at + last;
+}
+
+/** Where the amount's first digit sits — used to measure the gutter. */
+function firstDigit(line, amount) {
+  const at = line.length - amount.raw.length;
+  const m = /\d/.exec(amount.raw);
+  return m ? at + m.index : line.length;
+}
+
+const COLUMN_TOLERANCE = 4;   // chars of wobble allowed within one column
+const COLUMN_MIN_ROWS = 3;    // fewer than this is coincidence, not a column
+const COLUMN_MIN_GAP = 2;     // spaces between name and amount
+
+/**
+ * Decide whether these lines share a right-aligned amount column, and if so
+ * which of them sit in it.
+ *
+ * @param {string[]} lines
+ * @param {Array<object|null>} amounts  detectTrailingAmount per line
+ * @returns {Set<number>} indices of lines whose amount is column-attested
+ */
+export function detectPriceColumn(lines, amounts) {
+  const entries = [];
+  for (let i = 0; i < lines.length; i++) {
+    const a = amounts[i];
+    if (!a || !Number.isFinite(a.value)) continue;
+    const end = amountEnd(lines[i], a);
+    const first = firstDigit(lines[i], a);
+    if (end < 0) continue;
+    // A column is defined by the gutter in front of it. Without one, the
+    // number is just the tail of a sentence.
+    const before = lines[i].slice(0, first);
+    if (!new RegExp(`\\s{${COLUMN_MIN_GAP},}$`).test(before)) continue;
+    // Needs something to its left, or it is a lone number, not a priced row.
+    if (before.replace(/[^A-Za-z0-9]/g, '').length < 2) continue;
+    entries.push({ i, start: end });
+  }
+  if (entries.length < COLUMN_MIN_ROWS) return new Set();
+
+  // Largest cluster of start positions. Receipts sometimes print a quantity
+  // column too, so take the RIGHTMOST cluster that is big enough — amounts
+  // are the last column on the line.
+  let best = null;
+  for (const anchor of entries) {
+    const members = entries.filter((e) => Math.abs(e.start - anchor.start) <= COLUMN_TOLERANCE);
+    if (members.length < COLUMN_MIN_ROWS) continue;
+    if (!best || members.length > best.members.length
+      || (members.length === best.members.length && anchor.start > best.start)) {
+      best = { start: anchor.start, members };
+    }
+  }
+  return best ? new Set(best.members.map((m) => m.i)) : new Set();
+}
+
+// Some receipts don't put the amount beside the name at all: the name takes a
+// full-width line and the money is printed underneath, usually with a quantity
+// breakdown ("CINNAMON SUGAR" / "1 x 17.000      17,000"). A line that carries
+// an amount and nothing else nameable is that continuation, not an item of its
+// own — short alpha tokens are currency marks and OCR crumbs, not names.
+export function isAmountOnlyLine(line, amount) {
+  const head = line.slice(0, line.length - amount.raw.length);
+  const stripped = head
+    .replace(/₱|\$/g, ' ')
+    .replace(/\d[\d.,]*/g, ' ')
+    .replace(/\b[A-Za-z]{1,2}\b/g, ' ');
+  return stripped.replace(/[^A-Za-z]/g, '').length < 3;
 }
 
 function stripCurrency(s) {
@@ -256,11 +385,22 @@ function parseCore(text, selectedPeople) {
   let largestItem = 0;
   let summaryStarted = false;
 
-  for (const rawLine of (text || '').split('\n')) {
-    const line = rawLine.replace(/\t/g, ' ').trim();
-    if (line.length < 3) continue;
+  // Left indentation is kept: a right-aligned amount column can only be seen
+  // if every line is measured from the same origin. cleanName() strips the
+  // leading whitespace again when it extracts the item name.
+  const lines = (text || '').split('\n')
+    .map((l) => l.replace(/\t/g, ' ').replace(/\s+$/, ''))
+    .map((l) => (l.trim().length >= 3 ? l : ''));
+  const amounts = lines.map((l) => (l ? detectTrailingAmount(l) : null));
+  const inColumn = detectPriceColumn(lines, amounts);
+  const consumed = new Set();   // lines absorbed as a previous line's amount
 
-    const amount = detectTrailingAmount(line);
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    if (!line) continue;
+
+    const amount = amounts[li];
+    const columnPriced = inColumn.has(li);
     const lower = line.toLowerCase();
 
     // Structural boundary: a receipt's subtotal/total equals the sum of its
@@ -294,23 +434,48 @@ function parseCore(text, selectedPeople) {
     }
 
     if (summaryStarted) continue;
+    if (consumed.has(li)) continue;
     if (isSkippableLine(lower)) continue;
     if (looksLikeMetadata(line)) continue;
-    if (!amount) continue;
 
-    const { value, money } = amount;
+    // Layout: name on its own line, money on the next one.
+    let priced = amount;
+    let pricedInColumn = columnPriced;
+    let nameText = amount ? line.slice(0, line.length - amount.raw.length) : line;
+    if (!amount && line.replace(/[^A-Za-z]/g, '').length >= 3) {
+      const j = li + 1;
+      const next = lines[j];
+      const nextAmount = amounts[j];
+      if (next && nextAmount && isAmountOnlyLine(next, nextAmount)
+        && !isSkippableLine(next.toLowerCase()) && !looksLikeMetadata(next)) {
+        priced = nextAmount;
+        pricedInColumn = inColumn.has(j);
+        nameText = line;
+        consumed.add(j);
+      }
+    }
+    if (!priced) continue;
+
+    const { value, money } = priced;
     if (!Number.isFinite(value) || value <= 0) continue;
     // Bare integers (no decimals / no currency symbol) must be a sane menu
     // price — this rejects ZIPs, check numbers, table numbers, years, etc.
     if (!money) {
-      if (value < 10 || value > 9999) continue;
-      if (/^\s*0\d/.test(amount.raw)) continue; // leading zero -> code/ID/ZIP, not a price
+      // A number that lines up with the rest of the page's amounts is a price
+      // wherever it falls; one that doesn't has to be a plausible menu price,
+      // which is what keeps ZIPs, table numbers and order IDs out.
+      if (value < 10) continue;
+      if (!pricedInColumn && value > 9999) continue;
+      if (/^\s*0\d/.test(priced.raw)) continue; // leading zero -> code/ID/ZIP, not a price
     }
     if (value > 100000) continue;
 
-    const name = cleanName(line.slice(0, line.length - amount.raw.length));
+    const name = cleanName(nameText);
     if (name.replace(/[^A-Za-z]/g, '').length < 3) continue; // needs a real name
     if (name.length > 48) continue;                          // probably a sentence, not an item
+    // A garbled "TOTAL" carrying the bill's total is the most expensive kind
+    // of wrong row: it looks like an item and it is the largest number there.
+    if (looksLikeSummaryLabel(name)) { summaryStarted = true; continue; }
 
     const price = Math.round(value * 100) / 100;
     items.push({ id: uid(), name, price, people: [...selectedPeople] });

@@ -2,18 +2,38 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Receipt, PieChart, Users } from 'lucide-react';
 import { flushSync } from 'react-dom';
 
+/**
+ * The tab bar.
+ *
+ * Four tabs, each a full quarter of the receipt column: 93 × 57px at phone
+ * width, against the 36px tall items the audit measured. The glyph stays at
+ * 20px — the target is the column around it, not the mark.
+ *
+ * The current route is marked three ways at once: full ink, a sunk field and
+ * a pressed rule across the top of the tab. Colour is not one of them. In
+ * this system the only chromatic mark left is money, so chrome cannot borrow
+ * it to say "you are here".
+ */
+const TABS = [
+  { to: '/', label: 'Home', Icon: Home },
+  { to: '/people', label: 'People', Icon: Users },
+  { to: '/new-bill', label: 'New', Icon: Receipt },
+  { to: '/stats', label: 'Stats', Icon: PieChart },
+];
+
 export default function Navigation() {
   return (
-    <nav className="app-footer" aria-label="Primary">
-      <NavItem to="/" icon={<Home size={20} />} label="Home" />
-      <NavItem to="/people" icon={<Users size={20} />} label="People" />
-      <NavItem to="/new-bill" icon={<Receipt size={20} />} label="New" />
-      <NavItem to="/stats" icon={<PieChart size={20} />} label="Stats" />
+    <nav className="tabbar" aria-label="Primary">
+      <div className="tabbar__inner">
+        {TABS.map((tab) => (
+          <NavItem key={tab.to} {...tab} />
+        ))}
+      </div>
     </nav>
   );
 }
 
-function NavItem({ to, icon, label }) {
+function NavItem({ to, label, Icon }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isActive = location.pathname === to;
@@ -38,16 +58,14 @@ function NavItem({ to, icon, label }) {
     <a
       href={to}
       onClick={handleClick}
-      aria-label={label}
       aria-current={isActive ? 'page' : undefined}
-      className={`nav-item select-none ${isActive ? 'nav-item-active' : ''}`}
+      className="tabbar__item"
     >
-      {icon}
-      {/* Shown only on the selected tab — four labels will not fit a pill at
-          phone width. CSS hides it with display:none, which takes it out of
-          the accessibility tree as well, so the name every tab is announced
-          by is the aria-label above, not this. */}
-      <span className="nav-label" aria-hidden="true">{label}</span>
+      <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
+      {/* The label is always shown — four 13px mono words fit the column at
+          375px, and a tab whose name appears only once it is selected cannot
+          be read before you tap it. */}
+      <span>{label}</span>
     </a>
   );
 }

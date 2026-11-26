@@ -1,56 +1,61 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Pencil, Trash2, Share2, Receipt, Users, ChevronLeft } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
-import { formatCurrency, formatDate, initialsOf } from '../utils/format';
+import { isSettled } from '../utils/split';
+import { formatCurrency, formatDate } from '../utils/format';
 import { buildBillBreakdown, buildPaymentStatus } from '../utils/shareText';
+import Sheet from './ui/Sheet.jsx';
+import Button from './ui/Button.jsx';
+import Row from './ui/Row.jsx';
+import Stamp from './ui/Stamp.jsx';
 import ShareSheet from './ShareSheet';
 
+/**
+ * One saved split, read back: what was on the bill, what each person's share
+ * came to, and who has settled it.
+ *
+ * Sharing is two labelled buttons in the body rather than a menu behind a
+ * "Share" button — the old path put the message three modals deep for a
+ * choice between two things.
+ */
 export default function BillDetailModal({ billId, onClose }) {
-  const dialogRef = useRef(null);
   const navigate = useNavigate();
-  const { bills, billDuesById, billPersonStatus, people, removeBill, payInfo, meId } = useAppContext();
+  const { bills, billDuesById, billPersonStatus, people, removeBill, payInfo, meId } =
+    useAppContext();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [shareMenuOpen, setShareMenuOpen] = useState(false);
   // Which message the share sheet is shaping: 'breakdown' | 'status' | null.
   const [shareKind, setShareKind] = useState(null);
 
-  useEffect(() => {
-    const d = dialogRef.current;
-    if (!d) return;
-    if (billId && !d.open) d.showModal();
-    else if (!billId && d.open) d.close();
-  }, [billId]);
-
-  const handleClose = () => {
-    setConfirmDelete(false);
-    setShareMenuOpen(false);
-    setShareKind(null);
-    onClose();
-  };
-
-  const bill = bills.find((b) => b.id === billId);
+  const bill = bills.find((b) => b.id === billId) || null;
   // Memoized so they stay referentially stable for buildShareBody below.
   const dues = useMemo(() => (billId && billDuesById[billId]) || {}, [billId, billDuesById]);
   const statusByPerson = useMemo(
     () => (billId && billPersonStatus[billId]) || {},
     [billId, billPersonStatus],
   );
+
   const nameOf = (id) => people.find((p) => p.id === id)?.name || '—';
 
+  const close = () => {
+    setConfirmDelete(false);
+    onClose();
+  };
+
   const handleEdit = () => {
-    dialogRef.current?.close();
-    navigate('/new-bill', { state: { editId: bill.id } });
+    const id = bill?.id;
+    close();
+    if (id) navigate('/new-bill', { state: { editId: id } });
+  };
+
+  const handleRepeat = () => {
+    const id = bill?.id;
+    close();
+    if (id) navigate(`/new-bill?from=${encodeURIComponent(id)}`);
   };
 
   const handleDelete = () => {
-    removeBill(bill.id);
-    dialogRef.current?.close();
-  };
-
-  const openShare = (kind) => {
-    setShareMenuOpen(false);
-    setShareKind(kind);
+    if (bill) removeBill(bill.id);
+    close();
   };
 
   // Rebuilt on every option change, so the sheet's preview stays live. Names
@@ -67,164 +72,160 @@ export default function BillDetailModal({ billId, onClose }) {
   }, [bill, dues, statusByPerson, meId, payInfo, shareKind, people]);
 
   return (
-    <dialog
-      ref={dialogRef}
-      onClose={handleClose}
-      onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
-      style={{ width: '95vw', maxWidth: '500px', padding: 0, overflow: 'hidden' }}
-    >
-      {bill && (
-        <div className="flex flex-col" style={{ maxHeight: '85vh' }}>
-          {/* Header */}
-          <div
-            className="p-4 border-b border-glass flex justify-between items-center bg-glass"
-            style={{ position: 'sticky', top: 0, zIndex: 10, backdropFilter: 'blur(12px)' }}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="avatar gradient-primary flex-shrink-0"><Receipt size={20} /></div>
-              <div className="min-w-0">
-                <h2 className="text-xl font-bold truncate">{bill.title}</h2>
-                <p className="text-xs text-secondary">{formatDate(bill.date)}</p>
-              </div>
-            </div>
-            <form method="dialog">
-              <button className="btn bg-glass p-2 rounded-full pressable" aria-label="Close"><X size={20} /></button>
-            </form>
-          </div>
+    <>
+      <Sheet
+        open={!!bill && !shareKind}
+        title={bill ? bill.title : 'Split'}
+        onClose={close}
+        footer={
+          confirmDelete ? (
+            <>
+              <Button onClick={() => setConfirmDelete(false)}>Keep it</Button>
+              <Button variant="danger" onClick={handleDelete}>
+                Delete the split
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={handleEdit}>Edit</Button>
+              <Button variant="danger" onClick={() => setConfirmDelete(true)}>
+                Delete
+              </Button>
+            </>
+          )
+        }
+      >
+        {bill ? (
+          <div className="u-stack-loose">
+            <section>
+              <p className="u-micro u-ink-2" style={{ margin: 0 }}>
+                {formatDate(bill.date)}
+              </p>
+              <p className="figure figure--total" style={{ margin: 0 }}>
+                {formatCurrency(bill.total || 0)}
+              </p>
+            </section>
 
-          <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
-            {/* Total */}
-            <div className="text-center mb-6">
-              <p className="text-xs text-secondary uppercase tracking-wider mb-1">Total</p>
-              <h1 className="text-4xl font-black break-words">{formatCurrency(bill.total || 0)}</h1>
-            </div>
-
-            {/* Items */}
-            <div className="text-xs text-secondary font-bold uppercase tracking-wider mb-2">Items</div>
-            <div className="flex flex-col gap-2 mb-5">
-              {bill.items.length === 0 && <p className="text-secondary text-sm">No items.</p>}
-              {bill.items.map((item) => (
-                <div key={item.id} className="glass-panel p-3">
-                  <div className="flex justify-between items-center gap-3">
-                    <span className="font-semibold min-w-0 truncate">{item.name || 'Item'}</span>
-                    <span className="font-bold tabular-nums flex-shrink-0">{formatCurrency(item.price)}</span>
-                  </div>
-                  {item.people?.length > 0 && (
-                    <div className="flex gap-1 mt-2 flex-wrap">
-                      {item.people.map((pId) => (
-                        <span
-                          key={pId}
-                          className="text-xs px-2 py-1 rounded-full bg-glass text-secondary"
-                        >
-                          {nameOf(pId)}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Fees */}
-            {bill.fees?.length > 0 && (
-              <>
-                <div className="text-xs text-secondary font-bold uppercase tracking-wider mb-2">Fees &amp; tips</div>
-                <div className="flex flex-col gap-2 mb-5">
-                  {bill.fees.map((fee) => (
-                    <div key={fee.id} className="flex justify-between items-center px-1">
-                      <span className="text-sm text-secondary">{fee.name || 'Fee'}</span>
-                      <span className="font-semibold tabular-nums">{formatCurrency(fee.amount)}</span>
-                    </div>
+            <section>
+              <h3 className="section__label">Items</h3>
+              {bill.items.length === 0 ? (
+                <p className="u-ink-2" style={{ fontSize: 'var(--text-sm)' }}>
+                  Nothing itemised — this one was split as a single amount.
+                </p>
+              ) : (
+                <ul>
+                  {bill.items.map((item) => (
+                    <li key={item.id}>
+                      <Row
+                        name={item.name || 'Item'}
+                        note={
+                          item.people?.length
+                            ? item.people.map(nameOf).join(', ')
+                            : 'Nobody is on this one'
+                        }
+                        figure={formatCurrency(item.price)}
+                      />
+                    </li>
                   ))}
-                </div>
-              </>
-            )}
+                </ul>
+              )}
+            </section>
 
-            {/* Who owes what */}
-            <div className="text-xs text-secondary font-bold uppercase tracking-wider mb-2">The split</div>
-            <div className="flex flex-col gap-1 mb-2">
-              {(bill.participants || []).map((pId) => {
-                const due = dues[pId] || 0;
-                const remaining = Math.max(0, statusByPerson[pId]?.remaining ?? due);
-                const isPaid = due > 0.005 && remaining <= 0.005;
-                return (
-                  <div key={pId} className="flex justify-between items-center py-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="avatar bg-accent flex-shrink-0" style={{ width: 36, height: 36, fontSize: '0.85rem' }}>
-                        {initialsOf(nameOf(pId))}
-                      </div>
-                      <div className="min-w-0">
-                        <span className="font-semibold truncate block">{nameOf(pId)}</span>
-                        {/* Paid/owes framing doesn't apply to your own row — you fronted the bill. */}
-                        {pId !== meId && due > 0.005 && (
-                          <span className={isPaid ? 'text-xs text-success' : 'text-xs text-secondary'}>
-                            {isPaid ? 'Paid' : `Owes ${formatCurrency(remaining)}`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="font-bold tabular-nums flex-shrink-0">{formatCurrency(due)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+            {bill.fees?.length > 0 ? (
+              <section>
+                <h3 className="section__label">Fees and tips</h3>
+                <ul>
+                  {bill.fees.map((fee) => (
+                    <li key={fee.id}>
+                      <Row name={fee.name || 'Fee'} figure={formatCurrency(fee.amount)} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
 
-          {/* Actions */}
-          <div className="p-4 border-t border-glass flex flex-col gap-2" style={{ flexShrink: 0 }}>
+            <section>
+              <h3 className="section__label">The split</h3>
+              <ul>
+                {(bill.participants || []).map((pId) => {
+                  const due = dues[pId] || 0;
+                  const remaining = Math.max(0, statusByPerson[pId]?.remaining ?? due);
+                  const counts = !isSettled(due);
+                  const paid = counts && isSettled(remaining);
+                  const theirs = pId !== meId;
+                  return (
+                    <li key={pId}>
+                      <Row
+                        name={nameOf(pId)}
+                        // Paid/owes framing doesn't apply to your own row —
+                        // you fronted the bill.
+                        note={
+                          theirs && counts && !paid
+                            ? `Still owes ${formatCurrency(remaining)}`
+                            : undefined
+                        }
+                        figure={formatCurrency(due)}
+                        state={theirs && counts ? (paid ? 'settled' : 'owed') : 'default'}
+                        trailing={theirs && paid ? <Stamp status="settled" /> : null}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+
+            {/* The same prefill route the suggestion chips use — one path,
+                not two. The wizard opens on a fresh draft hydrated from this
+                bill's lines, prices and per-line assignments, and writes
+                nothing until it is saved. */}
+            <section>
+              <h3 className="section__label">Do it again</h3>
+              <Button block onClick={handleRepeat}>
+                Split this again
+              </Button>
+              <p className="u-micro u-ink-3" style={{ marginBlockStart: 'var(--space-2)' }}>
+                Opens a new split on these lines and these people. Last
+                time&rsquo;s prices come with it, to correct where they moved.
+              </p>
+            </section>
+
+            <section>
+              <h3 className="section__label">Send it to them</h3>
+              <div className="u-row" style={{ gap: 'var(--space-2)' }}>
+                <Button block onClick={() => setShareKind('breakdown')}>
+                  The breakdown
+                </Button>
+                <Button block onClick={() => setShareKind('status')}>
+                  Who has paid
+                </Button>
+              </div>
+            </section>
+
             {confirmDelete ? (
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-center text-secondary">Delete this split? This can&apos;t be undone.</p>
-                <div className="flex gap-2">
-                  <button className="btn btn-secondary flex-1 pressable" onClick={() => setConfirmDelete(false)}>Keep</button>
-                  <button className="btn btn-danger flex-1 pressable" onClick={handleDelete}>Delete</button>
-                </div>
-              </div>
-            ) : shareMenuOpen ? (
-              <div className="flex flex-col gap-2">
-                <button className="btn btn-secondary pressable" onClick={() => openShare('breakdown')}>
-                  <Receipt size={18} /> Share full breakdown
-                </button>
-                <button className="btn btn-secondary pressable" onClick={() => openShare('status')}>
-                  <Users size={18} /> Share who&apos;s paid
-                </button>
-                <button className="btn text-secondary pressable" onClick={() => setShareMenuOpen(false)}>
-                  <ChevronLeft size={18} /> Back
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <button className="btn btn-secondary flex-1 pressable" onClick={() => setShareMenuOpen(true)} aria-label="Share split">
-                  <Share2 size={18} /> Share
-                </button>
-                <button className="btn btn-secondary flex-1 pressable" onClick={handleEdit} aria-label="Edit split">
-                  <Pencil size={18} /> Edit
-                </button>
-                <button
-                  className="btn btn-secondary pressable text-danger"
-                  onClick={() => setConfirmDelete(true)}
-                  aria-label="Delete split"
-                  style={{ flex: '0 0 auto' }}
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            )}
+              <p className="u-ink-2" style={{ fontSize: 'var(--text-sm)' }}>
+                Deleting this split removes it from everyone&apos;s balance. It
+                cannot be undone.
+              </p>
+            ) : null}
           </div>
-        </div>
-      )}
+        ) : null}
+      </Sheet>
 
       <ShareSheet
-        open={!!shareKind}
-        title={shareKind === 'status' ? "Share who's paid" : 'Share breakdown'}
+        open={!!shareKind && !!bill}
+        title={shareKind === 'status' ? 'Who has paid' : 'The breakdown'}
         actionLabel="Share"
         buildText={buildShareBody}
         levels={shareKind === 'status' ? undefined : ['summary', 'items']}
         fields={shareKind === 'status'
           ? ['showDates', 'showPaid', 'showPayInfo']
           : ['showDates', 'showSharers', 'showPayInfo']}
+        // A bill-level share is the one place the receipt image is the same
+        // object as the message: one split, every line, what each person owes.
+        // The sheet draws it on open and offers it as the second route.
+        receipt={{ bill, dues, nameOf, meId }}
         onClose={() => setShareKind(null)}
       />
-    </dialog>
+    </>
   );
 }

@@ -1,0 +1,58 @@
+{
+  "kind": "synthetic",
+  "what": "Synthetic degradations of 8 holdout receipts the pipeline already reads well. NOT comparable to the CORD table; these numbers measure how much of a good read survives a named insult.",
+  "when": "2026-11-26",
+  "base": [
+    "test-0097.jpg",
+    "test-0063.jpg",
+    "test-0084.jpg",
+    "test-0086.jpg",
+    "test-0088.jpg",
+    "validation-0013.jpg",
+    "validation-0015.jpg",
+    "validation-0018.jpg"
+  ],
+  "conditions": {
+    "clean": {
+      "strictF1_flattenOff": 0.882,
+      "strictF1_flattenOn": 1,
+      "itemF1_flattenOff": 0.882,
+      "itemF1_flattenOn": 1
+    },
+    "shadow": {
+      "strictF1_flattenOff": 0.667,
+      "strictF1_flattenOn": 0.944,
+      "itemF1_flattenOff": 0.667,
+      "itemF1_flattenOn": 0.944
+    },
+    "hardshadow": {
+      "strictF1_flattenOff": 0.414,
+      "strictF1_flattenOn": 0.323,
+      "itemF1_flattenOff": 0.483,
+      "itemF1_flattenOn": 0.387
+    },
+    "perspective": {
+      "strictF1_flattenOff": 0.588,
+      "strictF1_flattenOn": 0.529,
+      "itemF1_flattenOff": 0.765,
+      "itemF1_flattenOn": 0.765
+    },
+    "blur": {
+      "strictF1_flattenOff": 0.571,
+      "strictF1_flattenOn": 0.457,
+      "itemF1_flattenOff": 0.743,
+      "itemF1_flattenOn": 0.629
+    },
+    "fade": {
+      "strictF1_flattenOff": 0.706,
+      "strictF1_flattenOn": 0.833,
+      "itemF1_flattenOff": 0.765,
+      "itemF1_flattenOn": 0.889
+    }
+  },
+  "reading": [
+    "Illumination flattening is a clear win on a clean shot, on a smooth lighting gradient and on thermal fade.",
+    "It is a LOSS on a hard-edged shadow, on a steep perspective and on blur. A box blur across a hard shade line leaves a halo; dividing by it over- and under-corrects either side of the edge, and the paper/table split then lands on the halo.",
+    "n=8 receipts and ~30 items, so each of those regressions is two or three items. The CORD evidence (120 real receipts across two disjoint slices, +12pp strict F1 on both) is far stronger, which is why flattening ships. The hard-shadow case is the next thing to attack, with an edge-preserving illumination estimate rather than a box blur."
+  ]
+}

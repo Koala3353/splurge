@@ -1,0 +1,66 @@
+{
+  "what": "Second-pass ablation. Every row is 60 CORD-v2 receipts scored by scripts/ocr-eval/score.mjs.",
+  "when": "2026-11-26",
+  "slices": {
+    "dev": "--limit 60 (receipts 0-59, sorted by id)",
+    "holdout": "--offset 60 --limit 60 (receipts 60-119) — never inspected while tuning"
+  },
+  "note": [
+    "results/revamp.json is STALE: the pipeline is deterministic run-to-run (8/8 identical",
+    "texts across two runs) but reproduces 0 of 8 of revamp.json's texts, so that file was",
+    "written by code that no longer matches the tree. `control` below is the reproduced",
+    "control and is what every delta here is measured against.",
+    "Parser-only rows are replays over the SAME frozen OCR text, so they are exact A/Bs.",
+    "The per-parser-change rows are in-sample (dev); the bundle is confirmed on the holdout."
+  ],
+  "chain": [
+    {
+      "stage": "control (pass-1 pipeline + pass-1 parser), reproduced",
+      "dev": { "itemRecall": 0.428, "itemPrecision": 0.570, "itemF1": 0.489, "priceAttachment": 0.785, "strictF1": 0.383, "totalAgreeRate": 0.150, "leakedSummaryRows": 17, "zeroItemReceipts": 7, "meanMs": 3140, "medianMs": 1970 },
+      "holdout": { "itemRecall": 0.403, "itemPrecision": 0.587, "itemF1": 0.478, "priceAttachment": 0.889, "strictF1": 0.425, "totalAgreeRate": 0.267, "leakedSummaryRows": 13, "zeroItemReceipts": 15 }
+    },
+    {
+      "stage": "+ price-column detection (receipt.js)",
+      "inSample": true,
+      "dev": { "itemRecall": 0.447, "itemPrecision": 0.571, "itemF1": 0.502, "priceAttachment": 0.794, "strictF1": 0.399, "leakedSummaryRows": 18 }
+    },
+    {
+      "stage": "+ garbled summary-label guard (receipt.js)",
+      "inSample": true,
+      "dev": { "itemRecall": 0.447, "itemPrecision": 0.613, "itemF1": 0.517, "priceAttachment": 0.794, "strictF1": 0.411, "leakedSummaryRows": 12 }
+    },
+    {
+      "stage": "+ next-line amount join (receipt.js)  [= all parser changes]",
+      "dev": { "itemRecall": 0.467, "itemPrecision": 0.617, "itemF1": 0.532, "priceAttachment": 0.803, "strictF1": 0.427, "totalAgreeRate": 0.133, "leakedSummaryRows": 13, "zeroItemReceipts": 10 },
+      "holdout": { "itemRecall": 0.507, "itemPrecision": 0.562, "itemF1": 0.533, "priceAttachment": 0.868, "strictF1": 0.463, "totalAgreeRate": 0.217, "leakedSummaryRows": 15, "zeroItemReceipts": 3 }
+    },
+    {
+      "stage": "+ illumination flattening before the paper/table split (binarize.js, preprocess.js)  [SHIPPED]",
+      "dev": { "itemRecall": 0.566, "itemPrecision": 0.632, "itemF1": 0.597, "priceAttachment": 0.849, "strictF1": 0.507, "totalAgreeRate": 0.267, "leakedSummaryRows": 13, "zeroItemReceipts": 5, "meanMs": 3480, "medianMs": 1350, "p90Ms": 7050 },
+      "holdout": { "itemRecall": 0.567, "itemPrecision": 0.639, "itemF1": 0.601, "priceAttachment": 0.868, "strictF1": 0.522, "totalAgreeRate": 0.267, "leakedSummaryRows": 14, "zeroItemReceipts": 4, "meanMs": 3040, "medianMs": 1450, "p90Ms": 10460 }
+    }
+  ],
+  "failureBuckets": {
+    "method": "For each ground-truth item the parser missed, is its name present in the recognised text? That splits an image failure from a parser failure.",
+    "onControl": {
+      "truthItems": 152,
+      "missed": 84,
+      "nameWasInTheText_parserSideLoss": 44,
+      "nameNotInTheText_imageSideLoss": 40,
+      "parserSideBreakdown": {
+        "amountDetectedButRowRejected": 22,
+        "digitsPresentButNoTrailingAmount": 9,
+        "nameOnlyLine_amountOnNextLine": 5,
+        "nameOnlyLine_noAmountNearby": 7
+      }
+    }
+  },
+  "whatDidNotWork": {
+    "physicalImageMeasuresAsPredictors": "Correlation of per-receipt strict F1 with illumination non-uniformity (6x6 tile-mean std) r=0.03, tile range r=0.06, Laplacian variance (sharpness) r=0.15, blown highlights r=0.11, crushed blacks r=-0.00, mean luminance r=-0.02. CORD-v2 is photographed well; it cannot be used to credit or refute a shadow/lighting change. That is why synthetic.mjs exists.",
+    "summaryLabelGuardWithoutBoundary": "Dropping a garbled TOTAL row without also starting the summary block scored 51.3% item F1 / 40.8% strict vs 51.7% / 41.1% with it; the weaker form was discarded."
+  },
+  "costs": {
+    "runtime": "Illumination flattening adds one O(pixels) box blur on the ~1000px analysis probe, twice per scan (crop + quad). Mean time 3.14s -> 3.48s on dev (+11%) and 2.70s -> 3.04s on holdout (+13%); MEDIAN time improved on dev (1.97s -> 1.35s) because fewer receipts need the long tail of the candidate race. p90 is worse on the holdout (7.00s -> 10.46s).",
+    "zeroItemReceipts": "The parser changes alone raised dev zero-item receipts 7 -> 10 (garbled-TOTAL rows were the only thing some receipts produced). Illumination flattening took it back to 5. Across both slices: 22 -> 9."
+  }
+}

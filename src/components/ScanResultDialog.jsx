@@ -1,131 +1,118 @@
-import { useRef, useEffect } from 'react';
-import { X, RotateCcw, Check } from 'lucide-react';
+import Sheet from './ui/Sheet.jsx';
+import Button from './ui/Button.jsx';
+import Row from './ui/Row.jsx';
+import {
+  variantLabel, variantHint, sourceLabel, confidenceBand, confidenceVerdict,
+} from '../utils/ocr';
+import './newbill/newbill.css';
 
-const VARIANT_LABEL = {
-  threshold: 'High contrast',
-  contrast: 'Contrast boost',
-  original: 'Original photo',
-};
-const SOURCE_LABEL = {
-  flat: 'flattened from an angle',
-  crop: 'cropped to the receipt',
-  full: 'whole photo',
-};
-
-// Confidence is the engine's own mean certainty across recognised words. It is
-// the single most useful number here: a low score with plausible-looking items
-// is exactly the case worth double-checking before splitting money on it.
-function verdict(c, items) {
-  if (items === 0) return { tone: 'var(--danger)', head: "Couldn't read it", body: 'No line items came out of that photo. Retaking it usually beats fixing it by hand.' };
-  if (c >= 80) return { tone: 'var(--success)', head: 'Clean read', body: 'The text came through clearly. Still worth a glance before you split it.' };
-  if (c >= 60) return { tone: 'var(--accent-color)', head: 'Readable, check the numbers', body: 'Some characters were uncertain. Prices are the ones worth verifying.' };
-  return { tone: 'var(--danger)', head: 'Rough read', body: 'The engine was unsure about much of this. Check every line, or retake the photo flatter and better lit.' };
-}
-
+/**
+ * What the scan did, said plainly, and the cheapest way on from it.
+ *
+ * Two deliberate departures from what shipped here before:
+ *
+ * 1. **The labels and the confidence bands come from `utils/ocr`.** This file
+ *    carried its own copy of both, with thresholds at 80/60 against the
+ *    engine's 75/55, so a 78% scan rendered green on one screen and amber on
+ *    the next. There is one source now and this is a consumer of it.
+ *
+ * 2. **Confidence is not coloured, and does not claim the numbers are right.**
+ *    Measured against CORD-v2, engine confidence does not predict whether the
+ *    parse is correct — a confident read of a clear photo can still attach
+ *    the wrong price. So it is presented as a fact about the *image*, in ink,
+ *    and the headline action is to go and check the lines. (`confidenceTone`
+ *    exists in utils/ocr but resolves to --success / --accent-color /
+ *    --danger, none of which exist in this palette; colour here would also
+ *    break the rule that only money is chromatic.)
+ */
 export default function ScanResultDialog({ open, info, onClose, onRescan }) {
-  const dialogRef = useRef(null);
-
-  useEffect(() => {
-    const d = dialogRef.current;
-    if (!d) return;
-    if (open && !d.open) d.showModal();
-    else if (!open && d.open) d.close();
-  }, [open]);
-
-  const v = info ? verdict(info.confidence ?? 0, info.itemCount ?? 0) : null;
+  const confidence = Math.round(info?.confidence ?? 0);
+  const itemCount = info?.itemCount ?? 0;
+  const verdict = info ? confidenceVerdict(confidence, itemCount) : null;
+  const band = confidenceBand(confidence);
 
   return (
-    <dialog
-      ref={dialogRef}
+    <Sheet
+      open={open && !!info}
+      title="What the scan got"
       onClose={onClose}
-      onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
-      style={{ width: '95vw', maxWidth: '440px', padding: 0, overflow: 'hidden' }}
+      footer={
+        <Button variant="solid" onClick={onClose}>
+          Check the lines
+        </Button>
+      }
     >
-      {info && v && (
-        <div className="flex flex-col" style={{ maxHeight: '86vh' }}>
-          <div className="p-4 border-b border-glass flex justify-between items-center">
-            <h2 className="text-xl font-bold">Scan result</h2>
-            <form method="dialog">
-              <button className="btn bg-glass p-2 rounded-full pressable" aria-label="Close"><X size={20} /></button>
-            </form>
-          </div>
+      {info && verdict ? (
+        <div className="u-stack-loose">
+          <section>
+            <h3 className="section__label">{verdict.head}</h3>
+            <p className="u-ink-2">{verdict.body}</p>
+            <p className="u-ink-3" style={{ fontSize: 'var(--text-sm)', marginBlockStart: 'var(--space-3)' }}>
+              Across 60 photographed receipts this scanner found about 4 in 10
+              lines, and put the right price on about 8 of every 10 it found.
+              Correcting a few is the normal way through, not a sign anything
+              went wrong.
+            </p>
+          </section>
 
-          <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
-            <div className="flex items-center gap-4 mb-4">
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true">
-                  <circle cx="38" cy="38" r="32" fill="none" stroke="var(--glass-border)" strokeWidth="7" />
-                  <circle
-                    cx="38" cy="38" r="32" fill="none" stroke={v.tone} strokeWidth="7" strokeLinecap="round"
-                    strokeDasharray={`${(Math.max(0, Math.min(100, info.confidence ?? 0)) / 100) * 201} 201`}
-                    transform="rotate(-90 38 38)"
-                  />
-                </svg>
-                <div style={{
-                  position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', flexDirection: 'column',
-                }}>
-                  <span className="font-display font-black tabular-nums" style={{ fontSize: '1.15rem', color: v.tone }}>
-                    {Math.round(info.confidence ?? 0)}%
-                  </span>
-                </div>
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-lg font-bold" style={{ color: v.tone }}>{v.head}</h3>
-                <p className="text-sm text-secondary" style={{ lineHeight: 1.45, marginTop: 2 }}>{v.body}</p>
-              </div>
-            </div>
-
-            <div className="glass-panel" style={{ padding: '0.75rem', marginBottom: '1rem' }}>
-              <Row label="Found" value={`${info.itemCount} ${info.itemCount === 1 ? 'item' : 'items'}${info.feeCount ? `, ${info.feeCount} ${info.feeCount === 1 ? 'fee' : 'fees'}` : ''}`} />
-              <Row label="Read as" value={VARIANT_LABEL[info.variant] || info.variant} />
-              <Row label="Image used" value={SOURCE_LABEL[info.source] || (info.cropped ? 'cropped' : 'whole photo')} />
-              {info.orientation !== 0 && <Row label="Orientation" value={`rotated ${info.orientation > 0 ? '90°' : '-90°'}`} />}
-              {info.relaid && <Row label="Layout" value="prices re-paired from word positions" />}
-              <Row label="Attempts" value={`${info.attempts} of ${info.tried}`} last />
-            </div>
-
-            {info.preview && (
-              <>
-                <p className="text-xs text-secondary font-bold uppercase tracking-wider" style={{ marginBottom: '0.4rem' }}>
-                  What the scanner read
-                </p>
-                <img
-                  src={info.preview}
-                  alt="Processed receipt as passed to the recogniser"
-                  style={{ width: '100%', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}
+          <section>
+            <h3 className="section__label">What came back</h3>
+            <ul>
+              <li>
+                <Row
+                  name="Lines found"
+                  figure={`${itemCount}`}
+                  note={info.feeCount ? `plus ${info.feeCount} ${info.feeCount === 1 ? 'fee' : 'fees'}` : undefined}
                 />
-                <p className="text-xs text-secondary" style={{ marginTop: '0.5rem', lineHeight: 1.45 }}>
-                  If this looks cut off, skewed or washed out, the photo is the
-                  problem rather than the reading — a flatter, better-lit retake
-                  will do more than editing the lines by hand.
-                </p>
-              </>
-            )}
-          </div>
+              </li>
+              <li>
+                <Row
+                  name="Certainty about the image"
+                  note={`${band === 'good' ? 'Clear photo' : band === 'fair' ? 'Mixed photo' : 'Difficult photo'} — it says nothing about whether the prices are right`}
+                  figure={`${confidence}%`}
+                />
+              </li>
+              <li>
+                <Row name="Read as" figure={variantLabel(info.variant)} />
+              </li>
+              <li>
+                <Row
+                  name="Image used"
+                  figure={sourceLabel(info.source || (info.cropped ? 'crop' : 'full'))}
+                />
+              </li>
+              {info.orientation ? (
+                <li>
+                  <Row
+                    name="Orientation"
+                    figure={`Turned ${info.orientation > 0 ? '90°' : '-90°'}`}
+                  />
+                </li>
+              ) : null}
+              <li>
+                <Row name="Passes" figure={`${info.attempts} of ${info.tried}`} />
+              </li>
+            </ul>
+            <p className="u-ink-3" style={{ fontSize: 'var(--text-micro)', marginBlockStart: 'var(--space-2)' }}>
+              {variantHint(info.variant)}
+            </p>
+          </section>
 
-          <div className="p-4 border-t border-glass flex gap-2" style={{ flexShrink: 0 }}>
-            <button className="btn btn-secondary flex-1 pressable" onClick={onRescan}>
-              <RotateCcw size={18} /> Rescan
-            </button>
-            <button className="btn btn-primary flex-1 pressable" onClick={() => dialogRef.current?.close()}>
-              <Check size={18} /> Looks good
-            </button>
-          </div>
+          {info.preview ? (
+            <section>
+              <h3 className="section__label">What the scanner saw</h3>
+              <img className="shot" src={info.preview} alt="The receipt as the recogniser received it" />
+              <p className="u-ink-2" style={{ fontSize: 'var(--text-sm)', marginBlockStart: 'var(--space-2)' }}>
+                If that looks cut off, skewed or washed out, the photo is the
+                problem rather than the reading — a flatter, better-lit retake
+                beats editing the lines by hand.
+              </p>
+            </section>
+          ) : null}
+
+          <Button block onClick={onRescan}>Scan a different photo</Button>
         </div>
-      )}
-    </dialog>
-  );
-}
-
-function Row({ label, value, last }) {
-  return (
-    <div
-      className="flex justify-between items-center gap-3"
-      style={{ padding: '0.4rem 0', borderBottom: last ? 'none' : '1px solid var(--glass-border)' }}
-    >
-      <span className="text-sm text-secondary flex-shrink-0">{label}</span>
-      <span className="text-sm font-semibold text-primary" style={{ textAlign: 'right' }}>{value}</span>
-    </div>
+      ) : null}
+    </Sheet>
   );
 }

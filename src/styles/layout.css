@@ -1,0 +1,159 @@
+/* Layout — the sheet of paper, which is the only container in this system.
+ * Lives in the `components` layer so a utility can always out-rank it.
+ *
+ * There are no cards. Rows are separated by hairlines, never boxed. Where a
+ * card seems necessary the answer is a rule above and generous space below.
+ */
+@layer components {
+  /* The narrow receipt column. Real receipts are 58–80mm, which is natively
+     a phone measure; on a desk it stays narrow rather than stretching. */
+  .column {
+    width: 100%;
+    max-width: var(--column);
+    margin-inline: auto;
+    padding-inline: var(--space-4);
+  }
+
+  .app {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    background: var(--paper);
+  }
+
+  .app__main {
+    flex: 1;
+    padding-block: var(--space-5) var(--space-8);
+  }
+
+  /* ---- the bill sheet --------------------------------------------- */
+  .sheet-paper {
+    position: relative;
+    background: var(--sheet-paper);
+    box-shadow: var(--shadow-sheet);
+    border-inline: var(--hairline) solid var(--rule);
+    padding: var(--space-6) var(--space-5);
+  }
+
+  /* Perforation. A row of bites of the page colour cut into the sheet's top
+     and bottom edge — a repeated radial gradient, no image asset. Used ONCE
+     per bill sheet; the moment it appears on a nav bar it is decoration and
+     comes out. */
+  .sheet-paper::before,
+  .sheet-paper::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--perf-size);
+    background-image: radial-gradient(
+      circle at 50% 50%,
+      var(--paper) 0 calc(var(--perf-size) / 2 - 0.5px),
+      transparent calc(var(--perf-size) / 2)
+    );
+    background-size: calc(var(--perf-size) * 1.6) var(--perf-size);
+    background-repeat: repeat-x;
+    pointer-events: none;
+  }
+
+  .sheet-paper::before {
+    top: calc(var(--perf-size) / -2);
+  }
+
+  .sheet-paper::after {
+    bottom: calc(var(--perf-size) / -2);
+  }
+
+  /* ---- separation ------------------------------------------------- */
+  .rule {
+    height: 0;
+    border: 0;
+    border-top: var(--hairline) solid var(--rule);
+  }
+
+  .rule--strong {
+    border-top-color: var(--rule-strong);
+  }
+
+  /* The fold: where a receipt is torn into sections. */
+  .fold {
+    height: 0;
+    margin-block: var(--space-5);
+    border: 0;
+    border-top: var(--hairline) dashed var(--rule-strong);
+  }
+
+  /* ---- sections --------------------------------------------------- */
+  .section {
+    margin-block-start: var(--space-7);
+  }
+
+  .section:first-child {
+    margin-block-start: 0;
+  }
+
+  /* More space above a heading than below it. */
+  .section__heading {
+    margin-block-end: var(--space-3);
+    font-size: var(--text-lg);
+  }
+
+  .section__label {
+    display: block;
+    margin-block-end: var(--space-2);
+    padding-block-end: var(--space-2);
+    border-bottom: var(--hairline) solid var(--rule);
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    text-transform: uppercase;
+  }
+
+  /* ---- the figures ------------------------------------------------ */
+  .figure {
+    color: var(--figure-color);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Money is ink until it has a state. These two are the only chromatic
+     marks in the interface and nothing but an amount may wear them. */
+  .figure--owed {
+    color: var(--figure-owed);
+  }
+
+  .figure--settled {
+    color: var(--figure-settled);
+  }
+
+  .figure--total {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--track-tight);
+  }
+
+  .figure--display {
+    font-size: var(--text-display);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--track-tight);
+    line-height: var(--leading-tight);
+  }
+
+  /* ---- the sheet prints ------------------------------------------- */
+  /* The review screen reveals top-to-bottom the way a thermal printer feeds.
+     Once per bill, on the review step only. */
+  @keyframes sheet-print {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  .is-printing {
+    animation: sheet-print var(--dur-print) var(--ease-out) both;
+  }
+}

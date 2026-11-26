@@ -26,7 +26,13 @@ jobs:
           node-version: 20
           cache: 'npm'
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+      - name: Test
+        run: npm test
+      - name: Lint
+        run: npm run lint
+      - name: Contrast check
+        run: node scripts/check-contrast.mjs
       - name: Build
         run: npm run build
       - name: Upload artifact

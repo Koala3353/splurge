@@ -1,0 +1,558 @@
+/* Shell, pages and the small parts they share.
+ *
+ * src/styles/* is the design system: tokens, the document, the sheet of paper
+ * and the six primitives. This file is the other half — the app shell (tab
+ * bar, masthead, toast) and the page-level structures that consume them. It
+ * sits in the same declared layers, so `utilities` still out-ranks everything
+ * here and the a11y adaptations cannot be out-specified.
+ *
+ * Nothing below writes a raw value that is not a token. The one exception is
+ * documented where it stands.
+ */
+@layer components {
+  /* ================================================================== *
+   * Shell
+   * ================================================================== */
+
+  /* The bar is 1 hairline + 8 + 20 + 4 + ~16 + 8 = 57px of ink, plus the
+     home-indicator inset underneath it. Main clears that, not a guess. */
+  .app--tabbed .app__main {
+    padding-block-end: calc(
+      var(--space-8) + var(--space-7) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .tabbar {
+    position: fixed;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-top: var(--hairline) solid var(--rule);
+    background: var(--paper-raised);
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
+
+  .tabbar__inner {
+    display: flex;
+    width: 100%;
+    max-width: var(--column);
+    margin-inline: auto;
+  }
+
+  /* Four tabs, each a full quarter of the bar: 93px wide at 375px and 57px
+     tall, against the 36px the audit measured. The mark is 20px; the target
+     is the whole column. */
+  .tabbar__item {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: var(--control-min);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding-block: var(--space-2);
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    line-height: 1;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition:
+      color var(--dur-state) var(--ease-out),
+      background-color var(--dur-state) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .tabbar__item:hover {
+      color: var(--ink-2);
+      background: var(--paper-sunk);
+    }
+  }
+
+  .tabbar__item:active {
+    translate: 0 1px;
+  }
+
+  /* The current route is marked three ways over one: full ink, a sunk field,
+     and a pressed rule across the top of the column. Colour alone would be
+     the only signal, and the only colour this system has left is money. */
+  .tabbar__item[aria-current='page'] {
+    color: var(--ink);
+    background: var(--paper-sunk);
+  }
+
+  .tabbar__item[aria-current='page']::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--hairline) * -1);
+    right: 0;
+    left: 0;
+    height: 2px;
+    background: var(--ink);
+  }
+
+  /* ---- masthead ---------------------------------------------------- */
+  .masthead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-block-end: var(--space-5);
+  }
+
+  .masthead__mark {
+    font-family: var(--font-mono);
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--track-loose);
+    text-transform: uppercase;
+  }
+
+  /* A square control for a 20px glyph. The mark stays small; the target is
+     the floor. The gear shipped at 29.8 × 29.8. */
+  .icon-btn {
+    display: inline-flex;
+    min-width: var(--control-min);
+    min-height: var(--control-min);
+    align-items: center;
+    justify-content: center;
+    border: var(--hairline) solid transparent;
+    border-radius: var(--radius-press);
+    background: transparent;
+    color: var(--ink-2);
+    transition:
+      color var(--dur-state) var(--ease-out),
+      background-color var(--dur-state) var(--ease-out),
+      border-color var(--dur-state) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .icon-btn:hover:not(:disabled) {
+      border-color: var(--rule);
+      background: var(--paper-sunk);
+      color: var(--ink);
+    }
+  }
+
+  .icon-btn:active:not(:disabled) {
+    translate: 0 1px;
+  }
+
+  .icon-btn:disabled {
+    color: var(--ink-3);
+  }
+
+  /* ---- toast ------------------------------------------------------- */
+  /* One vocabulary for everything that reports after the fact: an undo
+     window, a logged split, a new version waiting. It sits above the tab
+     bar, never over it. */
+  .toast {
+    position: fixed;
+    z-index: 30;
+    right: 0;
+    bottom: calc(var(--space-7) + var(--space-5) + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    display: flex;
+    width: 100%;
+    max-width: var(--column);
+    align-items: center;
+    gap: var(--space-3);
+    margin-inline: auto;
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-press);
+    background: var(--paper-raised);
+    box-shadow: var(--shadow-lift);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+    animation: toast-rise var(--dur-state) var(--ease-out) both;
+  }
+
+  /* When nothing owns the bottom bar the toast drops to the normal margin. */
+  .app-shell--no-tabbar .toast,
+  .toast--low {
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .toast__text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  @keyframes toast-rise {
+    from {
+      translate: 0 var(--space-3);
+      opacity: 0;
+    }
+    to {
+      translate: 0 0;
+      opacity: 1;
+    }
+  }
+
+  /* ================================================================== *
+   * Page parts
+   * ================================================================== */
+
+  /* ---- a notice between two rules, because there are no cards ------ */
+  .notice {
+    margin-block: var(--space-5);
+    border-block: var(--hairline) dashed var(--rule-strong);
+    padding-block: var(--space-4);
+  }
+
+  .notice__title {
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+  }
+
+  .notice__body {
+    margin-block-start: var(--space-1);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+
+  .notice__chips {
+    margin-block-start: var(--space-3);
+  }
+
+  /* ---- chips: a set of names you pick one of ----------------------- */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .chip {
+    display: inline-flex;
+    max-width: 100%;
+    min-height: var(--control-min);
+    align-items: center;
+    gap: var(--space-2);
+    padding-inline: var(--space-4);
+    border: var(--hairline) solid var(--ink-3);
+    border-radius: var(--radius-press);
+    background: transparent;
+    color: var(--ink);
+    font-size: var(--text-sm);
+    transition:
+      background-color var(--dur-state) var(--ease-out),
+      border-color var(--dur-state) var(--ease-out),
+      color var(--dur-state) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .chip:hover:not(:disabled) {
+      background: var(--paper-sunk);
+    }
+
+    /* A SELECTED chip needs its own hover, or it disappears.
+       `.chip:hover:not(:disabled)` is (0,3,0) and out-specifies
+       `.chip[aria-pressed='true']` at (0,2,0), so hovering a selected chip
+       reset its background to --paper-sunk while `color` stayed --paper —
+       #141310 text on #0E0D0B in carbon, which is invisible. Hover on an
+       already-selected chip stays inverted and only dims the fill. */
+    .chip[aria-pressed='true']:hover:not(:disabled),
+    .chip[aria-checked='true']:hover:not(:disabled) {
+      border-color: var(--ink-2);
+      background: var(--ink-2);
+      color: var(--paper);
+    }
+  }
+
+  .chip:active:not(:disabled) {
+    translate: 0 1px;
+  }
+
+  .chip[aria-pressed='true'],
+  .chip[aria-checked='true'] {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .chip:disabled {
+    border-color: var(--rule);
+    color: var(--ink-3);
+  }
+
+  /* A long name wraps rather than running out of a 320px sheet. */
+  .chip__label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* A count is a figure, so it is mono and boxed off from the words. Drawn
+     in currentColor, which means it inverts with the chip instead of needing
+     a selected rule of its own — and so cannot repeat the hover bug that
+     made a selected chip's label vanish. */
+  .chip__count {
+    flex: 0 0 auto;
+    min-width: 2.5ch;
+    border: var(--hairline) solid currentColor;
+    border-radius: var(--radius-press);
+    padding-inline: var(--space-1);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    text-align: center;
+  }
+
+  /* ---- the balance block ------------------------------------------- */
+  .balance {
+    margin-block-end: var(--space-5);
+  }
+
+  .balance__figure {
+    display: block;
+    margin-block: var(--space-2) var(--space-1);
+  }
+
+  .balance__note {
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+
+  .balance__cta,
+  .section__more {
+    margin-block-start: var(--space-4);
+  }
+
+  /* ---- search ------------------------------------------------------- */
+  .search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search__icon {
+    position: absolute;
+    left: var(--space-3);
+    color: var(--ink-3);
+    pointer-events: none;
+  }
+
+  /* The control is the Field control; only the gutters for the two marks
+     are added here, so the focus indicator is the same one. */
+  .search__input {
+    padding-left: calc(var(--space-6) + var(--space-2));
+    padding-right: var(--control-min);
+  }
+
+  .search__clear {
+    position: absolute;
+    right: 0;
+    display: inline-flex;
+    min-width: var(--control-min);
+    min-height: var(--control-min);
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: var(--radius-press);
+    background: transparent;
+    color: var(--ink-2);
+  }
+
+  @media (hover: hover) {
+    .search__clear:hover {
+      color: var(--ink);
+    }
+  }
+
+  /* ---- empty states ------------------------------------------------- */
+  /* Teaches the loop. It is a ruled block of instruction, not a shrug with
+     an icon over it. */
+  .teach {
+    margin-block: var(--space-5);
+    border-top: var(--hairline) solid var(--rule-strong);
+    padding-block-start: var(--space-5);
+  }
+
+  .teach__steps {
+    margin-block: var(--space-4);
+    counter-reset: teach;
+  }
+
+  .teach__steps li {
+    display: flex;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+
+  .teach__steps li + li {
+    border-top: var(--hairline) solid var(--rule);
+  }
+
+  .teach__steps li::before {
+    counter-increment: teach;
+    content: counter(teach, decimal-leading-zero);
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+  }
+
+  /* ---- skeletons: shaped like the row they stand in for ------------- */
+  .skel {
+    display: block;
+    border-radius: var(--radius-press);
+    background: var(--paper-sunk);
+    animation: skel-breathe 1.4s var(--ease-out) infinite;
+  }
+
+  .skel--row {
+    height: var(--control-min);
+    margin-block: var(--space-2);
+  }
+
+  .skel--figure {
+    width: 40%;
+    height: var(--text-display);
+  }
+
+  @keyframes skel-breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+
+  /* ================================================================== *
+   * Statement — the Stats page reads as a printed statement: ruled
+   * columns, mono figures, a monthly ledger. No KPI tiles.
+   * ================================================================== */
+  .statement__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    border-block: var(--hairline) solid var(--rule-strong);
+    padding-block: var(--space-2);
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    text-transform: uppercase;
+  }
+
+  /* The month columns. Bars are drawn at full height and scaled on the Y
+     axis — the audit caught eight `transition: height` animations on these,
+     which lay out the page on every frame. There is no transition here at
+     all: a statement does not animate its own figures. */
+  .chart {
+    display: flex;
+    height: 7rem;
+    align-items: flex-end;
+    gap: var(--space-2);
+    border-bottom: var(--hairline) solid var(--rule-strong);
+  }
+
+  .chart__col {
+    display: flex;
+    height: 100%;
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .chart__bar {
+    display: block;
+    height: 100%;
+    background: var(--rule-strong);
+    transform-origin: bottom center;
+  }
+
+  .chart__bar--peak {
+    background: var(--ink-3);
+  }
+
+  .chart__scale {
+    display: flex;
+    gap: var(--space-2);
+    padding-block-start: var(--space-2);
+  }
+
+  .chart__tick {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  /* A single ruled meter: how much of what you fronted has come back. */
+  .meter {
+    height: var(--space-2);
+    border: var(--hairline) solid var(--rule-strong);
+    background: var(--paper-sunk);
+  }
+
+  .meter__fill {
+    display: block;
+    height: 100%;
+    background: var(--ink-3);
+    transform-origin: left center;
+  }
+
+  /* The drill-down under a person's row in the running tab. */
+  .drill {
+    margin-block-end: var(--space-3);
+    border-left: 2px solid var(--rule-strong);
+    padding-left: var(--space-3);
+  }
+
+  /* ---- settings ------------------------------------------------------ */
+  .setting + .setting {
+    margin-block-start: var(--space-6);
+    border-top: var(--hairline) solid var(--rule);
+    padding-block-start: var(--space-5);
+  }
+
+  .setting__title {
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+  }
+
+  .setting__body {
+    margin-block: var(--space-1) var(--space-3);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+
+  .setting__status {
+    min-height: var(--space-5);
+    margin-block-start: var(--space-4);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+
+  .setting__qr {
+    display: block;
+    width: 100%;
+    /* A QR code needs a true white quiet zone or a scanner will not read it.
+       This is the one literal colour in the project outside the tokens, and
+       it is a function of the camera, not of the theme. */
+    background: #fff;
+    padding: var(--space-2);
+  }
+}
+
+@layer utilities {
+  /* A skeleton that breathes is motion; under reduce it simply sits there. */
+  @media (prefers-reduced-motion: reduce) {
+    .skel,
+    .toast {
+      animation: none;
+    }
+  }
+}

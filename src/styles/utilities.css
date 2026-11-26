@@ -1,0 +1,162 @@
+/* Utilities — single-purpose helpers, and the accessibility adaptations.
+ *
+ * This is the LAST layer, which is the whole point: everything below wins
+ * over `components` regardless of how either is written. The previous
+ * stylesheet needed seven `!important`s and still lost every light-mode
+ * adaptation to a (0,2,0) theme block. There are no `!important`s here.
+ */
+@layer utilities {
+  .u-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .u-micro {
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    text-transform: uppercase;
+  }
+
+  .u-ink-2 {
+    color: var(--ink-2);
+  }
+
+  .u-ink-3 {
+    color: var(--ink-3);
+  }
+
+  .u-stack > * + * {
+    margin-block-start: var(--space-3);
+  }
+
+  .u-stack-loose > * + * {
+    margin-block-start: var(--space-5);
+  }
+
+  .u-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .u-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .u-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* A mark drawn smaller than 44px keeps a 44px hit area. */
+  .u-hit-44 {
+    position: relative;
+  }
+
+  .u-hit-44::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--control-min));
+    height: max(100%, var(--control-min));
+    translate: -50% -50%;
+  }
+
+  /* ---- adaptations ------------------------------------------------- */
+
+  /* There is no translucency in this system by design — the one translucent
+     surface is the modal scrim, which becomes opaque paper here. */
+  @media (prefers-reduced-transparency: reduce) {
+    :root {
+      --scrim: var(--paper-sunk);
+      --grain-opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Both authored moments collapse to an opacity fade; nothing else moves. */
+    .stamp--lands,
+    .is-printing,
+    .sheet[open],
+    .sheet[open]::backdrop {
+      animation: fade-only var(--dur-state) linear both;
+    }
+
+    @keyframes fade-only {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .is-printing {
+      clip-path: none;
+    }
+
+    .btn__feed span {
+      animation: none;
+      opacity: 1;
+    }
+
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms;
+      scroll-behavior: auto;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    :root {
+      --ink-2: var(--ink);
+      --ink-3: var(--ink);
+      --rule: var(--rule-strong);
+      --grain-opacity: 0;
+      --stamp-opacity: 1;
+      --focus-width: 3px;
+    }
+
+    .leader {
+      border-bottom-style: solid;
+    }
+  }
+
+  @media (forced-colors: active) {
+    :root {
+      --grain-opacity: 0;
+    }
+
+    .btn,
+    .field__control,
+    .sheet,
+    .avatar {
+      border-color: ButtonBorder;
+    }
+
+    .stamp::before {
+      mask-image: none;
+      border-color: CanvasText;
+    }
+
+    .leader {
+      border-bottom-color: CanvasText;
+    }
+
+    :focus-visible {
+      outline-color: Highlight;
+    }
+  }
+}

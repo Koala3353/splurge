@@ -16,7 +16,8 @@
 // context. Every number has to say what it is, because a bare "₱800 (₱205 paid)"
 // reads as if the ₱205 were still inside the ₱800 when it has already come off.
 
-import { formatCurrency } from './format.js';
+import { formatCurrencyTrim, formatShortDate } from './format.js';
+import { SETTLED_EPSILON, isSettled } from './split.js';
 
 export const DEFAULT_SHARE_OPTIONS = {
   detail: 'bills',      // 'summary' (totals only) | 'bills' (per split) | 'items' (per line)
@@ -34,11 +35,9 @@ const num = (v) => {
 };
 
 // Chat reads better without trailing centavos on whole amounts: ₱575, not
-// ₱575.00. Anything with real centavos keeps them.
-const money = (n) => {
-  const s = formatCurrency(Math.max(0, num(n)));
-  return s.endsWith('.00') ? s.slice(0, -3) : s;
-};
+// ₱575.00. Anything with real centavos keeps them. The trimming itself lives
+// in format.js — this file should never be doing currency surgery on strings.
+const money = (n) => formatCurrencyTrim(Math.max(0, num(n)));
 
 const upperFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -54,14 +53,7 @@ function listOf(names) {
 }
 
 // Short enough to sit in parentheses; the year only appears when it isn't this one.
-function shortDate(iso) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString('en-PH', sameYear
-    ? { month: 'short', day: 'numeric' }
-    : { month: 'short', day: 'numeric', year: 'numeric' });
-}
+const shortDate = (iso) => formatShortDate(iso);
 
 // "Friday dinner (Aug 12)" when dates are on.
 function billLabel(bill, o) {
@@ -108,7 +100,7 @@ export function buildPersonRequest({
   const o = withDefaults(options);
   const name = person?.name || 'there';
 
-  if (num(amount) <= 0.005) {
+  if (num(amount) <= SETTLED_EPSILON) {
     return o.greeting ? `Hey ${name}, you're all settled.` : "You're all settled.";
   }
 
@@ -141,7 +133,7 @@ export function buildPersonRequest({
 
   // The point is that the number above is already net, not that the app did
   // subtraction. Parenthesised and short, the way someone adds an aside.
-  if (o.showPaid && num(paidTotal) > 0.005) {
+  if (o.showPaid && num(paidTotal) > SETTLED_EPSILON) {
     blocks.push(`(${money(paidTotal)} you already sent is off this)`);
   }
 
@@ -172,7 +164,7 @@ export function buildGroupReminder({ rows = [], label, payInfo, options }) {
   const total = rows.reduce((sum, r) => sum + num(r.amount), 0);
   const lines = rows.map((r) => {
     // "₱800 left of ₱1,005" can only be read one way; "₱800 (₱205 paid)" cannot.
-    if (o.showPaid && num(r.paid) > 0.005) {
+    if (o.showPaid && num(r.paid) > SETTLED_EPSILON) {
       return `${r.name}: ${money(r.amount)} left of ${money(num(r.amount) + num(r.paid))}`;
     }
     return `${r.name}: ${money(r.amount)}`;
@@ -199,7 +191,7 @@ export function buildBillBreakdown({ bill, dues = {}, nameOf, payInfo, options }
 
   const rows = (bill.participants || [])
     .map((pId) => ({ name: nameOf(pId), amount: num(dues[pId]) }))
-    .filter((r) => r.amount > 0.005)
+    .filter((r) => r.amount > SETTLED_EPSILON)
     .sort((a, b) => b.amount - a.amount);
 
   const items = o.detail === 'items'
@@ -243,9 +235,9 @@ export function buildPaymentStatus({ bill, statusByPerson = {}, nameOf, meId, pa
       const st = statusByPerson[pId];
       const due = num(st?.due);
       const remaining = Math.max(0, st?.remaining ?? due);
-      return { name: nameOf(pId), due, remaining, isPaid: remaining <= 0.005 };
+      return { name: nameOf(pId), due, remaining, isPaid: isSettled(remaining) };
     })
-    .filter((r) => r.due > 0.005);
+    .filter((r) => r.due > SETTLED_EPSILON);
 
   const paid = rows.filter((r) => r.isPaid);
   const unpaid = rows.filter((r) => !r.isPaid).sort((a, b) => b.remaining - a.remaining);
@@ -256,7 +248,7 @@ export function buildPaymentStatus({ bill, statusByPerson = {}, nameOf, meId, pa
 
   const lines = unpaid.map((r) => (
     // Part-payers get the same "left of" treatment, for the same reason.
-    o.showPaid && r.remaining < r.due - 0.005
+    o.showPaid && r.remaining < r.due - SETTLED_EPSILON
       ? `${r.name}: ${money(r.remaining)} left of ${money(r.due)}`
       : `${r.name}: ${money(r.remaining)}`
   ));

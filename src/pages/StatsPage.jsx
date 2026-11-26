@@ -1,131 +1,73 @@
 import { useState, useMemo } from 'react';
-import { monthlySpend, collectionRate, splitCompanions } from '../utils/stats';
-import { useAppContext } from '../store/AppContext';
-import { useCountUp } from '../hooks/useCountUp';
-import { formatCurrency, formatCompact, formatDate, initialsOf } from '../utils/format';
 import {
-  Wallet,
-  ArrowUpRight,
-  Award,
-  Receipt,
-  HandCoins,
-  ChevronDown,
-} from 'lucide-react';
+  monthlySpend, collectionRate, splitCompanions,
+  settleDurations, settleSpeed, payOrder, chaseList, settleTrend,
+} from '../utils/stats';
+import { useAppContext } from '../store/AppContext';
+import { useNavigate } from 'react-router-dom';
+import { formatCurrency, formatDate, formatShortDate } from '../utils/format';
+import { isSettled, withDerivedTotal } from '../utils/split';
+import { sortBillsByDate } from '../utils/bills';
+import Button from '../components/ui/Button';
+import Row from '../components/ui/Row';
+import Leader from '../components/ui/Leader';
+import BarChart from '../components/stats/BarChart';
+import SettleSpeed from '../components/stats/SettleSpeed';
+import PayOrder from '../components/stats/PayOrder';
+import ChaseList from '../components/stats/ChaseList';
+import SettleTrend from '../components/stats/SettleTrend';
+import '../components/shell.css';
 
-// A single headline stat. `hero` flips it to the gradient treatment.
-// `value` is the raw number; `format` renders each animated frame, so the
-// count-up plays against the real magnitude instead of a formatted string.
-// min-w-0 + truncate on the value guarantees no horizontal clipping at 375px.
-function StatCard({ icon, label, value, format = (n) => n, hero = false }) {
-  const animated = useCountUp(value);
-  return (
-    <div
-      className={`glass-panel flex-col justify-between card-hover relative overflow-hidden min-w-0 ${hero ? 'feature-card' : ''}`}
-      style={{ padding: '0.8rem 0.85rem' }}
-    >
-      <div
-        className={`flex items-center gap-2 ${hero ? 'text-on-accent' : 'text-secondary'}`}
-        // Tighter than it was: the label and the figure are one unit, and the
-        // gap between them was doing nothing but costing a row of pixels.
-        style={{ opacity: hero ? 0.95 : 1, position: 'relative', zIndex: 1, marginBottom: '0.55rem' }}
-      >
-        <span className="flex-shrink-0 flex items-center">{icon}</span>
-        <span className="uppercase">{label}</span>
-      </div>
-      <div
-        className={`font-display font-black tabular-nums truncate min-w-0 ${hero ? 'text-on-accent' : 'text-primary'}`}
-        style={{ fontSize: 'clamp(1.3rem, 6.4vw, 1.8rem)', lineHeight: 1.05, letterSpacing: 'var(--track-display)', position: 'relative', zIndex: 1 }}
-      >
-        {format(animated)}
-      </div>
-    </div>
-  );
-}
-
-// Custom horizontal bar built from plain divs. Width animates via CSS
-// transition; fill defaults to the danger gradient (debts) but can be
-// overridden (e.g. --gradient-data for all-time totals, which are magnitude
-// rather than paid/owed and so stay out of the status colour channel). `sub` renders a
-// quiet caption under the bar.
-// `display` overrides the formatted amount, for bars measuring something
-// that isn't money (a count of splits, say).
-function OwesBar({ name, amount, pct, fill, sub, display }) {
-  return (
-    <div className="flex-col gap-1 min-w-0">
-      <div className="flex items-center justify-between gap-3 min-w-0">
-        <span className="text-sm font-semibold text-primary truncate min-w-0">{name}</span>
-        <span className="text-sm font-bold text-primary tabular-nums flex-shrink-0">
-          {display ?? formatCompact(amount)}
-        </span>
-      </div>
-      <div
-        className="relative overflow-hidden"
-        style={{
-          height: '10px',
-          borderRadius: 'var(--radius-full)',
-          background: 'var(--glass-bg)',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            background: fill || 'var(--gradient-danger)',
-            transformOrigin: 'left center',
-            transform: `scaleX(${Math.max(0, Math.min(pct, 100)) / 100})`,
-            transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-          }}
-        />
-      </div>
-      {sub && <span className="text-xs text-secondary truncate">{sub}</span>}
-    </div>
-  );
-}
-
+/**
+ * The statement.
+ *
+ * Not a dashboard: a printed statement. Ruled columns, mono figures, a
+ * monthly ledger, and every chart built from plain CSS with no dependency —
+ * which was already the genuine strength of this page and stays.
+ *
+ * The month bars are drawn at full height and scaled on the Y axis. They
+ * shipped as eight simultaneous `transition: height` animations, which lays
+ * out the page on every frame of every one of them; here they do not animate
+ * at all, because a statement does not animate its own figures.
+ */
 export default function StatsPage() {
+  const navigate = useNavigate();
   const {
-    bills,
-    people,
-    meId,
-    balances,
-    personBillShares,
-    lifetimePayments,
-    totalOwedToYou,
+    bills, people, meId, balances, personBillShares, lifetimePayments, totalOwedToYou,
+    payments, needsSelfIdentity,
   } = useAppContext();
 
   const [expandedPersonId, setExpandedPersonId] = useState(null);
 
-  // Everyone who still owes you (balance > 0), excluding yourself. Sorted desc.
   const owers = useMemo(() => (
     people
       .filter((p) => p.id !== meId)
       .map((p) => ({ person: p, amount: balances[p.id] || 0 }))
-      .filter((item) => item.amount > 0.005)
+      .filter((item) => item.amount > 0 && !isSettled(item.amount))
       .sort((a, b) => b.amount - a.amount)
   ), [people, meId, balances]);
 
+  /* `withDerivedTotal`, not `b.total`: a quick split is stored without one,
+     and reading the raw field put "Total split ₱0.00" above a ledger of real
+     amounts. The month-by-month figures below already derive it, so the two
+     halves of this page disagreed. */
   const totalSplurged = useMemo(
-    () => bills.reduce((sum, b) => sum + (b.total || 0), 0),
-    [bills]
+    () => bills.reduce((sum, b) => sum + withDerivedTotal(b).total, 0),
+    [bills],
   );
 
   const totalCollected = useMemo(
     () => people.reduce((sum, p) => sum + (lifetimePayments[p.id] || 0), 0),
-    [people, lifetimePayments]
+    [people, lifetimePayments],
   );
-
-  const avgPerOuting = bills.length > 0 ? totalSplurged / bills.length : 0;
 
   const biggestSplit = useMemo(
-    () => bills.reduce((max, b) => ((b.total || 0) > (max?.total || 0) ? b : max), null),
-    [bills]
+    () => bills
+      .map(withDerivedTotal)
+      .reduce((max, b) => (b.total > (max?.total ?? -Infinity) ? b : max), null),
+    [bills],
   );
 
-  const topOwers = owers.slice(0, 6);
-  const maxOwed = topOwers.length > 0 ? topOwers[0].amount : 0;
-
-  // All-time spending: everything each person has ever been billed across all
-  // splits — settled or not — including yourself. "Who spent the most overall."
   const allTime = useMemo(() => (
     people
       .map((p) => ({
@@ -133,341 +75,297 @@ export default function StatsPage() {
         total: (personBillShares[p.id] || []).reduce((sum, s) => sum + s.amount, 0),
         paid: lifetimePayments[p.id] || 0,
       }))
-      .filter((r) => r.total > 0.005)
+      .filter((r) => r.total > 0 && !isSettled(r.total))
       .sort((a, b) => b.total - a.total)
   ), [people, personBillShares, lifetimePayments]);
 
-  const maxAllTime = allTime.length > 0 ? allTime[0].total : 0;
-
   const months = useMemo(() => monthlySpend(bills, { months: 6 }), [bills]);
   const monthsPeak = months.reduce((m, b) => Math.max(m, b.total), 0);
+
+  /* The chart's columns carry their own readout, so hovering, tapping or
+     tabbing to one says what it is worth without scrolling to the ledger. */
+  const monthColumns = useMemo(() => months.map((m) => ({
+    key: m.key,
+    label: m.label,
+    pct: m.pct,
+    hasData: m.total > 0,
+    isPeak: m.total === monthsPeak && m.total > 0,
+    readout: {
+      name: m.label,
+      figure: formatCurrency(m.total),
+      note: m.count === 0 ? 'no splits' : `${m.count} ${m.count === 1 ? 'split' : 'splits'}`,
+    },
+  })), [months, monthsPeak]);
+
   const collection = useMemo(
     () => collectionRate({ balances, lifetimePayments, people, meId }),
     [balances, lifetimePayments, people, meId],
   );
+
   const companions = useMemo(
     () => splitCompanions({ bills, people, meId, limit: 5 }),
     [bills, people, meId],
   );
 
-  // Designed empty state — nothing to compute until the first split exists.
+  /* Every payback figure below is derived from one walk of the FIFO
+     allocation — payments carry no bill id, so the day a given person's share
+     of a given split closed is something `settleDurations` has to find by
+     replaying `settlement.js` with less money each time. Done once here; the
+     four readings of it are cheap. */
+  const durations = useMemo(
+    () => (needsSelfIdentity ? [] : settleDurations({ bills, people, payments, meId })),
+    [bills, people, payments, meId, needsSelfIdentity],
+  );
+
+  const speed = useMemo(() => settleSpeed({ records: durations }), [durations]);
+  const order = useMemo(() => payOrder({ records: durations }), [durations]);
+  const chase = useMemo(() => chaseList({ records: durations }), [durations]);
+  const trend = useMemo(() => settleTrend({ records: durations, months: 6 }), [durations]);
+
+  const period = useMemo(() => {
+    const ordered = sortBillsByDate(bills);
+    const newest = ordered[0];
+    const oldest = ordered[ordered.length - 1];
+    if (!newest || !oldest) return '';
+    if (newest.id === oldest.id) return formatShortDate(newest.date);
+    return `${formatShortDate(oldest.date)} – ${formatShortDate(newest.date)}`;
+  }, [bills]);
+
   if (bills.length === 0) {
     return (
-      <>
-        <main className="app-main">
-          <h1 className="text-2xl mb-6 font-black">Stats</h1>
-          <div className="empty-state">
-            <div className="flex justify-center mb-3 text-secondary">
-              <Receipt size={40} />
-            </div>
-            <h2 className="text-lg font-bold text-primary mb-1">Nothing to crunch yet</h2>
-            <p className="text-sm text-secondary">Numbers show up after your first split.</p>
-          </div>
-        </main>
-      </>
+      <main className="app__main">
+        <div className="column">
+          <h1>Statement</h1>
+          <section className="teach" aria-labelledby="stats-teach">
+            <h2 className="section__label" id="stats-teach">
+              Nothing to total yet
+            </h2>
+            <ol className="teach__steps">
+              <li>Save a split and this page starts keeping the books.</li>
+              <li>It totals what you fronted, month by month.</li>
+              <li>And how much of it has actually come back to you.</li>
+            </ol>
+            <Button variant="solid" block onClick={() => navigate('/new-bill')}>
+              Start a split
+            </Button>
+          </section>
+        </div>
+      </main>
     );
   }
 
   return (
-    <>
-      <main className="app-main">
-        <h1 className="text-2xl mb-5 font-black">Stats</h1>
+    <main className="app__main">
+      <div className="column">
+        <h1>Statement</h1>
 
-        {/* Headline stats — 2x2 grid; numbers use formatCompact so they never clip. */}
-        <div
-          className="mb-5"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '0.5rem',
-          }}
-        >
-          <StatCard
-            hero
-            icon={<Wallet size={16} />}
-            label="You're owed"
-            value={totalOwedToYou}
-            format={formatCompact}
+        <p className="statement__meta section__more">
+          <span>{period}</span>
+          <span>as of {formatDate(new Date().toISOString())}</span>
+        </p>
+
+        {/* Summary — a ruled column of figures, not three tiles in a row. */}
+        <section className="section" aria-labelledby="summary-label">
+          <h2 className="section__label" id="summary-label">
+            Summary
+          </h2>
+          <Row
+            name="Splits recorded"
+            figure={String(bills.length)}
           />
-          <StatCard
-            icon={<Receipt size={16} />}
-            label="Outings"
-            value={bills.length}
-            format={Math.round}
+          <Row name="Total split" figure={formatCurrency(totalSplurged)} />
+          <Row
+            name="Average per split"
+            figure={formatCurrency(totalSplurged / bills.length)}
           />
-          <StatCard
-            icon={<ArrowUpRight size={16} />}
-            label="Splurged"
-            value={totalSplurged}
-            format={formatCompact}
+          <Row name="Collected" figure={formatCurrency(totalCollected)} />
+          <Row
+            name="Outstanding"
+            figure={formatCurrency(totalOwedToYou)}
+            state={isSettled(totalOwedToYou) ? 'settled' : 'owed'}
           />
-          <StatCard
-            icon={<HandCoins size={16} />}
-            label="Collected"
-            value={totalCollected}
-            format={formatCompact}
-          />
-        </div>
-
-        {/* Light-touch insights — only when the data supports them. */}
-        {bills.length > 0 && (
-          <div className="flex gap-2 mb-5 min-w-0">
-            <div className="glass-panel flex-1 min-w-0" style={{ padding: '0.7rem 0.85rem' }}>
-              <p className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1">
-                Avg per outing
-              </p>
-              <p className="text-lg font-bold text-primary tabular-nums truncate">
-                {formatCompact(avgPerOuting)}
-              </p>
-            </div>
-            {biggestSplit && (
-              <div className="glass-panel flex-1 min-w-0" style={{ padding: '0.7rem 0.85rem' }}>
-                <p className="text-xs text-secondary uppercase tracking-wider font-semibold mb-1">
-                  Biggest split
-                </p>
-                <p className="text-lg font-bold text-primary tabular-nums truncate">
-                  {formatCompact(biggestSplit.total || 0)}
-                </p>
-                <p className="text-xs text-secondary truncate">{biggestSplit.title}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Month by month — the question "am I spending more lately?" is the
-            one a splitting app can actually answer, and nothing here answered
-            it before. Empty months are drawn, not skipped. */}
-        {monthsPeak > 0 && (
-          <section className="mb-6">
-            <h2 className="lab" style={{ marginBottom: '0.6rem' }}>Month by month</h2>
-            <div className="glass-panel month-chart" style={{ padding: '1.25rem 1rem 1rem' }}>
-              {months.map((m) => (
-                <div key={m.key} className="month-col">
-                  <span className="month-value">
-                    {m.total > 0 ? formatCompact(m.total) : ''}
-                  </span>
-                  <div
-                    className="month-bar"
-                    style={{ height: `${Math.max(m.pct, m.total > 0 ? 4 : 0)}%` }}
-                    role="img"
-                    aria-label={`${m.label}: ${formatCurrency(m.total)} across ${m.count} ${m.count === 1 ? 'split' : 'splits'}`}
-                  />
-                  <span className="month-label">{m.label}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Collection rate — how much of what you fronted has come back. */}
-        {collection.rate !== null && (
-          <section className="mb-6">
-            <h2 className="lab" style={{ marginBottom: '0.6rem' }}>Getting paid back</h2>
-            <div className="glass-panel" style={{ padding: '1.25rem 1rem' }}>
-              <div className="flex items-baseline justify-between mb-3">
-                <span className="text-3xl font-bold tabular-nums">
-                  {Math.round(collection.rate * 100)}%
-                </span>
-                <span className="text-sm text-secondary">
-                  {formatCompact(collection.collected)} of {formatCompact(collection.billed)} back
-                </span>
-              </div>
-              <div className="rate-track">
-                <div
-                  className="rate-fill"
-                  style={{ width: `${Math.max(2, collection.rate * 100)}%` }}
-                />
-              </div>
-              <p className="text-xs text-secondary" style={{ marginTop: '0.6rem' }}>
-                {collection.outstanding > 0.005
-                  ? `${formatCompact(collection.outstanding)} still out there.`
-                  : 'Everyone has settled up.'}
-              </p>
-            </div>
-          </section>
-        )}
-
-        {/* Who you actually go out with — counted in splits, not pesos. */}
-        {companions.length > 0 && (
-          <section className="mb-6">
-            <h2 className="lab" style={{ marginBottom: '0.6rem' }}>Who you split with</h2>
-            <div className="glass-panel flex-col gap-4" style={{ padding: '1.25rem 1rem' }}>
-              {companions.map((c) => (
-                <OwesBar
-                  key={c.person.id}
-                  name={c.person.name}
-                  amount={c.count}
-                  display={`${c.count} ${c.count === 1 ? 'split' : 'splits'}`}
-                  pct={c.pct}
-                  fill="var(--gradient-primary)"
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Who owes you most — custom animated bars. */}
-        {topOwers.length > 0 && (
-          <section className="mb-6">
-            <h2 className="lab" style={{ marginBottom: '0.6rem' }}>Who owes you most</h2>
-            <div className="glass-panel flex-col gap-4" style={{ padding: '1.25rem 1rem' }}>
-              {topOwers.map((item) => (
-                <OwesBar
-                  key={item.person.id}
-                  name={item.person.name}
-                  amount={item.amount}
-                  pct={maxOwed > 0 ? (item.amount / maxOwed) * 100 : 0}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* The running tab — tappable leaderboard with per-bill drill-down. */}
-        <section className="mb-7">
-          <h2 className="lab" style={{ marginBottom: '0.7rem' }}>The running tab</h2>
-
-          {owers.length === 0 ? (
-            <div className="empty-state">
-              <p className="text-sm text-secondary">Everyone&apos;s squared up. Nice.</p>
-            </div>
-          ) : (
-            <div className="flex-col gap-3">
-              {owers.map((item, index) => {
-                const isTop = index === 0;
-                const isExpanded = expandedPersonId === item.person.id;
-                const shares = personBillShares[item.person.id] || [];
-
-                return (
-                  <div key={item.person.id} className="flex-col gap-2 min-w-0">
-                    <button
-                      type="button"
-                      aria-expanded={isExpanded}
-                      aria-label={`${item.person.name} owes you ${formatCurrency(item.amount)}. Tap to ${isExpanded ? 'hide' : 'show'} breakdown.`}
-                      onClick={() => setExpandedPersonId(isExpanded ? null : item.person.id)}
-                      className="glass-panel pressable flex items-center justify-between gap-3 animate-slide-up min-w-0 cursor-pointer"
-                      style={{
-                        padding: '0.875rem 1rem',
-                        width: '100%',
-                        textAlign: 'left',
-                        animationDelay: `${Math.min(index * 0.06, 0.4)}s`,
-                        borderColor: isTop
-                          ? 'var(--border-danger)'
-                          : isExpanded
-                            ? 'var(--accent-color)'
-                            : undefined,
-                        boxShadow: isTop ? 'var(--glow-danger)' : undefined,
-                      }}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={`avatar flex-shrink-0 ${isTop ? 'bg-danger' : index === 1 ? 'bg-warning' : 'bg-accent'}`}
-                          style={{ width: '44px', height: '44px' }}
-                        >
-                          {isTop ? <Award size={22} /> : initialsOf(item.person.name)}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-bold text-primary truncate">{item.person.name}</h3>
-                          <p className="text-xs text-secondary flex items-center gap-1 truncate">
-                            <ArrowUpRight
-                              size={12}
-                              className={`flex-shrink-0 ${isTop ? 'text-danger' : 'text-accent'}`}
-                            />
-                            Yet to pay you
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span
-                          className={`font-bold text-lg tabular-nums ${isTop ? 'text-danger' : 'text-primary'}`}
-                        >
-                          {formatCompact(item.amount)}
-                        </span>
-                        <ChevronDown
-                          size={18}
-                          className="text-secondary"
-                          style={{
-                            transition: 'transform 0.2s ease',
-                            transform: isExpanded ? 'rotate(180deg)' : 'none',
-                          }}
-                        />
-                      </div>
-                    </button>
-
-                    {isExpanded && (
-                      <div
-                        className="glass-panel animate-slide-in flex-col"
-                        style={{
-                          padding: '0.875rem 1rem',
-                          marginLeft: '0.75rem',
-                          background: 'var(--glass-bg)',
-                          borderLeft: '2px solid var(--accent-color)',
-                        }}
-                      >
-                        <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">
-                          What they&apos;re in for
-                        </h4>
-                        {shares.length > 0 ? (
-                          shares.map((share, idx) => (
-                            <div
-                              key={share.bill.id ?? idx}
-                              className="flex justify-between items-center gap-3 py-2 min-w-0"
-                              style={{
-                                borderBottom:
-                                  idx === shares.length - 1
-                                    ? 'none'
-                                    : '1px solid var(--glass-border)',
-                              }}
-                            >
-                              <div className="flex-col min-w-0">
-                                <span className="text-sm font-medium text-primary truncate">
-                                  {share.bill.title}
-                                </span>
-                                <span className="text-xs text-secondary truncate">
-                                  {formatDate(share.bill.date)}
-                                </span>
-                              </div>
-                              <span className="text-sm font-bold text-accent tabular-nums flex-shrink-0">
-                                {formatCurrency(share.amount)}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-xs text-secondary">No recorded bills yet.</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+          {biggestSplit && (
+            <Row
+              name="Biggest split"
+              note={biggestSplit.title}
+              figure={formatCurrency(biggestSplit.total || 0)}
+            />
           )}
         </section>
 
-        {/* All-time spending — settled or not, yourself included. */}
-        {allTime.length > 0 && (
-          <section className="mb-7">
-            <h2 className="lab" style={{ marginBottom: '0.4rem' }}>All-time spending</h2>
-            <p className="text-sm text-secondary mb-3">
-              Everything ever billed — paid or not — so you can see who splurges hardest.
-            </p>
-            <div className="glass-panel flex-col gap-4" style={{ padding: '1.25rem 1rem' }}>
-              {allTime.map((r) => (
-                <OwesBar
-                  key={r.person.id}
-                  name={r.person.id === meId ? `${r.person.name} (you)` : r.person.name}
-                  amount={r.total}
-                  pct={maxAllTime > 0 ? (r.total / maxAllTime) * 100 : 0}
-                  fill="var(--gradient-data)"
-                  sub={r.person.id !== meId && r.paid > 0.005
-                    ? `${formatCompact(r.paid)} settled back`
-                    : undefined}
-                />
+        {/* Month by month: the one question a splitting app can answer about
+            your own spending. The chart is the picture; the ledger under it is
+            the record, and the record is what assistive tech reads. */}
+        {monthsPeak > 0 && (
+          <section className="section" aria-labelledby="months-label">
+            <h2 className="section__label" id="months-label">
+              Month by month
+            </h2>
+
+            <BarChart label="What you split each month" columns={monthColumns} />
+
+            <ul className="section__more">
+              {months.map((m) => (
+                <li key={m.key}>
+                  <Row
+                    name={m.label}
+                    note={m.count === 0 ? 'no splits' : `${m.count} ${m.count === 1 ? 'split' : 'splits'}`}
+                    figure={formatCurrency(m.total)}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
         )}
-      </main>
-    </>
+
+        {/* Getting paid back. */}
+        {collection.rate !== null && (
+          <section className="section" aria-labelledby="collection-label">
+            <h2 className="section__label" id="collection-label">
+              Getting paid back
+            </h2>
+            <p className="u-row">
+              <span className="figure figure--total">
+                {Math.round(collection.rate * 100)}%
+              </span>
+              <Leader />
+              <span className="u-ink-2">
+                {formatCurrency(collection.collected)} of{' '}
+                {formatCurrency(collection.billed)}
+              </span>
+            </p>
+            <div
+              className="meter section__more"
+              role="img"
+              aria-label={`${Math.round(collection.rate * 100)} percent collected`}
+            >
+              <span
+                className="meter__fill"
+                style={{ scale: `${Math.max(0.02, collection.rate)} 1` }}
+              />
+            </div>
+            <p className="balance__note section__more">
+              {isSettled(collection.outstanding)
+                ? 'Everyone has settled up.'
+                : `${formatCurrency(collection.outstanding)} is still out there.`}
+            </p>
+          </section>
+        )}
+
+        {/* Who pays first, how long people take, who you have to chase.
+            All four are withheld rather than guessed when the data is thin:
+            a ranking built on one payment each is noise with names on it. */}
+        {needsSelfIdentity ? (
+          <section className="section" aria-labelledby="payback-label">
+            <h2 className="section__label" id="payback-label">
+              Getting paid back, per person
+            </h2>
+            <p className="u-ink-2">
+              Tag yourself in settings and this page can say who settles first
+              and how long each person takes. Until then every split counts its
+              own payer as owing, so the figures would be wrong.
+            </p>
+          </section>
+        ) : (
+          <>
+            <SettleSpeed speed={speed} />
+            <PayOrder order={order} />
+            <ChaseList chase={chase} />
+            <SettleTrend trend={trend} />
+          </>
+        )}
+
+        {/* The running tab. */}
+        <section className="section" aria-labelledby="tab-label">
+          <h2 className="section__label" id="tab-label">
+            The running tab
+          </h2>
+          {owers.length === 0 ? (
+            <p className="u-ink-2">Everyone has squared up. Nothing is outstanding.</p>
+          ) : (
+            <ul>
+              {owers.map((item) => {
+                const isExpanded = expandedPersonId === item.person.id;
+                const shares = personBillShares[item.person.id] || [];
+                return (
+                  <li key={item.person.id}>
+                    <Row
+                      name={item.person.name}
+                      note={isExpanded ? 'Tap to close' : 'Tap for the breakdown'}
+                      figure={formatCurrency(item.amount)}
+                      state="owed"
+                      aria-expanded={isExpanded}
+                      onClick={() =>
+                        setExpandedPersonId(isExpanded ? null : item.person.id)
+                      }
+                    />
+                    {isExpanded && (
+                      <div className="drill">
+                        <h3 className="section__label">What they are in for</h3>
+                        {shares.length === 0 ? (
+                          <p className="u-ink-3">No splits recorded against them.</p>
+                        ) : (
+                          shares.map((share, idx) => (
+                            <Row
+                              key={share.bill.id ?? idx}
+                              name={share.bill.title}
+                              note={formatShortDate(share.bill.date)}
+                              figure={formatCurrency(share.amount)}
+                            />
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        {/* Who you actually go out with — counted in splits, not pesos. */}
+        {companions.length > 0 && (
+          <section className="section" aria-labelledby="companions-label">
+            <h2 className="section__label" id="companions-label">
+              Who you split with
+            </h2>
+            <ul>
+              {companions.map((c) => (
+                <li key={c.person.id}>
+                  <Row
+                    name={c.person.name}
+                    figure={`${c.count} ${c.count === 1 ? 'split' : 'splits'}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* All-time: everything ever billed, settled or not, you included. */}
+        {allTime.length > 0 && (
+          <section className="section" aria-labelledby="alltime-label">
+            <h2 className="section__label" id="alltime-label">
+              All-time, per person
+            </h2>
+            <ul>
+              {allTime.map((r) => (
+                <li key={r.person.id}>
+                  <Row
+                    name={r.person.id === meId ? `${r.person.name} (you)` : r.person.name}
+                    note={
+                      r.person.id !== meId && r.paid > 0 && !isSettled(r.paid)
+                        ? `${formatCurrency(r.paid)} settled back`
+                        : undefined
+                    }
+                    figure={formatCurrency(r.total)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+    </main>
   );
 }

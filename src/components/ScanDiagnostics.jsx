@@ -1,122 +1,100 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, ScanLine } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import Button from './ui/Button.jsx';
+import Row from './ui/Row.jsx';
+import { variantLabel, variantHint, confidenceBand } from '../utils/ocr';
+import './newbill/newbill.css';
 
-// Plain-language names for what the pipeline chose. The engine's own vocabulary
-// ("PSM 6", "adaptive threshold") means nothing to someone holding a receipt,
-// but WHICH treatment won is genuinely useful: it's the difference between
-// "retake the photo" and "this receipt just prints faintly".
-const VARIANT = {
-  threshold: { label: 'High contrast', hint: 'Converted to pure black on white. Best on dark or unevenly lit shots.' },
-  contrast:  { label: 'Contrast boost', hint: 'Grays stretched apart without flattening them. Best on faint thermal print.' },
-  original:  { label: 'Original photo', hint: 'Used the photo untouched — it was already clean.' },
-};
-
-const confidenceTone = (c) => (c >= 75 ? 'var(--success)' : c >= 55 ? 'var(--accent-color)' : 'var(--danger)');
-
-export default function ScanDiagnostics({ info }) {
+/**
+ * The standing summary of the scan that produced the lines below it.
+ *
+ * Which treatment won is genuinely useful — it is the difference between
+ * "retake the photo" and "this receipt just prints faintly" — so it stays
+ * visible while the lines are being corrected.
+ *
+ * The labels and bands come from `utils/ocr`; the divergent local copy that
+ * used to live here read 75/55 against the dialog's 80/60. Confidence is
+ * shown in ink and described as a property of the image: measured against
+ * CORD-v2 it does not predict whether the parse is right, so nothing here
+ * may imply a high number means correct numbers.
+ */
+export default function ScanDiagnostics({ info, onRescan }) {
   const [open, setOpen] = useState(false);
   if (!info) return null;
 
-  const variant = VARIANT[info.variant] || { label: 'Unknown', hint: '' };
-  const rotated = info.orientation !== 0;
+  const confidence = Math.round(info.confidence ?? 0);
+  const band = confidenceBand(confidence);
   const facts = [
-    rotated ? 'rotated upright' : 'upright',
-    info.cropped ? 'cropped to receipt' : 'whole photo',
+    info.orientation ? 'turned upright' : 'upright',
+    info.cropped ? 'cropped to the receipt' : 'whole photo',
     info.psm === '4' ? 'column mode' : 'block mode',
-    ...(info.relaid ? ['columns re-paired'] : []),
+    ...(info.relaid ? ['prices re-paired from word positions'] : []),
   ];
 
   return (
-    <div className="glass-panel" style={{ padding: '0.75rem', marginBottom: '0.75rem' }}>
-      <div className="flex items-center gap-3 min-w-0">
-        {info.preview
-          ? <img
-              src={info.preview}
-              alt="What the scanner read"
-              style={{
-                width: 44, height: 58, objectFit: 'cover', flexShrink: 0,
-                borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-              }}
-            />
-          : <div className="avatar bg-glass flex-shrink-0"><ScanLine size={18} /></div>}
+    <section className="notice" aria-labelledby="scan-summary">
+      <div className="u-row" style={{ alignItems: 'flex-start' }}>
+        {info.preview ? (
+          <img className="shot shot--thumb" src={info.preview} alt="What the scanner read" />
+        ) : null}
 
-        <div className="min-w-0" style={{ flex: 1 }}>
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-bold truncate">{variant.label}</span>
-            {Number.isFinite(info.confidence) && (
-              <span
-                className="text-xs font-bold tabular-nums flex-shrink-0"
-                style={{ color: confidenceTone(info.confidence) }}
-              >
-                {info.confidence}%
-              </span>
-            )}
-          </div>
-          {/* Wraps rather than truncates: the whole point of this line is
-              telling you which treatment was used, so clipping it is worse
-              than a second row. */}
-          <p className="text-xs text-secondary" style={{ marginTop: 2, lineHeight: 1.35 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 className="notice__title" id="scan-summary">
+            {variantLabel(info.variant)}
+          </h2>
+          <p className="notice__body">
             {facts.join(' · ')}
           </p>
-          <p className="text-xs text-secondary" style={{ marginTop: 2 }}>
-            Found {info.itemCount} {info.itemCount === 1 ? 'item' : 'items'}
-            {info.feeCount > 0 && `, ${info.feeCount} ${info.feeCount === 1 ? 'fee' : 'fees'}`}
-            {info.attempts > 1 && ` · ${info.attempts} passes`}
+          <p className="notice__body">
+            {info.itemCount} {info.itemCount === 1 ? 'line' : 'lines'}
+            {info.feeCount > 0 ? `, ${info.feeCount} ${info.feeCount === 1 ? 'fee' : 'fees'}` : ''}
+            {info.attempts > 1 ? ` · ${info.attempts} passes` : ''}
+            {' · '}
+            {band === 'good' ? 'clear photo' : band === 'fair' ? 'mixed photo' : 'difficult photo'}
+            {' '}
+            <span className="u-mono">{confidence}%</span>
           </p>
         </div>
 
         <button
           type="button"
-          className="btn p-2 pressable flex-shrink-0"
+          className="icon-btn"
           aria-expanded={open}
-          aria-label={open ? 'Hide scan details' : 'Show scan details'}
+          aria-controls="scan-detail"
           onClick={() => setOpen((v) => !v)}
         >
-          {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          {open
+            ? <ChevronUp size={24} strokeWidth={1.5} aria-hidden="true" />
+            : <ChevronDown size={24} strokeWidth={1.5} aria-hidden="true" />}
+          <span className="u-sr-only">{open ? 'Hide the scan detail' : 'Show the scan detail'}</span>
         </button>
       </div>
 
-      {open && (
-        <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--glass-border)', paddingTop: '0.75rem' }}>
-          <p className="text-xs text-secondary" style={{ marginBottom: '0.6rem' }}>{variant.hint}</p>
+      {open ? (
+        <div id="scan-detail" className="u-stack" style={{ marginBlockStart: 'var(--space-4)' }}>
+          <p className="notice__body">{variantHint(info.variant)}</p>
 
-          {info.preview && (
-            <>
-              <p className="text-xs text-secondary font-bold uppercase tracking-wider" style={{ marginBottom: '0.4rem' }}>
-                What the scanner saw
-              </p>
-              <img
-                src={info.preview}
-                alt="Processed receipt as passed to the recogniser"
-                style={{
-                  width: '100%', borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--glass-border)', marginBottom: '0.75rem',
-                }}
+          <ul>
+            <li>
+              <Row
+                name="Certainty about the image"
+                note="Not a claim about the prices — check those against the paper"
+                figure={`${confidence}%`}
               />
-              <p className="text-xs text-secondary" style={{ marginBottom: '0.75rem' }}>
-                If the text here looks cut off, skewed or washed out, that is what
-                the recogniser had to work with — retaking the photo will help more
-                than editing the items below.
-              </p>
-            </>
-          )}
+            </li>
+            <li>
+              <Row name="Passes" figure={`${info.attempts} of ${info.tried}`} />
+            </li>
+          </ul>
 
-          <p className="text-xs text-secondary font-bold uppercase tracking-wider" style={{ marginBottom: '0.4rem' }}>
-            Raw text read
-          </p>
-          <pre
-            style={{
-              margin: 0, maxHeight: 180, overflow: 'auto', whiteSpace: 'pre-wrap',
-              overflowWrap: 'anywhere', fontSize: '0.72rem', lineHeight: 1.45,
-              color: 'var(--text-secondary)', background: 'rgba(var(--tint-ink), 0.5)',
-              border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)',
-              padding: '0.6rem',
-            }}
-          >
-            {info.text?.trim() || '(nothing)'}
-          </pre>
+          <h3 className="section__label">The raw text it read</h3>
+          <pre className="raw">{info.text?.trim() || 'Nothing came back.'}</pre>
+
+          {onRescan ? (
+            <Button block onClick={onRescan}>Scan a different photo</Button>
+          ) : null}
         </div>
-      )}
-    </div>
+      ) : null}
+    </section>
   );
 }

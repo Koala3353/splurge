@@ -1,0 +1,2608 @@
+{
+  "summary": {
+    "receipts": 60,
+    "truthItems": 152,
+    "parsedItems": 114,
+    "itemRecall": 0.4276315789473684,
+    "itemPrecision": 0.5701754385964912,
+    "itemF1": 0.4887218045112782,
+    "priceAttachment": 0.7846153846153846,
+    "strictRecall": 0.3355263157894737,
+    "strictPrecision": 0.4473684210526316,
+    "strictF1": 0.38345864661654133,
+    "leakedSummaryRows": 17,
+    "zeroItemReceipts": 7,
+    "totalAgreeRate": 0.15,
+    "serviceRecall": 0.375,
+    "serviceExpected": 8,
+    "discountRecall": 0,
+    "discountExpected": 2,
+    "meanMs": 3140.034434066668,
+    "medianMs": 1968.124125000002,
+    "p90Ms": 6519.871832999997,
+    "label": "control",
+    "tuning": "default",
+    "tuningValues": {
+      "plausibleQuadOnly": true,
+      "perspectiveMinStrength": 0.06,
+      "racePlainCropFirst": true,
+      "orientationPhotoGuard": true,
+      "rotationNeedsStrongEvidence": true,
+      "columnFallback": true
+    },
+    "when": "2026-11-26T02:57:35.796Z",
+    "dataset": "CORD-v2 (naver-clova-ix/cord-v2), CC BY 4.0",
+    "calibration": [
+      {
+        "band": "poor  <58",
+        "n": 48,
+        "strictF1": 0.34871794871794876
+      },
+      {
+        "band": "fair 58-77",
+        "n": 10,
+        "strictF1": 0.5074626865671642
+      },
+      {
+        "band": "good  >=78",
+        "n": 2,
+        "strictF1": 0
+      }
+    ]
+  },
+  "rows": [
+    {
+      "id": "test-0000.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": true,
+      "parsedSum": 60000,
+      "truthTotal": 60000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "-TICKET CP"
+      ],
+      "spurious": [
+        "TOVAL Gty=60000"
+      ],
+      "ms": 2007.3785420000002,
+      "error": null,
+      "confidence": 44,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "EE ERE,\n.  .       -      Co.         -—\n901016      TICKET €P\n2        60.007        £0.000\nTOTAL DISC §        -60.,000\nTAX       5.45\n                 Subtotal       0.000\n+ TOVAL (Gty 2.00~60,000\nLee 9                 |\n     - EDC CIN NIAGR No: xxT730        50.000     |\n1 LL sesswedammebaranonapnrmeseTa ren\nSL MHOTANCD THEN © 0   SL   i Le ey\n"
+    },
+    {
+      "id": "test-0001.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 300,
+      "truthTotal": 91000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "J.STB PROMO",
+        "Y.B.BAT",
+        "Y.BASO PROM"
+      ],
+      "spurious": [
+        "toms=300"
+      ],
+      "ms": 12077.506374999999,
+      "error": null,
+      "confidence": 43,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": "Tews\n§ toms. 282 300 ®\nth ‘pop.e Saeed BH 3\n\n$v. . 03\nfoes ob ES\nt! 19 i B®}    rs 3\nJ.STB PROMO       17500\nY.B.BAT          46000\nY.BASO PROM       27500\nTOTAL    91000\nCASH      91000\nSo be       PUB goa\n\nJe Ye imi\n+8 1 2 kind\n\n"
+    },
+    {
+      "id": "test-0002.jpg",
+      "truthItems": 1,
+      "parsedItems": 3,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 1,
+      "itemRecall": 1,
+      "itemPrecision": 0.3333333333333333,
+      "itemF1": 0.5,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 0.3333333333333333,
+      "strictF1": 0.5,
+      "totalAgrees": false,
+      "parsedSum": 56000,
+      "truthTotal": 28000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [
+        "PUCONUY JELLY L=4000",
+        "gus Toa A=28000"
+      ],
+      "ms": 969.3722499999985,
+      "error": null,
+      "confidence": 35,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "Se                    / s        ~—.,\noP         Co\nye wom qm?\nCM ee ww fe ue WN a\noe —F 1081 NEF EN\n.e wna J\n‘re = of    ot       -—\n1 nSWINE MT (L) ,    24.000\nPUCONUY JELLY ( L )        8      4,000\n———————    - i  ee Lei meee. }\ngus Toa: A     7 5         “28,000\nTOTAL $AI+S     j     LE       © 26.000\nTOTAL ‘Tens            Tote       cor\nCASH    Y    100,000\nCHANGE           LL      \\     ny\n                     |         $                       .\n"
+    },
+    {
+      "id": "test-0003.jpg",
+      "truthItems": 1,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 0.5,
+      "itemF1": 0.6666666666666666,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 0.5,
+      "strictF1": 0.6666666666666666,
+      "totalAgrees": false,
+      "parsedSum": 11990,
+      "truthTotal": 11000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [
+        "rutip=990"
+      ],
+      "ms": 1968.124125000002,
+      "error": null,
+      "confidence": 51,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "       Sekery & Gene\nDigg\nor\n—— AY ORAL —————\ndl) rutip + = 990 pe\n         or BaP\nCW @         ee\nX              @11000\nDONAT GULA               11,000\n1.00xITEMs\nSUBTOTAL                                   11,000\nTOTAL                  11,000\nCASH                    11,000\nwo:\n=            WW 10 penatv® GI\n{\nERS\n"
+    },
+    {
+      "id": "test-0004.jpg",
+      "truthItems": 3,
+      "parsedItems": 3,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 110816,
+      "truthTotal": 174600,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "ICE BLACKCOFFE",
+        "AVOCADO COFFEE",
+        "CHIKEN KATSU FF"
+      ],
+      "spurious": [
+        "CE BLMNCOFFE oo=82200",
+        "aL BE TRIAL=16",
+        "Cee=28600"
+      ],
+      "ms": 3105.984542000002,
+      "error": null,
+      "confidence": 29,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "woe                         —\n   ’   ~~.   f  —y    “mB\n  TT 0  vh\ni   -  » =. -\nJaf\nCF   ww  tee\nPLT. TT         IC\n4       f Reo Det haan gem ar as noosa anny sx s e          (\nCE BLMNCOFFE oo 2      82,200\n  Adacang (ree   1    8145007 4 |\nHIKER FAVSYFF-™ 1   TEL08g 4\ng  ! i        Wg\naL BE TRIAL    16,00\nCo ym    9.400\"\nfo Yan A      76,60 7\n~ © GANS A,’    00,00\nCF Cee     28,600\n|   ag    oe  c-   \\   .      :  ’\n-e  .   * . . “.  ~. Lo    i\n~   Ty\n"
+    },
+    {
+      "id": "test-0005.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 2182,
+      "truthTotal": 31000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 2085.1297919999997,
+      "error": null,
+      "confidence": 54,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 2,
+      "text": "|   Mig   i\n9   “4   :\nTRAD KY TOAST CARTE   2.182\nITEMS 1.00\n|   SUBTTL   28.182\n|   PB-1 108\nTOTAL   31.000\nCASH   31.000\nutr Cf   br\nHee ui.\n.   8s   “on\n1   :   to:"
+    },
+    {
+      "id": "test-0006.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 50000,
+      "truthTotal": 46000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "EGG TART",
+        "CHOCO CUS ARD PASTRY",
+        "REDBEAN BREAD"
+      ],
+      "spurious": [
+        "ASH=50000"
+      ],
+      "ms": 5502.737459,
+      "error": null,
+      "confidence": 30,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 5,
+      "text": "vadt Ld Jed\n|                   Or nu me             LT\n© Beers Mae QING\nBf ton               oy\nLL LL w-- +4        Co\n® ma Tw Tv.\nwe    Serie         =F   :\n= 5 TT oT a\n2 CHOCO CUS ARD PASTRY...  By wo\ni. 71 EDBEAN a0   TR 4B\nTOTAL          46,000\n- -   ASH    |              50,000\n~~ CHANCE          4,000\nCL eee wm               nn\n. gp ~ WO * on WD We       -\n"
+    },
+    {
+      "id": "test-0007.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 1091,
+      "truthTotal": 111000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Kupon 15"
+      ],
+      "spurious": [
+        "PBL CH oT Ge tea HE=1091"
+      ],
+      "ms": 14804.464124999999,
+      "error": null,
+      "confidence": 23,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": "Ce       CPE Eas mada\n:             -      Sa RRR\npon 15.7 0, rT he BALE\nKupon 35. 7... faa e100, G00 :\n0D CHICKEN BOX. ol ay\nSobtatal DT Ey ang\n PBL CH) oT Ge ; tea HE 1,091 :\nld CE Penn Ee Th nel\n Total iii Sh bl a SRL 13,000\nFda ee met Be Ea\nSlash Ce R000\nRen EL IE Re TONER ely dE Te eA Sa A\nHE Te a\n"
+    },
+    {
+      "id": "test-0008.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": false,
+      "parsedSum": 45455,
+      "truthTotal": 50000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 5119.750042,
+      "error": null,
+      "confidence": 40,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 5,
+      "text": ":    EE SETA Ee TT Te Hy\n          9           %\n. Pract Gap, = sats Eom aptly\nwartrttag SphG +4 Swe B90\n     WVU Gn ~b rte = +P\nmnt       :\nHR pa gba debisibelng\nBe 1 real a wr rt a\n1 [REG] BLACK SAKURA          45,455\n1 COOKIE DOH SAUCES           -       0\n1 NATA DE COCO           i          0\nSubTotal       145,485\nPB1 (10%)       !    4.545\nRounding                    Co         0\nTotal =       ~~. 50,000\n¢ emmsememme—nertil               1\nCard Payment      |                ; 50,000\ni y+ mr\n"
+    },
+    {
+      "id": "test-0009.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 1000,
+      "truthTotal": null,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Bumbu Kaldu Ayam 1"
+      ],
+      "spurious": [
+        "Kembalian=1000"
+      ],
+      "ms": 6512.087541000001,
+      "error": null,
+      "confidence": 44,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": "oo    ,    =                                   i\n:    oa                        ¥\n\n Sub Total          .          38000                  .o          !\n\n- Discount (0 %)        oo               Ct\nKembalian      1 1000                .    ;\n\n.  .     .  +  +  s  v              *  §\n"
+    },
+    {
+      "id": "test-0010.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 3000,
+      "truthTotal": 17000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "CINNAMON SUGAR"
+      ],
+      "spurious": [
+        "We ange St Bp=3000"
+      ],
+      "ms": 4060.591207999998,
+      "error": null,
+      "confidence": 43,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 5,
+      "text": "|   CR TA\nIT\nfe 7 42   Ya\nSeay\nCINNAMON SUGAR\nTx 17.000\n17.000\nSUBTOTAL\n17.000\nGRAND TOTAL\nCASH IDR   17.000\n20,000\nCHANGE DUE\nWe + ange St Bp   3,000\n>\nBr"
+    },
+    {
+      "id": "test-0011.jpg",
+      "truthItems": 1,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 230000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "BANABERRY FRESH CREAM CAK"
+      ],
+      "spurious": [],
+      "ms": 8467.259042000005,
+      "error": null,
+      "confidence": 32,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": "i\nws    rere #0\n\n“att\n\n"
+    },
+    {
+      "id": "test-0012.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 120000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "BLUS WANITA",
+        "SHOPPING BAG"
+      ],
+      "spurious": [],
+      "ms": 5261.517624999993,
+      "error": null,
+      "confidence": 35,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": "CR\ni          “ww   *      .                    2\n|         ~   -      »\nee 1         .     .          Cog      ~( k\n.    0571 55 RL ITA\n1002      120,          120,000\nTO Sg wg FN\n8889 100x          0        i\n    Tora  (2 4   ’           ’                        - .\n.    ite                            .\nIC. Visa, pry * .      + 20,000       \\\notal keatalian           ~0,Cog\n.                            0          |\nTee\nC—-        Tm         :       e.       :\n*  * “ney      Tr -—-. .      v\n.         ®t -          co»   !\n.         - os,      so\n              .  *    * ey      Lo     avr YIaRa\n"
+    },
+    {
+      "id": "test-0013.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 3,
+      "truthTotal": 51300,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "BASO KUAH",
+        "A.MINERAL GELAS"
+      ],
+      "spurious": [
+        "Eco=3"
+      ],
+      "ms": 1534.287124999988,
+      "error": null,
+      "confidence": 33,
+      "variant": "contrast",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "Crone          2\nhy   .  ’     :\n™          ’\n-\n&\n8\nFA\n= ne  a |       >\nMM a \". i,                                    =\na= yo. ch le         Q\noe  NaC po\n=                       LS\nhaw             :\nEco      3.00\n-     .                          2-0\n            46.634 A\n          51,3000\nLC s2000T\nBe 00s\ni      a      Z\n"
+    },
+    {
+      "id": "test-0014.jpg",
+      "truthItems": 6,
+      "parsedItems": 4,
+      "matched": 4,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.6666666666666666,
+      "itemPrecision": 1,
+      "itemF1": 0.8,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 105051,
+      "truthTotal": 281435,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Chamomile",
+        "Iced Tea"
+      ],
+      "spurious": [],
+      "ms": 1211.6183750000055,
+      "error": null,
+      "confidence": 38,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 1,
+      "text": "®\n:\n1   . a   wd   “4\n|\n+ ha   ow\noem\n=\n000\n38.   +\n1 RedVelvel Cheese 51\n1 Chicken Baked Rice   :   45,000\n1 Fish n Chips   35,000\n1   Soup   :   25,000\n. 1   : 20,000\n-   1 Iced Ted\n238,000\nSUBTOTAL   17,840\ni   :   5,\n.   Service\nTT 5 A435\n281,\n¥   roTAL\n100,000\n200,000 ;\n.\nLoupon\nCAS\n.\n|\n,\neo\nA\n,\n,\n.\n©,"
+    },
+    {
+      "id": "test-0015.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 13,
+      "truthTotal": 63000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Lemon Tea (L)",
+        "Caramel Small"
+      ],
+      "spurious": [
+        "isl=13"
+      ],
+      "ms": 3426.3905839999934,
+      "error": null,
+      "confidence": 22,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 10,
+      "text": "A\na   1\n3\nLl\npe   £1]   i\nisl 13\ndie\nJa   ells\nbil   Ne\nEd   1   RE Hg\n1\n-\n1"
+    },
+    {
+      "id": "test-0016.jpg",
+      "truthItems": 2,
+      "parsedItems": 2,
+      "matched": 2,
+      "pricedCorrect": 2,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": false,
+      "parsedSum": 63636,
+      "truthTotal": 70000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 864.7033340000053,
+      "error": null,
+      "confidence": 57,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "og                               |\nre rf greet TE BR pe\noer 01.        pv    :    Sv tages.\nrrr               Lad\ncof\nSpelt ip i. wuwnlh\nrr Tire aim ws.\n®& wih i. %                                                 Ise h\n1 [LG] BLACK SAKURA                       59,091\n1 LONGAN                                 0\n1 ROASTED ALMOND                            0\n1 VANGGO                                             0\n1 VINERAL WATER (bundling) 5k            4,545\nSub Total                                                     63,636\nPB1 (10%)         :                     6,364\nRounding                                               0\nTotal                                           70,000\nCash Payment                                 100,000\nChange                                          30,000\ni eth mr rv -——\n"
+    },
+    {
+      "id": "test-0017.jpg",
+      "truthItems": 6,
+      "parsedItems": 3,
+      "matched": 2,
+      "pricedCorrect": 2,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.3333333333333333,
+      "itemPrecision": 0.6666666666666666,
+      "itemF1": 0.4444444444444444,
+      "priceAttachment": 1,
+      "strictRecall": 0.3333333333333333,
+      "strictPrecision": 0.6666666666666666,
+      "strictF1": 0.4444444444444444,
+      "totalAgrees": false,
+      "parsedSum": 66000,
+      "truthTotal": 91000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Goblin's Mace",
+        "Cheese Croquette",
+        "Plastik Amook",
+        "Plastik Putih Take Away"
+      ],
+      "spurious": [
+        "Chease=14000"
+      ],
+      "ms": 533.3988329999993,
+      "error": null,
+      "confidence": 60,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "= Ge\noH\nbedi ob | gabe  bole  i\n\nSLIIXL\nL          oo.                       -\n= x                 des V\nGoblin's Mace 1                             \"725,000\nMozarelia Hot       2                               38,000\nDog\nChili Pepper          1                               14,000\nCroqustte\nChease           1                     14,000\nCroquette\nPlastik Amook      1                                   0\nPlastik Putih          1                                        0\nTake Away                               -—\nSubtote!                                 91,000\nDiscount                                    (0)\nTOTAL                          Rp. 91,000\nDebit                                    91,000\n        -                 7 00000OO0NKX\n"
+    },
+    {
+      "id": "test-0018.jpg",
+      "truthItems": 1,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 156000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Propolis Cair"
+      ],
+      "spurious": [],
+      "ms": 4477.552708000003,
+      "error": null,
+      "confidence": 58,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 9,
+      "text": "Propolis Garr 1\n\n“BOC\n156000                T4600\n\nSub ola!                156000\n\nTunai                     156000\n\nKembalian                        Rp. 0\n\n® =\n\nAr -ANB-  ®)     .          -\ntg MIR Jah Wwe\nHime) yn re\n\n"
+    },
+    {
+      "id": "test-0019.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 176000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "AMBUSH DBL CHS",
+        "AMBUSH CHS BUR"
+      ],
+      "spurious": [],
+      "ms": 4304.126749999996,
+      "error": null,
+      "confidence": 35,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": "\\\n|                        |\n9                           T\na                           .\n.\n)\ne)                              i\n2\no     $ Andou DBL CRS Aull       :\niJ ARELsA CHS aux toy       -\n1.\n4    Wei sito     Loin      2\nTR               {anid        J\nANGUNT DUE    LANE Nt\nro,\n"
+    },
+    {
+      "id": "test-0020.jpg",
+      "truthItems": 5,
+      "parsedItems": 7,
+      "matched": 5,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 0.7142857142857143,
+      "itemF1": 0.8333333333333333,
+      "priceAttachment": 0.2,
+      "strictRecall": 0.2,
+      "strictPrecision": 0.14285714285714285,
+      "strictF1": 0.16666666666666666,
+      "totalAgrees": false,
+      "parsedSum": 122619,
+      "truthTotal": 377859,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [
+        "Service ChYQ=17708",
+        "i0 FRI=351"
+      ],
+      "ms": 2002.9805000000051,
+      "error": null,
+      "confidence": 38,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "> Se\n5\nCa\n.    Lo.\nBem mm TE .    .  i\ni cachew puts ohkn              £4,500\n1 garlic pepper beef            79,500\ni red curry beef                £9,500\nhad thal                         £3,500\ni plead thal                      G1, JY\n4 steamed rice                  £7,560\nmm er mm Sm\nSUITRTATAL                AE Abd\nSUBTOTAL                  325,600\nService ChYQ                  17,708\nin Dd     ”                    4 IE\ni0% FRI                    351\nim on ef eH 7       :    =   ws\n~                 «ZF        by od\n3   \"5              ET z Bea\nmim rr           Ch ee ———\n:                                            |\nof    )    |\n                      { *\n"
+    },
+    {
+      "id": "test-0021.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 3,
+      "truthTotal": 38000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "NASI GOR SFD TLR",
+        "ES TEH TAWAR"
+      ],
+      "spurious": [
+        "SEQ Ss=3"
+      ],
+      "ms": 6519.871832999997,
+      "error": null,
+      "confidence": 41,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 7,
+      "text": "crt      =   m= —\nSr       20% OFF WE »\nSo 2.    5 |\n      Mm. = Too:\n=  oo oO        |\nTs -— OO oO        |\n.         =  S\n= wn         |\n= nl   .\n- = oo\n   —   3      |\n;       2       § AF\na     =              :\nE     =F   2 &    3   |\n&   BSP os 8  a\n:    £88 8 =        |\nI     SEQ  Ss 38  $   3\nae   :    :\npo\nnr    a.\n"
+    },
+    {
+      "id": "test-0022.jpg",
+      "truthItems": 2,
+      "parsedItems": 2,
+      "matched": 2,
+      "pricedCorrect": 2,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": true,
+      "parsedSum": 40000,
+      "truthTotal": 40000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 1320.8342080000002,
+      "error": null,
+      "confidence": 58,
+      "variant": "contrast",
+      "source": "full",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 2,
+      "text": "Ine   Art\n.\n)\ni   NS\n\"2 [WD] SOFT STEAMED CHEESEC 20,000\n2 [MD] SOFT STEAMED CHOCCCA 20,000\n|   TOTAL   40,000\nCASH   100,000\nCHANGE   60,000\n-\nSn"
+    },
+    {
+      "id": "test-0023.jpg",
+      "truthItems": 2,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.5,
+      "itemPrecision": 0.5,
+      "itemF1": 0.5,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 93000,
+      "truthTotal": 63000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "TWIST DONUT"
+      ],
+      "spurious": [
+        "CE THST DONT=54000"
+      ],
+      "ms": 537.6630830000067,
+      "error": null,
+      "confidence": 71,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "EERE\n\nCE THST DONT 54.000\n\n1 REDBEAN BREAD             39,000\nTOTAL       63,000\n\nCASH               70,000     |\nCHANGE       7,000\n"
+    },
+    {
+      "id": "test-0024.jpg",
+      "truthItems": 3,
+      "parsedItems": 2,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": true,
+      "parsedSum": 118000,
+      "truthTotal": 118000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "5001-Corn Flakes Cookies",
+        "5003-Chokoreto Cookies",
+        "6002-Plastic Bag Medium"
+      ],
+      "spurious": [
+        "fin 36.000 wt Rr=56000",
+        "Rp.62 000 x1 Rp=62000"
+      ],
+      "ms": 750.4962080000114,
+      "error": null,
+      "confidence": 34,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "i\n-    Sra Bra qui         oo\n         § or Homeas vo\nher Bed 8 dare WN         ’\nArey Wr sssenrb                .\naaa Aan        hoes\nwe oa      or\nra        . -—    3\ney   .   Pow be dy ewe +® .   Le\n5001-Corn Flzkes Cookies\nfin, 36.000 © wt                 Rr. 56.000\n5003-Chokioreto Cookies\nRp.62,000 x1                Rp.62.000\n6002-Flactic Bag Medium\nRp wl          Rp.0\nTotal Item:        3\nTotal,                   Rp.118.000\nDebet Card           Sos\n"
+    },
+    {
+      "id": "test-0025.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.3333333333333333,
+      "itemPrecision": 1,
+      "itemF1": 0.5,
+      "priceAttachment": 1,
+      "strictRecall": 0.3333333333333333,
+      "strictPrecision": 1,
+      "strictF1": 0.5,
+      "totalAgrees": false,
+      "parsedSum": 16000,
+      "truthTotal": 43000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "TWIST STRAWBERRY DONUT",
+        "TLJ CROQUETTE"
+      ],
+      "spurious": [],
+      "ms": 815.4711250000109,
+      "error": null,
+      "confidence": 32,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "Butane LER\nFi\n2 2 I+\n    + — Jas\nof HP® ot\nLTE -\n4 wr iF eh gi\nrs an I\n ae\nWT\n{TL leone       0\n1 pTAT? oEPPER gAGEL    16,000\n107 AL        13,00\ncps            1 “0\n/                       1p\n/    SE     \",\n2 ‘        :\n"
+    },
+    {
+      "id": "test-0026.jpg",
+      "truthItems": 3,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 138000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Nasi Cap Cay Porsi B esar",
+        "Teh Tawar",
+        "Fu Yung Hai"
+      ],
+      "spurious": [],
+      "ms": 6273.330416000012,
+      "error": null,
+      "confidence": 95,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": ""
+    },
+    {
+      "id": "test-0027.jpg",
+      "truthItems": 2,
+      "parsedItems": 2,
+      "matched": 2,
+      "pricedCorrect": 2,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": false,
+      "parsedSum": 56000,
+      "truthTotal": 61600,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 1161.0448329999927,
+      "error": null,
+      "confidence": 35,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 4,
+      "text": "FOSS!\nTWAIN ee rg\n   we Gwe Gh ish wi\n PKT AYAM       © 33,000\nGULAI OTAK               23,000\n|              2.00MI TEMS\n~ SUBTOTAL     56,000\nTAX 10%                   5,600\nTOTAL      61,600\nCHARGES                  61,600\n9 C1 Sted Hrd Sl)\n0 0p Silonite Dilng\nrag                ann\nto         “ et see eav— eT]\n"
+    },
+    {
+      "id": "test-0028.jpg",
+      "truthItems": 3,
+      "parsedItems": 3,
+      "matched": 2,
+      "pricedCorrect": 2,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0.6666666666666666,
+      "itemPrecision": 0.6666666666666666,
+      "itemF1": 0.6666666666666666,
+      "priceAttachment": 1,
+      "strictRecall": 0.6666666666666666,
+      "strictPrecision": 0.6666666666666666,
+      "strictF1": 0.6666666666666666,
+      "totalAgrees": false,
+      "parsedSum": 193450,
+      "truthTotal": 426195,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "SAMGYOPSAL"
+      ],
+      "spurious": [
+        "Yonios=18450"
+      ],
+      "ms": 553.1757079999952,
+      "error": null,
+      "confidence": 44,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "Shieh 4 She\na       ”,       we\nErte + rt\nI Nr Sn un on toe\nSAMGYOPsAL       194,000\nSULLUNG TANG {            75,000\nMAKOL|             1        100,000\nSup Tol 0\nYonios                       18,450\n38,745\n]   Discount                           0\noe ine\nL Wh Nay Canna,\n"
+    },
+    {
+      "id": "test-0029.jpg",
+      "truthItems": 6,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 7,
+      "truthTotal": 145900,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "COLD OCHA",
+        "BCA PROMO",
+        "SKEWERED SHUMAI",
+        "SKEWERED TOFU ROLL",
+        "EBI TEMPURA",
+        "KITSUNE UDON (KIDS)"
+      ],
+      "spurious": [
+        "cBIMTR EL=7"
+      ],
+      "ms": 2076.2141249999986,
+      "error": null,
+      "confidence": 33,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 2,
+      "text": "CY    o\n\"RAM TO   |\nEAR +00 $ ty    1\na cs PE   2   ,\nno  Po) ¥  t  \\  i!\n3225508)       |  s 3\ncBIMTR=EL        |   $7\nnC C 3%  . .  .  1    8\n> 928? + 1d |   :\nMC <0  1    a      e  i\n= 2 =  \\    = =n ¢;\n= nx» w  t    Ss     =  4\nnog 2  te * 4!\nur  0  \\  »     $\n    xy vu     ¥\n|      Lr 3 +\n\\   3 &    es’  4\n!    “a  1    \\\n         \\     $  i   =  s\n       Lo 3., 8\nPRE ERR Re       \\   3\nbo     A Rs\ny TO  oo       i   +3\nTow N®N  po       1\nVR Tay  0)  Ct    \\\n1 WW NW  nO  i.          .\nINN NOoOOoOND a, wm    !   §\n oe    Lo alle   a.\n"
+    },
+    {
+      "id": "test-0030.jpg",
+      "truthItems": 1,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 1,
+      "itemRecall": 1,
+      "itemPrecision": 0.5,
+      "itemF1": 0.6666666666666666,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 0.5,
+      "strictF1": 0.6666666666666666,
+      "totalAgrees": true,
+      "parsedSum": 31500,
+      "truthTotal": 31500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [
+        "FBI 107 oo=2864"
+      ],
+      "ms": 634.682083000007,
+      "error": null,
+      "confidence": 38,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "|           :          Lo\npon 3    28,636\n* Subtotal          oo     28, 636\nFBI (107)     oo        2,864\nDine In Total     3,500\nCoan TET 000\n| Shae  Lo  Lo |   18,500 oo\nBT NR © me a fs ee ta ae\n"
+    },
+    {
+      "id": "test-0031.jpg",
+      "truthItems": 2,
+      "parsedItems": 3,
+      "matched": 2,
+      "pricedCorrect": 2,
+      "leakedSummaryRows": 1,
+      "itemRecall": 1,
+      "itemPrecision": 0.6666666666666666,
+      "itemF1": 0.8,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 0.6666666666666666,
+      "strictF1": 0.8,
+      "totalAgrees": false,
+      "parsedSum": 95760,
+      "truthTotal": 113886,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": true,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [
+        "SVC CHG BX=10260"
+      ],
+      "ms": 696.7095420000114,
+      "error": null,
+      "confidence": 46,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "ee “eo\now nu,\not nw -\npoco ®\ngir\noi  =  . -» ee\nerrr   a\nine\n*    prey\naL       ise lk     yr\n- sill   . J    ’ alt   ui\n1 SALMON PESTO          85,500\n1     SALMON PESTO         85,500\nDisc -100%(ITMOB)          -85,500\nSUBTTL                    85,500\n“© SVC CHG BX           10,260\nPB1 10%               18,126\nCo     TOTAL           113 A8H       oo\n"
+    },
+    {
+      "id": "test-0032.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": true,
+      "parsedSum": 24000,
+      "truthTotal": 24000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "THAI ICED GREEN TEA"
+      ],
+      "spurious": [
+        "TEN=24000"
+      ],
+      "ms": 1145.206707999998,
+      "error": null,
+      "confidence": 39,
+      "variant": "contrast",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": ") i                 5      g\n\"Qh          She\non ie\n[                               24.000\nTEN          24.000\nAm\n"
+    },
+    {
+      "id": "test-0033.jpg",
+      "truthItems": 3,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.3333333333333333,
+      "itemPrecision": 0.5,
+      "itemF1": 0.4,
+      "priceAttachment": 1,
+      "strictRecall": 0.3333333333333333,
+      "strictPrecision": 0.5,
+      "strictF1": 0.4,
+      "totalAgrees": false,
+      "parsedSum": 86857,
+      "truthTotal": 148127,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "GRILLED BABY POTATO (R",
+        "HOT TUNA"
+      ],
+      "spurious": [
+        "FHG BX=19857"
+      ],
+      "ms": 672.3660419999942,
+      "error": null,
+      "confidence": 31,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "oo TT\na Windle + gy\no- ®.  te 9 gi » Toi\ni a Nout. 4 @\nSti ep\nbe oe\nCoe cp\nSo Apwh 4a\nww Bo-ty & ¢#\nBe ts rg? o» q    ®t, wld\n1 GRILLED BABY POTATO (R  or\n    ior TINA          67,000\n0            [67,000\n  Disc -100%(ITMOB)   / a\nm           1,070   \\\n: ws FHG BX            19,857\n——    o\n"
+    },
+    {
+      "id": "test-0034.jpg",
+      "truthItems": 2,
+      "parsedItems": 3,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0.5,
+      "itemPrecision": 0.3333333333333333,
+      "itemF1": 0.4,
+      "priceAttachment": 1,
+      "strictRecall": 0.5,
+      "strictPrecision": 0.3333333333333333,
+      "strictF1": 0.4,
+      "totalAgrees": false,
+      "parsedSum": 10012,
+      "truthTotal": 93500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Ash Chick Sambal Matah"
+      ],
+      "spurious": [
+        "8jak=8.5",
+        "stal=3.5"
+      ],
+      "ms": 586.4772499999963,
+      "error": null,
+      "confidence": 33,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "AY\n’    od pd       \\\n2 5% rAd\nfx anew\nPd sed\n;   5\n.      &)\n:  en 2 oT  “eo\nfo - »\n. i em\ntoe  Cb ee »\n‘    ww\nfoh Chick Sama) foteh 5 Fam\nfemur Goreng + 2             10,000\nPrsccnrsccunsmrurevevers rye var eree seer aeve\nubtotal                  85.000\n8jak (10%)                 8.50\nstal        3.50\n|\n100.000\ni\n2  el               5.500\n"
+    },
+    {
+      "id": "test-0035.jpg",
+      "truthItems": 4,
+      "parsedItems": 5,
+      "matched": 4,
+      "pricedCorrect": 4,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 0.8,
+      "itemF1": 0.888888888888889,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 0.8,
+      "strictF1": 0.888888888888889,
+      "totalAgrees": false,
+      "parsedSum": 61000,
+      "truthTotal": 54000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [
+        "ew On=7000"
+      ],
+      "ms": 1208.7614999999932,
+      "error": null,
+      "confidence": 47,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "Ra |               A\nMe LE Hang\nWe On  !\nBe ee.\nWee sue my\nfl ¥ es\nwrite Gr Seid d\n2 TWIST DOWT 18.000\n1 BANANA DONUT             11,000\n1 CREAMCHEESE BREAD      13,000\n        1 FRANKFRUT SAUSAGE ROLL 12,000\nTOTAL         5¢,000\nCASH                   00\nCHANGE ~~ 5(,000\npo \"®              *\nCe —\n° poetDV » grrr ®\new On 7000  ®\nonl\n"
+    },
+    {
+      "id": "test-0036.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": true,
+      "parsedSum": 40000,
+      "truthTotal": 40000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 2173.4107499999955,
+      "error": null,
+      "confidence": 39,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "1 XXL Cnspy Chicken” - 40,000\n—— - rom rt amon am tn\n\nTEMS | 40000\n\nTatal coanovens                        -    | of  SE Ee       :\n\nPay Cash 100,000 Change :60,000\n\n|   mam ws   wummanmmnma   or   - enn     ae =\nCm hy gee ree ET\nCd te\n"
+    },
+    {
+      "id": "test-0037.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": false,
+      "parsedSum": 20000,
+      "truthTotal": null,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 946.1785840000084,
+      "error": null,
+      "confidence": 49,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "ahs own ef\n\n9) @ Lig\n\nSond Pp    tw\n:     dv wt nn\n\n1 Popcorn Salt (S)          20.000\n                   TOTAL       A.M\n\nCASH                       50.000\n\nCHANGED                     30.000\n\nLD SE el rang\n\nCo       $0 2 oe\n"
+    },
+    {
+      "id": "test-0038.jpg",
+      "truthItems": 9,
+      "parsedItems": 4,
+      "matched": 3,
+      "pricedCorrect": 3,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0.3333333333333333,
+      "itemPrecision": 0.75,
+      "itemF1": 0.46153846153846156,
+      "priceAttachment": 1,
+      "strictRecall": 0.3333333333333333,
+      "strictPrecision": 0.75,
+      "strictF1": 0.46153846153846156,
+      "totalAgrees": false,
+      "parsedSum": 207599,
+      "truthTotal": 664329,
+      "service": {
+        "expected": true,
+        "found": true,
+        "correct": true
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "XLB Org Pork 10x",
+        "Sicito Babi",
+        "Hotplate Tahu",
+        "DF Fish Fillet Garlc",
+        "Kwan Yin Cup",
+        "Onde-Onde"
+      ],
+      "spurious": [
+        "Tota bevunenns=664"
+      ],
+      "ms": 793.2769579999876,
+      "error": null,
+      "confidence": 58,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "4 1 XB Qrg Park 10x           74m IE\n4 1 Ssicwonan                     Shin\n4 I Hatplate Tahu                 BiG      b\n4 1 DF Fish Fillet Garic          108,000       :\n#4 1 LM Pork Belly                 88,000\n1 Siew Mai                       38,800      E\n\ng 5 KwanYinCup                  50,000       |\n1 Herbal Jelly                       38,000\n\n1 Onde-Onde                   33,000 FE\nITEMS :13                                  561,500        E\nService charge                          42,135\nPB1                                    60,334\nTota bevunenns                                        664, 32 9                    j\n"
+    },
+    {
+      "id": "test-0039.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 87200,
+      "truthTotal": null,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "LUNCH BOX 3P SET W/RED BAG & SP00 N.",
+        "RICE CASE 7L W/CUP",
+        "LUNCH BOX 3P SET W/BLACK BAG & SP OON"
+      ],
+      "spurious": [
+        "TE ITT=87200"
+      ],
+      "ms": 5262.998416999995,
+      "error": null,
+      "confidence": 22,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 5,
+      "text": "eel TORO  .\n     TU - elL seon\nNa\nQe rr               7      cy    -\nELL            247 apn     ToTeAoTn\nNTSUTN. fans                                 os\nDITRENS (277          £555,200\nSE ERY BYPE p,m       .\nwei Ti RIPE  Lash 7  gortip\n£7        Ton pe           .\nTE        ITT, 000     87.200\nDish: 120m          eq. 000\nrea    Poca   -            -\nEe TELE late sw    .       Cn\nGin\nam        ve me     Cee\n407         MLA ezom\n“aye     ;\nPrRVe man         TITLE\nYooh ie              ”\nTam                   on\nt Ve Tn     De             i   2\nCe el,           Tomar fr\n"
+    },
+    {
+      "id": "test-0040.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.5,
+      "itemPrecision": 1,
+      "itemF1": 0.6666666666666666,
+      "priceAttachment": 1,
+      "strictRecall": 0.5,
+      "strictPrecision": 1,
+      "strictF1": 0.6666666666666666,
+      "totalAgrees": false,
+      "parsedSum": 14000,
+      "truthTotal": 68000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Snack Lestari All"
+      ],
+      "spurious": [],
+      "ms": 532.1847500000003,
+      "error": null,
+      "confidence": 35,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 2,
+      "text": "Lestari All\n2   54,068\nAnsha Sieir banana, Pizza, yoko, ar\ncokelat, dll\nmer   14,000\n2   7,00\n£2,000\nTOTAL\nCASH"
+    },
+    {
+      "id": "test-0041.jpg",
+      "truthItems": 10,
+      "parsedItems": 8,
+      "matched": 8,
+      "pricedCorrect": 6,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.8,
+      "itemPrecision": 1,
+      "itemF1": 0.888888888888889,
+      "priceAttachment": 0.75,
+      "strictRecall": 0.6,
+      "strictPrecision": 0.75,
+      "strictF1": 0.6666666666666665,
+      "totalAgrees": false,
+      "parsedSum": 236370.28,
+      "truthTotal": 36500000,
+      "service": {
+        "expected": true,
+        "found": true,
+        "correct": true
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Naga Lychee Juice",
+        "Lychee/Peach/Lemon/Mango"
+      ],
+      "spurious": [],
+      "ms": 835.8440840000112,
+      "error": null,
+      "confidence": 64,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "a Fa\n1,\n«es\n4p\n»\nid\nChicken Maryland                 7619.00\nCapouctno (Hot/Iced)          2303.00\nNaga Lychee Juice             4632.)\nCafe Latte                    30303.60\nHot Chocolate Marshmallo       30303.00\nChicken Cesar Salad            43290.00\nMineral Water               12987.00\nMineral Water                12987.00\nLychee/Peach/Lemon/Mango      Zar.\nChicken Maryland               47615.00\n17.00\nSubtotal                    316017.\nService Charge 5% +           48962.68\n5000.00\nToL                *\nLL weew\nNR cE A—\noy\n—           1\n1\n"
+    },
+    {
+      "id": "test-0042.jpg",
+      "truthItems": 1,
+      "parsedItems": 3,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 1,
+      "itemRecall": 1,
+      "itemPrecision": 0.3333333333333333,
+      "itemF1": 0.5,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 0.3333333333333333,
+      "strictF1": 0.5,
+      "totalAgrees": false,
+      "parsedSum": 50000,
+      "truthTotal": 16500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [
+        "P.Rest=1500",
+        "Cea Kemba=33500"
+      ],
+      "ms": 627.5895410000085,
+      "error": null,
+      "confidence": 42,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 1,
+      "text": "|   3\n:   Se\n/)   1   Crucken HCC, 1Pcs   15.000\nGs   Su Total   15,000\nP.Rest 10   1.500\n16,50\nTotal\nCas   56,0010\nCea   Kemba) 1   33,500\n4   - i\n1 Ttess,"
+    },
+    {
+      "id": "test-0043.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 16,
+      "truthTotal": 16500000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 12341.91962500001,
+      "error": null,
+      "confidence": 57,
+      "variant": "original",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": "EE RRRRRRRRRRRRRRRRRIRRRRRRRRRRRiRRRRRRRAR Rm\n.\n|\n© Pcs Cheese Tart            16x\nBox of 6                  —\nPP Carrier\n3                 Subtotal:                    |      he\n          Total Tax Included:         Bye    i\n-           Total:                   Rp165060 00\nCustomer Paid Cash:          .\nCustomer Change:             He\n"
+    },
+    {
+      "id": "test-0044.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 50000,
+      "truthTotal": 30000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Combo 1"
+      ],
+      "spurious": [
+        "wen=50000"
+      ],
+      "ms": 3279.8997500000114,
+      "error": null,
+      "confidence": 43,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 5,
+      "text": "1 [x1 X°\ncafe         =\n2 NM  RL WD\nre a\no not b+\n1 Combo 1          30. 000\n       i     TOTAL     30.00\nwen 4         50.000\nCHANGED |                 20. 000\nAD oth ip Stapp AE         3\nJ       | 8 ¢ &oy            ¥\nes fT ON\n"
+    },
+    {
+      "id": "test-0045.jpg",
+      "truthItems": 4,
+      "parsedItems": 3,
+      "matched": 3,
+      "pricedCorrect": 3,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.75,
+      "itemPrecision": 1,
+      "itemF1": 0.8571428571428571,
+      "priceAttachment": 1,
+      "strictRecall": 0.75,
+      "strictPrecision": 1,
+      "strictF1": 0.8571428571428571,
+      "totalAgrees": false,
+      "parsedSum": 63000,
+      "truthTotal": 88000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Lemon Tea (L)."
+      ],
+      "spurious": [],
+      "ms": 1411.2820000000065,
+      "error": null,
+      "confidence": 55,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "\\ |\nrd\nANI            \\\n< 27s\n{            ® wus:   og:\nbe ce\noon wo\nh- dbew a a             _\n1 Lemon Tea (L).           25. 000\n1 Mike & Ike Original          28.000\n     1 Mike & Berry                28.000\n1 Rot! Keju Manis.           7.000\nTOTAL       Bm\nCASH                  86.000 |\nCHANGED                       0\n® GE WT ey ga\nge 45 G9 ~     1\n4\n"
+    },
+    {
+      "id": "test-0046.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.5,
+      "itemPrecision": 1,
+      "itemF1": 0.6666666666666666,
+      "priceAttachment": 1,
+      "strictRecall": 0.5,
+      "strictPrecision": 1,
+      "strictF1": 0.6666666666666666,
+      "totalAgrees": false,
+      "parsedSum": 20000,
+      "truthTotal": 40000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "S-Bubble Milk Tea"
+      ],
+      "spurious": [],
+      "ms": 1167.8140840000124,
+      "error": null,
+      "confidence": 32,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "    3   .                p y  hy\ndy          = §\n    §     :       A  )               i\n5      5        (in           oP\nFo aa Rh Nn\n¢      . 4   XD) 1h     _                            :\n 3      Co     w                                a\n\\    ’    oT CR  -                       5\n%    Oo rw a\n=    -«                               y\nCT  Co -  Wee > 9p                3\n1 a    0 mau \"wow\nQ meee\n1: XS Buble Milk Tea 5 020,000 20,000          .\n+R % WX S-Caramel Milk eb  020,000 20,000\n1      100%                            Fo\n.           .   \"   Ce TTT\nCL    -     Co      he          + 4         :\n-         3        Total:        40,000      :\nCoe     SE    Cash:       40,000     :\nrot    in eg gf      - -\nCn Rees    CHANGE 7      0\niil Dae cof een\n"
+    },
+    {
+      "id": "test-0047.jpg",
+      "truthItems": 3,
+      "parsedItems": 2,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 2,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 126000,
+      "truthTotal": 6300000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "COPIA 1 /GB",
+        "PLASTIC BAG RED CENTRAL SI",
+        "COPIA 1 /GB"
+      ],
+      "spurious": [
+        "lotal=63000",
+        "Lda ere ee ny=63000"
+      ],
+      "ms": 1029.001500000013,
+      "error": null,
+      "confidence": 60,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "  lotal                               63,000.00\nTotal discount                0.00\nTotal quantity...             3\nCard Payment DEBIT CARD\nLda ere ee ny    63,000.00\n"
+    },
+    {
+      "id": "test-0048.jpg",
+      "truthItems": 1,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 0.5,
+      "itemF1": 0.6666666666666666,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 0.5,
+      "strictF1": 0.6666666666666666,
+      "totalAgrees": true,
+      "parsedSum": 25019,
+      "truthTotal": 25000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [
+        "hey=19"
+      ],
+      "ms": 1064.6555000000226,
+      "error": null,
+      "confidence": 75,
+      "variant": "contrast",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "1X S-Hazelnut KOI Cafe 625,000    25,000\n25%\nLess Ice\nPB1:           20202\nSubtotal:           22,728\nTotal:          25,000\nCash:          100,000\nCHANGE :           75,000\nhey!     19\n“an\n"
+    },
+    {
+      "id": "test-0049.jpg",
+      "truthItems": 2,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0.5,
+      "itemPrecision": 0.5,
+      "itemF1": 0.5,
+      "priceAttachment": 1,
+      "strictRecall": 0.5,
+      "strictPrecision": 0.5,
+      "strictF1": 0.5,
+      "totalAgrees": false,
+      "parsedSum": 34000,
+      "truthTotal": 23000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Ptgs Eggtart"
+      ],
+      "spurious": [
+        "DUE=23000"
+      ],
+      "ms": 3002.559499999974,
+      "error": null,
+      "confidence": 27,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 2,
+      "text": "a\nCen\nett   :   :\n.   .   -\nnd\nA\n-   .\n3   “+   i\na.   -   Lt. Ce\nwes\n4   em   oe em eer   i\n1 Ptgs Eggtart\n{ Chora Melt   11,000\n.\nJ   mee oman   id\nSURTOTAL   23,000\njw   DUE   23,000\n|."
+    },
+    {
+      "id": "test-0050.jpg",
+      "truthItems": 1,
+      "parsedItems": 2,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 2,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 21073,
+      "truthTotal": 19500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Superice Cauburry"
+      ],
+      "spurious": [
+        "Foie=1773",
+        "Totals=19300"
+      ],
+      "ms": 1391.3838329999999,
+      "error": null,
+      "confidence": 27,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1,
+      "text": "-% -          7\nI a ull\n§ Lo\nwe'® queen We! ®\n~' »       9\nMor w Qos: GB0te            s\n0 wns Wet tr @       gq\nTTT\ni SpFrice Cadiurry             iy Tey\nSubTulels        17,727 3 |\nFoie       1,773\nTotals          19,300\nLashi       133,60%°9\nChanges     80,300\non an oma So vil —aeaennns   g\nCa asad dds adaddl ltd ad hh lAAMAASAA SASS\n"
+    },
+    {
+      "id": "test-0051.jpg",
+      "truthItems": 4,
+      "parsedItems": 4,
+      "matched": 3,
+      "pricedCorrect": 3,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0.75,
+      "itemPrecision": 0.75,
+      "itemF1": 0.75,
+      "priceAttachment": 1,
+      "strictRecall": 0.75,
+      "strictPrecision": 0.75,
+      "strictF1": 0.75,
+      "totalAgrees": false,
+      "parsedSum": 168551,
+      "truthTotal": 334000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "(TA) NASI GRG TERI MEDAN"
+      ],
+      "spurious": [
+        "Ent=30365"
+      ],
+      "ms": 2090.979249999975,
+      "error": null,
+      "confidence": 69,
+      "variant": "contrast",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "MN\nrai    y\nCustor\n(TA) NAST « RG TERI       4        165,400\nMEDAN\n(TA) BIHUN GORENG       1          40,456\nSEAFQCD\n(TA) KWETIAW SEAFQOD 1          42.274\nSIRAM\n(TA) NASI GORENG         2          55,456\nITEMS:8                           303,646\nEnt 10%                            30,365\nc@ Rounding                    334,011\nRounding                                   1\nTotal                               234,000\nDEBIT BCA                  334,000\nA       yungan\n"
+    },
+    {
+      "id": "test-0052.jpg",
+      "truthItems": 2,
+      "parsedItems": 3,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 160000,
+      "truthTotal": 40000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "THAI ICED TEA",
+        "THAI ICED TEA"
+      ],
+      "spurious": [
+        "Af 1 e20.00=20000",
+        "CRANDTOTAL=40000",
+        "OSH=100000"
+      ],
+      "ms": 1482.8597919999738,
+      "error": null,
+      "confidence": 51,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "   oo  ;\n| Su iol |\n|    umm Eee\nWe        |\nTow net od   |\n1\" THA ICED TEA        :\nfas >|\nAf 1 e20.00     20.000\nA SUB-TOTAL    40.000\n|    CRANDTOTAL    40,000\nOSH      100.000\nCHANGED    |   60.000\n"
+    },
+    {
+      "id": "test-0053.jpg",
+      "truthItems": 3,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0.3333333333333333,
+      "itemPrecision": 0.5,
+      "itemF1": 0.4,
+      "priceAttachment": 1,
+      "strictRecall": 0.3333333333333333,
+      "strictPrecision": 0.5,
+      "strictF1": 0.4,
+      "totalAgrees": false,
+      "parsedSum": 34585,
+      "truthTotal": 123585,
+      "service": {
+        "expected": true,
+        "found": true,
+        "correct": true
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Pecel Komplit + Nasi",
+        "SOTO KUDUS"
+      ],
+      "spurious": [
+        "pajak Rest=11235"
+      ],
+      "ms": 4383.741417000012,
+      "error": null,
+      "confidence": 45,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 5,
+      "text": "-\nta a\ntae        Ko idagit,      -\nrtp\na Ae                    ,                  A\na, ae\nwb                    wl         R\n¢ be                             i\nCo                                 )\n.                          :\nA   HAMMER AREER ERE RARE RARE REAR BR]\nLie     oy   [  .\nwg\n1 Pecel Komplit + Nasi     42 000\n1 SOTO KUDUS             47? 000\n2 Mineral Water          18.000\nSubtotal               107? 000\nservi Charge 57        5.350\npajak Rest 107         11.235\n4 Total                 123.585\nPre               Lee  A»\nre    mmm mmm E EEE\n"
+    },
+    {
+      "id": "test-0054.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": true,
+      "parsedSum": 10000,
+      "truthTotal": 10000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 1561.2800419999985,
+      "error": null,
+      "confidence": 36,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 2,
+      "text": "dk\nAnse\nTRE\n—— gv   ——\n|\nare Ped\nBb.\nJ   ow\nKACANG MERAH   10,000\nSUBTOTAL   10,000   =\nTOTAL   10,000\nCASH   10,000\nWP   ;\n|\n’"
+    },
+    {
+      "id": "test-0055.jpg",
+      "truthItems": 2,
+      "parsedItems": 2,
+      "matched": 2,
+      "pricedCorrect": 2,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": true,
+      "parsedSum": 54000,
+      "truthTotal": 54000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 1484.4953749999986,
+      "error": null,
+      "confidence": 37,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2,
+      "text": "5    ws  a =\n1    I.\n-  Bisel + crue tu\nWhe sg\nBN Sr we eee\n\"1 APPLE CINNANON PrsTRY 22,000\n2 ROYAL CHEESE TART         32,000\nTOTAL         5¢,000\nCARD          5¢,000\n- -                 na\"\n =\nWn dw Tame ow ww\n"
+    },
+    {
+      "id": "test-0056.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 1,
+      "strictRecall": 1,
+      "strictPrecision": 1,
+      "strictF1": 1,
+      "totalAgrees": false,
+      "parsedSum": 8181,
+      "truthTotal": 8999,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 11956.134625000006,
+      "error": null,
+      "confidence": 42,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10,
+      "text": "PO Mm OW® SoBe m\neprops » Sra hed\n.   oe estes § +      _—\n\nw- Be Sheptre- EB bn       =\n\nHE We = epee te sha     =\n\nwtb To\n\n=\n\nAIR MINERAL.    . +8,181 Et\nSUBTOTAL    ’   -8, 181\nTAX             +818\nTL       - 8. LQOg9g\nCG            +1, 001\n\nBpore 9flld Fie ema\nWAR a ie Reh\n"
+    },
+    {
+      "id": "test-0057.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": null,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "ICED TT",
+        "ICED GT"
+      ],
+      "spurious": [],
+      "ms": 4542.505999999994,
+      "error": null,
+      "confidence": 71,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 8,
+      "text": "4 2 000\n"
+    },
+    {
+      "id": "test-0058.jpg",
+      "truthItems": 1,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 60500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "PHO BO TAI"
+      ],
+      "spurious": [],
+      "ms": 5671.601334000006,
+      "error": null,
+      "confidence": 95,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 9,
+      "text": ""
+    },
+    {
+      "id": "test-0059.jpg",
+      "truthItems": 9,
+      "parsedItems": 4,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.1111111111111111,
+      "itemPrecision": 0.25,
+      "itemF1": 0.15384615384615383,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 124297,
+      "truthTotal": 680500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Tahu Isi",
+        "Tea",
+        "Kepiting 7-8.4ons - Chilly 0.7 1",
+        "Udang Telur Asin - Regular",
+        "Kailan 2 Rasa",
+        "Mantau - 2 pcs",
+        "Sweet Tea",
+        "Mantau - 3 pcs"
+      ],
+      "spurious": [
+        "Tahu Gh a=78000",
+        "EES=30000",
+        "Chil Ly=297"
+      ],
+      "ms": 4119.203792000015,
+      "error": null,
+      "confidence": 25,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 1,
+      "text": "ATR\ngee\nmy   Sd\ned\ngr   Ce\nLT de\nra   he TL   TT   .   au\na   oe\nmie mip   mm   TET\nA   BIT\nRe EL\nRI   Fh\nft   mi ee el   Fer\nmie   Ea\n2 Tahu   Gh   a 78,000\n5\nEES   30,000\ngy   Chilly\nChil Ly,   297   si\n0d\n|\nig 1 sang Telur\n7\nA   2\na   pe   EE\n7 Nasi Putip   ‘16,000\nCr\nfed 1   A000\nBA   peg\nSA NW ped\n74 Tots] Iteg\n9\ni   EE\na   te   Wim\nA\ngf   818,490 i\nJ\nTe   Sh S80 2 <3\nTo\nCT   ge\nLE"
+    }
+  ]
+}

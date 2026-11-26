@@ -1,0 +1,182 @@
+/* The share sheet — the styles that only the message composer has.
+ *
+ * Everything structural (the sheet, chips, rows, figures, the section label)
+ * comes from styles/ and shell.css. What is here is the switch, which is the
+ * one control in the product that is neither a button, a field nor a chip.
+ * No raw value appears below; every colour, size and space is a token.
+ */
+@layer components {
+  .toggles li + li {
+    border-top: var(--hairline) solid var(--rule);
+  }
+
+  /* The whole row is the target, so it clears 44px at every width and there
+     is no small mark to aim at on a phone held one-handed. */
+  .toggle {
+    display: flex;
+    width: 100%;
+    min-height: var(--control-min);
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: var(--text-base);
+    text-align: left;
+  }
+
+  .toggle__text {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .toggle__hint {
+    display: block;
+    color: var(--ink-3);
+    font-size: var(--text-micro);
+  }
+
+  /* The word, not the shape, is what makes an on/off control unambiguous —
+     the shape only says which way it is leaning. */
+  .toggle__state {
+    flex: 0 0 auto;
+    min-width: 2.5ch;
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    text-align: right;
+    text-transform: uppercase;
+  }
+
+  /* Cut, not rounded: a switch is something you press, so it takes the press
+     radius like every other pressable thing. There is no pill here. */
+  .toggle__track {
+    display: flex;
+    width: var(--space-7);
+    height: var(--space-5);
+    flex: 0 0 auto;
+    align-items: center;
+    padding: var(--hairline);
+    border: var(--hairline) solid var(--ink-3);
+    border-radius: var(--radius-press);
+    background: var(--paper-sunk);
+    transition:
+      background-color var(--dur-state) var(--ease-out),
+      border-color var(--dur-state) var(--ease-out);
+  }
+
+  /* Half the track, so `translate: 100%` lands it flush right with no magic
+     number to drift out of step with the width above. */
+  .toggle__knob {
+    display: block;
+    width: 50%;
+    height: 100%;
+    border-radius: var(--radius-press);
+    background: var(--ink-3);
+    transition:
+      translate var(--dur-state) var(--ease-out),
+      background-color var(--dur-state) var(--ease-out);
+  }
+
+  .toggle[aria-checked='true'] .toggle__state {
+    color: var(--ink);
+  }
+
+  .toggle[aria-checked='true'] .toggle__track {
+    border-color: var(--ink);
+    background: var(--ink);
+  }
+
+  .toggle[aria-checked='true'] .toggle__knob {
+    background: var(--paper);
+    translate: 100% 0;
+  }
+
+  @media (hover: hover) {
+    /* Hover is written for BOTH states. The chip bug this system already had
+       — a (0,3,0) hover out-specifying a (0,2,0) selected state and wiping
+       its fill out from under an inverted foreground — is exactly what an
+       unchecked-only hover rule would reintroduce here. */
+    .toggle:hover:not(:disabled) .toggle__track {
+      border-color: var(--ink-2);
+    }
+
+    .toggle:hover:not(:disabled) .toggle__knob {
+      background: var(--ink-2);
+    }
+
+    .toggle[aria-checked='true']:hover:not(:disabled) .toggle__track {
+      border-color: var(--ink-2);
+      background: var(--ink-2);
+    }
+
+    .toggle[aria-checked='true']:hover:not(:disabled) .toggle__knob {
+      background: var(--paper);
+    }
+  }
+
+  .toggle:active:not(:disabled) {
+    translate: 0 1px;
+  }
+
+  .toggle:disabled {
+    color: var(--ink-3);
+  }
+
+  .toggle:disabled .toggle__track {
+    border-color: var(--rule);
+    background: var(--paper-sunk);
+  }
+
+  .toggle:disabled .toggle__knob {
+    background: var(--rule-strong);
+  }
+
+  /* ---- what the send actually did ---------------------------------- */
+  /* Reserves its line whether or not there is anything to say, so the footer
+     does not jump the moment a copy lands. */
+  .share__status {
+    min-height: var(--space-5);
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+}
+
+/* ---- the receipt image ------------------------------------------- */
+/* A preview of the PNG, not a second rendering of it: the image element holds
+   the exact file that will be posted, shown at its own CSS width so what is on
+   screen is what lands in the chat. The well behind it is the page colour, so the
+   perforated edge — which is cut to transparent — reads as a torn sheet here
+   the same way it will there. */
+@layer components {
+  .shot {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-4) 0;
+  }
+
+  .shot__sheet {
+    max-width: 100%;
+    height: auto;
+    box-shadow: var(--shadow-sheet);
+  }
+
+  /* Holds the preview's place while the receipt is drawn, so the sheet does
+     not jump the moment the image resolves. */
+  .shot__pending {
+    display: flex;
+    min-height: 12rem;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: var(--space-5);
+    border: var(--hairline) dashed var(--rule-strong);
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    text-align: center;
+  }
+}

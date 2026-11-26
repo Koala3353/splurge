@@ -1,0 +1,174 @@
+/* Base — the document itself. Element selectors only; no class may live here. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: light) {
+    html:not([data-theme='dark']) {
+      color-scheme: light;
+    }
+  }
+
+  html[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-base);
+    font-weight: var(--weight-regular);
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  figure,
+  blockquote,
+  dl,
+  dd {
+    margin: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+    text-wrap: balance;
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    letter-spacing: var(--track-tight);
+  }
+
+  h2 {
+    font-size: var(--text-lg);
+  }
+
+  h3 {
+    font-size: var(--text-md);
+  }
+
+  h4 {
+    font-size: var(--text-base);
+  }
+
+  p {
+    max-width: var(--measure);
+  }
+
+  ul,
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Every number a receipt printer would have printed. Mono is reserved for
+     measurement; a fully-mono interface would be costume. */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  hr {
+    height: 0;
+    margin: var(--space-5) 0;
+    border: 0;
+    border-top: var(--hairline) solid var(--rule);
+  }
+
+  a {
+    color: inherit;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  img,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Focus is visible on EVERY interactive element, inputs included. No rule
+     anywhere in this stylesheet sets `outline: none` without replacing the
+     indicator in the same declaration — that omission left the previous app
+     with zero focus ring on every text field it shipped. */
+  :focus-visible {
+    outline: var(--focus-width) solid var(--focus-color);
+    outline-offset: var(--focus-offset);
+  }
+
+  ::selection {
+    background: var(--rule-strong);
+    color: var(--ink);
+  }
+
+  dialog {
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+  }
+
+  dialog::backdrop {
+    background: var(--scrim);
+  }
+
+  /* Paper has tooth. One fixed overlay for the whole app, generated from the
+     inline feTurbulence in index.html. It is the cheapest honest way to stop
+     large flat fields reading as sterile vector. */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    width: 100%;
+    height: 100%;
+    opacity: var(--grain-opacity);
+    pointer-events: none;
+  }
+}

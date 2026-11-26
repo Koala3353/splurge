@@ -1,698 +1,713 @@
-import { useState, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
-import { formatCurrency, initialsOf } from '../utils/format';
-import { computeBillDues } from '../utils/split';
+import { formatCurrency, formatRelativeDate } from '../utils/format';
+import { computeBillDues, fromCents, toCents } from '../utils/split';
+import { uid } from '../utils/id';
 import { parseReceiptFull } from '../utils/receipt';
-import { warmUpOcr, scanReceipt } from '../utils/ocr';
-import { flushSync } from 'react-dom';
-import {
-  Plus, Trash2, Check, Loader2, ChevronRight, ChevronLeft,
-  Users, UserPlus, CheckCircle, X, RotateCcw, Camera, ImagePlus,
-} from 'lucide-react';
-import SwipeableItem from '../components/SwipeableItem';
-import ScanDiagnostics from '../components/ScanDiagnostics';
+import { warmUpOcr, scanReceipt, cancelScan, ScanAbortedError } from '../utils/ocr';
+import Button from '../components/ui/Button.jsx';
+import Sheet from '../components/ui/Sheet.jsx';
+import StepPeople from '../components/newbill/StepPeople.jsx';
+import StepItems from '../components/newbill/StepItems.jsx';
+import StepReview from '../components/newbill/StepReview.jsx';
+import EvenSplitSheet from '../components/newbill/EvenSplitSheet.jsx';
+import SavedSheet from '../components/newbill/SavedSheet.jsx';
 import ScanResultDialog from '../components/ScanResultDialog';
+import NewGroupForm from '../components/people/NewGroupForm.jsx';
+import RepeatStrip from '../components/newbill/RepeatStrip.jsx';
+import UsualBanner from '../components/newbill/UsualBanner.jsx';
+import { rankPeopleBySplits } from '../utils/suggestions';
+import '../components/shell.css';
+import '../components/newbill/newbill.css';
 
-const newItem = (people) => ({ id: crypto.randomUUID(), name: '', price: 0, people: [...people] });
+const STEPS = {
+  1: {
+    title: 'Who is splitting this?',
+    lede: 'Step 1 of 3. Pick the people, or split one amount evenly and be done.',
+  },
+  2: {
+    title: 'What was on it?',
+    lede: 'Step 2 of 3. Scan the receipt or type the lines, then say who is on each.',
+  },
+  3: {
+    title: 'Check it over',
+    lede: 'Step 3 of 3. Add anything on top, then save and send.',
+  },
+};
+
+const newLine = (people) => ({ id: uid(), name: '', price: 0, people: [...people] });
+
+/**
+ * Turn a saved bill into a fresh draft of the same split.
+ *
+ * Prefill semantics, decided once and documented here:
+ *
+ *  - **Prices come through filled in, not blanked.** The same order rarely
+ *    costs exactly the same, but it almost never changes class: ₱345.50
+ *    becomes ₱352, not ₱40. A filled figure is one you correct where it moved
+ *    and leave where it didn't; a blank is six mandatory entries, which costs
+ *    more than the wizard this is meant to replace. The running total sits in
+ *    the header throughout, so a stale price is on screen rather than hidden,
+ *    and the note on step 2 says plainly that the figures are last time's.
+ *  - **Line names and per-line assignments come through too**, because they
+ *    are the expensive part — the audit measured assignment at 40% of the
+ *    taps in the flow — and they are exactly what a single even amount can
+ *    never carry.
+ *  - **People deleted since are scrubbed**, from the crew and from every line
+ *    they were on. A line that loses its last assignee is left empty on
+ *    purpose rather than quietly handed to the rest: step 2's gate names it
+ *    and refuses to advance, so the money is visibly unallocated instead of
+ *    silently moved onto somebody else's share.
+ *  - **Nothing is shared with the original.** New line ids, new fee ids, and
+ *    the draft stays in the wizard until it is saved, so a repeat abandoned
+ *    halfway writes nothing at all.
+ */
+function draftFrom(bill, knownIds) {
+  const crew = (bill.participants || []).filter((id) => knownIds.has(id));
+  const onCrew = (ids) => (ids || []).filter((id) => crew.includes(id));
+  return {
+    crew,
+    title: bill.title || '',
+    items: (bill.items || []).map((it) => ({
+      ...it, id: uid(), people: onCrew(it.people),
+    })),
+    fees: (bill.fees || [])
+      .filter((f) => !f.tipPct)
+      .map((f) => ({
+        ...f, id: uid(), people: onCrew(f.people || bill.participants),
+      })),
+    tipPct: (bill.fees || []).find((f) => f.tipPct > 0)?.tipPct || 0,
+    lostSomeone: crew.length !== (bill.participants || []).length,
+  };
+}
 
 export default function NewBillPage() {
-  const { people, groups, addPerson, addBill, updateBill, bills, meId, setMeId } = useAppContext();
+  const {
+    people, groups, addPerson, addBill, updateBill, bills, meId, setMeId,
+    usualCrew, lastTipPct, setLastTipPct,
+  } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const editId = location.state?.editId || null;
-  // When editing, prefill straight from the stored bill (localStorage is read
-  // synchronously, so it's available on first render — no effect needed).
-  const editBill = editId ? bills.find((b) => b.id === editId) : null;
 
-  // Arriving from a group ("Split with them") hands the people over, so the
-  // wizard opens on the items step with the crew already picked — which is the
-  // whole reason to keep a group in the first place.
+  const [params] = useSearchParams();
+
+  const editId = location.state?.editId || null;
+  const editBill = editId ? bills.find((b) => b.id === editId) : null;
   const preset = location.state?.peopleIds || null;
   const presetName = location.state?.presetName || '';
 
-  const [step, setStep] = useState(editBill || preset ? 2 : 1); // 1: People, 2: Items, 3: Review
-  const [splitName, setSplitName] = useState(editBill?.title || presetName);
-  const [selectedPeople, setSelectedPeople] = useState(
-    editBill?.participants || preset || [],
+  /* ------------------------------------------------------------- repeat */
+  // `?from=<billId>` opens the wizard on a *new* split hydrated from an old
+  // one. Nothing is written to the store until save, so an abandoned repeat
+  // leaves no trace — which is why this lives here rather than behind a
+  // store action.
+  const repeatId = params.get('from');
+  const repeatBill = repeatId && !editId ? bills.find((b) => b.id === repeatId) : null;
+  const known = useMemo(() => new Set(people.map((p) => p.id)), [people]);
+  const [draft] = useState(() => (repeatBill ? draftFrom(repeatBill, known) : null));
+
+  // A tip is stored as an ordinary fee carrying the percentage it came from,
+  // so reopening a bill restores the control rather than a mystery amount.
+  const storedTip = (editBill?.fees || []).find((f) => f.tipPct > 0);
+
+  const [step, setStep] = useState(editBill || draft || preset ? 2 : 1);
+  const [splitName, setSplitName] = useState(
+    editBill?.title || draft?.title || presetName,
   );
-  const [newPersonName, setNewPersonName] = useState('');
-  const [image, setImage] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [ocrProgress, setOcrProgress] = useState('Loading scanner...');
-  // Structured detail behind the progress line: which attempt is running,
-  // what it is trying, and why the previous attempt was rejected.
-  const [ocrStep, setOcrStep] = useState(null);
-  const [scanNote, setScanNote] = useState('');
-  // What the scanner actually did: which variant/orientation/mode won, how
-  // confident the engine was, and the image it really saw.
+  // The usual crew is the LAST fallback, so it can never override an edit, a
+  // repeat or a group tapped on the way in — those are all explicit choices
+  // about who is on this particular split.
+  const [selected, setSelected] = useState(
+    editBill?.participants || draft?.crew || preset || usualCrew.ids,
+  );
+
+  // Whether the usual crew is still the reason these people are selected. It
+  // starts true only when nothing more specific chose them, and the banner
+  // follows it rather than re-deriving a guess from the selection.
+  const [usualApplied, setUsualApplied] = useState(
+    () => !editBill && !draft && !preset && usualCrew.ids.length > 0,
+  );
+
+  const dropUsual = () => {
+    setSelected((prev) => prev.filter((id) => !usualCrew.ids.includes(id)));
+    setUsualApplied(false);
+  };
+  const [items, setItems] = useState(
+    () => draft?.items
+      || (editBill?.items || []).map((it) => ({ ...it, people: [...(it.people || [])] })),
+  );
+  const [fees, setFees] = useState(
+    () => draft?.fees
+      || (editBill?.fees || [])
+        .filter((f) => !f.tipPct)
+        .map((f) => ({ ...f, people: f.people || [...(editBill?.participants || [])] })),
+  );
+  // A tip is a habit, not a decision you remake from zero every time: the
+  // percentage you left last time is the default for the next bill. An edit
+  // keeps the bill's own tip (or its deliberate absence), and a repeat keeps
+  // the one it is repeating — both are explicit, and neither is overridden.
+  const [tipPct, setTipPct] = useState(() => {
+    if (editBill) return storedTip?.tipPct || 0;
+    if (draft) return draft.tipPct;
+    return lastTipPct || 0;
+  });
+
+  // The bill this draft is a repeat of, whether it arrived by URL or by a tap
+  // on step 1. It drives the note on step 2 and nothing else.
+  const [repeatedFrom, setRepeatedFrom] = useState(
+    () => (repeatBill ? { id: repeatBill.id, lostSomeone: draft.lostSomeone } : null),
+  );
+  const repeatSource = repeatedFrom ? bills.find((b) => b.id === repeatedFrom.id) : null;
+
+  const [scanning, setScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState('');
+  const [scanStep, setScanStep] = useState(null);
+  const [scanShot, setScanShot] = useState(null);
   const [scanInfo, setScanInfo] = useState(null);
+  const [scanNote, setScanNote] = useState('');
+  const [scanCancelling, setScanCancelling] = useState(false);
   const [scanResultOpen, setScanResultOpen] = useState(false);
-  const [items, setItems] = useState(() => (editBill?.items || []).map((it) => ({ ...it, people: [...(it.people || [])] })));
-  const [fees, setFees] = useState(() => (editBill?.fees || []).map((f) => ({
-    ...f,
-    people: f.people || [...(editBill?.participants || [])],
-  })));
-  const cameraInputRef = useRef(null);
-  const uploadInputRef = useRef(null);
-  // Remembered so Rescan reopens whichever source was used, rather than
-  // always dropping someone who picked from their gallery into the camera.
-  const lastSourceRef = useRef('camera');
-  const discardRef = useRef(null);
 
-  const handleStepChange = (newStep) => {
-    const direction = newStep > step ? 'forward' : 'backward';
-    if (!document.startViewTransition) { setStep(newStep); return; }
-    document.startViewTransition({
-      update: () => { flushSync(() => setStep(newStep)); },
-      types: [direction],
-    });
-  };
+  const [evenOpen, setEvenOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [saved, setSaved] = useState(null);
+  const [printing, setPrinting] = useState(false);
 
-  const stepTitles = {
-    1: { title: 'Who’s in?', subtitle: '1 of 3 · Pick everyone splitting this one.' },
-    2: { title: 'What’d you get?', subtitle: '2 of 3 · Add each line, or scan the receipt.' },
-    3: { title: 'Review', subtitle: '3 of 3 · Check the math, then save.' },
-  };
+  const cameraRef = useRef(null);
+  const libraryRef = useRef(null);
+  const lastSource = useRef('camera');
+  const printedOnce = useRef(false);
+  const shotUrl = useRef(null);
 
-  // --- STEP 1: People ---
-  const handleGroupSelect = (groupId) => {
-    const group = groups.find((g) => g.id === groupId);
-    if (group) setSelectedPeople((prev) => Array.from(new Set([...prev, ...group.peopleIds])));
-  };
+  // A scan still running when the wizard leaves is a worker burning the
+  // phone's battery for an answer nobody will read.
+  useEffect(() => () => {
+    cancelScan();
+    if (shotUrl.current) URL.revokeObjectURL(shotUrl.current);
+  }, []);
 
-  const togglePerson = (id) => {
-    setSelectedPeople((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
-  };
+  const nameOf = (id) => people.find((p) => p.id === id)?.name || 'Someone';
 
-  const handleAddPersonSubmit = (e) => {
-    e.preventDefault();
-    const name = newPersonName.trim();
-    if (!name) return;
+  // The picker, ordered by who you actually split with. Sorted here rather
+  // than in the store because this is the only screen the order is for — and
+  // it is a plain count, so it holds still between visits.
+  const pickerPeople = useMemo(
+    () => rankPeopleBySplits({ people, bills }),
+    [people, bills],
+  );
+
+  /* ---------------------------------------------------------------- math */
+  // Two passes: the items alone fix the subtotal a percentage tip is a
+  // percentage OF, and the full pass then splits items, fees and that tip.
+  // The list always carries one blank line at the end, the way a form that
+  // grows does; it is not part of the bill until it says something.
+  const realItems = useMemo(
+    () => items.filter((it) => it.name.trim() || it.price > 0),
+    [items],
+  );
+
+  const { itemsTotal } = useMemo(
+    () => computeBillDues({ items: realItems, fees: [], participants: selected }),
+    [realItems, selected],
+  );
+
+  const tipAmount = useMemo(
+    () => (tipPct > 0 ? fromCents(Math.round((toCents(itemsTotal) * tipPct) / 100)) : 0),
+    [itemsTotal, tipPct],
+  );
+
+  const allFees = useMemo(() => (
+    tipPct > 0
+      ? [...fees, {
+        id: 'tip', name: `Tip (${tipPct}%)`, amount: tipAmount, people: [...selected], tipPct,
+      }]
+      : fees
+  ), [fees, tipPct, tipAmount, selected]);
+
+  const {
+    dues, total, unassigned,
+  } = useMemo(
+    () => computeBillDues({ items: realItems, fees: allFees, participants: selected }, { meId }),
+    [realItems, allFees, selected, meId],
+  );
+
+  const unassignedNames = unassigned.map((it) => it.name.trim() || 'an untitled line');
+  const assignedCount = realItems.filter((it) => it.people.length > 0).length;
+  // Is the usual crew still exactly who is on this split, untouched? That is
+  // what "the user hasn't done anything yet" means once a default exists —
+  // without it, a pre-selected partner would make a brand-new wizard look
+  // dirty, hide the "same as last time" strip, and pop a discard dialog on
+  // the way back out of a split nobody had started.
+  const untouchedUsual = usualApplied
+    && selected.length === usualCrew.ids.length
+    && usualCrew.ids.every((id) => selected.includes(id));
+
+  // The banner survives adding somebody else — the usual crew is still the
+  // reason those people are on it — but not taking one of them off.
+  const usualShowing = usualApplied && usualCrew.ids.length > 0
+    && usualCrew.ids.every((id) => selected.includes(id));
+
+  const dirty = items.length > 0
+    || splitName.trim().length > 0
+    || (selected.length > 0 && !untouchedUsual);
+
+  /* -------------------------------------------------------------- step 1 */
+  const togglePerson = (id) => setSelected(
+    (prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]),
+  );
+
+  const addGroupPeople = (ids) => setSelected(
+    (prev) => Array.from(new Set([...prev, ...ids])),
+  );
+
+  const addNewPerson = (name) => {
     const id = addPerson(name);
-    setSelectedPeople((prev) => [...prev, id]);
-    setNewPersonName('');
+    setSelected((prev) => [...prev, id]);
   };
 
-  // Add (and remember) yourself, and tag you as "me" so your share never counts
-  // as money owed to you.
-  const handleAddMe = () => {
-    if (meId) {
-      const meExists = people.some((p) => p.id === meId);
-      if (meExists) {
-        setSelectedPeople((prev) => (prev.includes(meId) ? prev : [...prev, meId]));
-        return;
-      }
-    }
-    const existing = people.find((p) => ['me', 'you'].includes(p.name.trim().toLowerCase()));
-    if (existing) {
-      setMeId(existing.id);
-      setSelectedPeople((prev) => (prev.includes(existing.id) ? prev : [...prev, existing.id]));
+  // Tagging yourself here is what keeps you out of your own invoice.
+  const addMe = () => {
+    if (meId && people.some((p) => p.id === meId)) {
+      setSelected((prev) => (prev.includes(meId) ? prev : [...prev, meId]));
       return;
     }
-    const id = addPerson('Me');
+    const existing = people.find((p) => ['me', 'you'].includes(p.name.trim().toLowerCase()));
+    const id = existing ? existing.id : addPerson('Me');
     setMeId(id);
-    setSelectedPeople((prev) => [...prev, id]);
+    setSelected((prev) => (prev.includes(id) ? prev : [...prev, id]));
   };
 
-  // --- STEP 2: Items & OCR ---
-  // Start the (cached) scan engine the moment the user taps, so it warms up
-  // while they frame the shot or browse their gallery — then open the picker.
-  // Two inputs rather than one: `capture` hands straight to the camera on
-  // mobile, and its absence is what lets the OS offer the photo library, so a
-  // single input cannot do both.
-  const handleScanTap = (source = 'camera') => {
-    lastSourceRef.current = source;
+  /* -------------------------------------------------------------- step 2 */
+  const openPicker = (source = 'camera') => {
+    lastSource.current = source;
     warmUpOcr().catch(() => {});
-    (source === 'library' ? uploadInputRef : cameraInputRef).current?.click();
+    (source === 'library' ? libraryRef : cameraRef).current?.click();
   };
 
-  const handleRescanTap = () => handleScanTap(lastSourceRef.current);
+  const rescan = () => openPicker(lastSource.current);
 
-  const handleImageCapture = async (e) => {
-    const file = e.target.files[0];
+  // The engine can only let go between passes, so the control reports that it
+  // has been heard rather than sitting there looking broken.
+  const stopScan = () => {
+    setScanCancelling(true);
+    cancelScan();
+  };
+
+  const readReceipt = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    setImage(URL.createObjectURL(file));
+
+    if (shotUrl.current) URL.revokeObjectURL(shotUrl.current);
+    shotUrl.current = URL.createObjectURL(file);
+    setScanShot(shotUrl.current);
     setScanNote('');
     setScanInfo(null);
-    setOcrStep(null);
-    setIsProcessing(true);
-    setOcrProgress('Optimizing image…');
+    setScanStep(null);
+    setScanMessage('Optimising the photo…');
+    setScanCancelling(false);
+    setScanning(true);
 
     try {
-      const { text, diagnostics } = await scanReceipt(file, (msg, step) => {
-        setOcrProgress(msg);
-        setOcrStep(step || null);
+      const { text, diagnostics } = await scanReceipt(file, (message, progress) => {
+        setScanMessage(message);
+        setScanStep(progress || null);
       });
-      const { items: parsed, fees: scannedFees } = parseReceiptFull(text, selectedPeople);
-      setScanInfo({ ...diagnostics, itemCount: parsed.length, feeCount: scannedFees.length, text });
+      const { items: parsed, fees: parsedFees } = parseReceiptFull(text, selected);
+      setScanInfo({
+        ...diagnostics, itemCount: parsed.length, feeCount: parsedFees.length, text,
+      });
       setScanResultOpen(true);
+
       if (parsed.length > 0) {
         setItems(parsed);
-        if (scannedFees.length > 0) {
-          setFees(scannedFees);
-          const summary = scannedFees
-            .map((f) => `${f.name} ${f.amount < 0 ? '−' : '+'}${formatCurrency(Math.abs(f.amount))}`)
-            .join(', ');
-          setScanNote(`Also caught: ${summary}. Review them in step 3 — assign any discount to whoever owns it.`);
+        if (parsedFees.length > 0) {
+          setFees(parsedFees.map((f) => ({ ...f, people: f.people || [...selected] })));
+          setScanNote(
+            `It also caught ${parsedFees.map((f) => f.name).join(', ')}. Those are on the next step — put any discount on whoever earned it.`,
+          );
         }
       } else {
-        setItems([newItem(selectedPeople)]);
-        setScanNote("Couldn't read that one clearly — add items below, or rescan a flatter, well-lit shot.");
+        setScanNote('No lines came out of that photo. A flatter, better-lit shot usually beats typing, but typing always works.');
       }
     } catch (error) {
-      console.error('OCR failed', error);
-      setItems([newItem(selectedPeople)]);
-      setScanNote('Scan failed — add items manually or try again.');
+      if (error instanceof ScanAbortedError && error.cancelled) {
+        setScanNote('Scan cancelled. Nothing changed — whatever you had typed is still here.');
+      } else if (error instanceof ScanAbortedError && error.timedOut) {
+        setScanNote('The scan ran past 45 seconds and stopped itself. Try a flatter, brighter photo, or type the lines in.');
+      } else {
+        setScanNote('The scanner could not run on that photo. Try a different shot, or type the lines in.');
+      }
     } finally {
-      setIsProcessing(false);
+      setScanning(false);
+      setScanCancelling(false);
+      setScanStep(null);
     }
   };
 
-  const updateItem = (id, field, value) => {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, [field]: value } : it)));
-  };
+  // Naming the last line opens the next one, so six lines cost six entries
+  // rather than six entries and five taps on "Add a line".
+  const setItemField = (id, field, value) => setItems((prev) => {
+    const next = prev.map((it) => (it.id === id ? { ...it, [field]: value } : it));
+    const last = next[next.length - 1];
+    const started = last && (last.name.trim() || last.price > 0);
+    return last?.id === id && started ? [...next, newLine(selected)] : next;
+  });
 
-  const togglePersonForItem = (itemId, personId) => {
-    setItems((prev) => prev.map((it) => {
-      if (it.id !== itemId) return it;
-      const has = it.people.includes(personId);
-      return { ...it, people: has ? it.people.filter((p) => p !== personId) : [...it.people, personId] };
-    }));
-  };
+  const toggleItemPerson = (itemId, personId) => setItems((prev) => prev.map((it) => {
+    if (it.id !== itemId) return it;
+    return {
+      ...it,
+      people: it.people.includes(personId)
+        ? it.people.filter((p) => p !== personId)
+        : [...it.people, personId],
+    };
+  }));
 
-  const toggleEveryoneForItem = (itemId) => {
-    setItems((prev) => prev.map((it) => {
-      if (it.id !== itemId) return it;
-      const all = selectedPeople.every((p) => it.people.includes(p));
-      return { ...it, people: all ? [] : [...selectedPeople] };
-    }));
-  };
+  const everyoneOnItem = (itemId) => setItems((prev) => prev.map((it) => {
+    if (it.id !== itemId) return it;
+    const all = selected.length > 0 && selected.every((p) => it.people.includes(p));
+    return { ...it, people: all ? [] : [...selected] };
+  }));
 
-  // --- STEP 3: Fees ---
-  const addFee = () => setFees((prev) => [...prev, { id: crypto.randomUUID(), name: 'Service charge', amount: 0, people: [...selectedPeople] }]);
-  const updateFee = (id, field, val) => setFees((prev) => prev.map((f) => (f.id === id ? { ...f, [field]: val } : f)));
+  const copyAssignment = (itemId, peopleIds) => setItems(
+    (prev) => prev.map((it) => (it.id === itemId ? { ...it, people: [...peopleIds] } : it)),
+  );
+
+  // One person, every line, one tap — the accelerator the old grid had no
+  // equivalent of at all.
+  const personColumn = (personId, on) => setItems((prev) => prev.map((it) => ({
+    ...it,
+    people: on
+      ? Array.from(new Set([...it.people, personId]))
+      : it.people.filter((p) => p !== personId),
+  })));
+
+  /* -------------------------------------------------------------- step 3 */
+  const addFee = () => setFees((prev) => [...prev, {
+    id: uid(), name: 'Service charge', amount: 0, people: [...selected],
+  }]);
+
+  const setFeeField = (id, field, value) => setFees(
+    (prev) => prev.map((f) => (f.id === id ? { ...f, [field]: value } : f)),
+  );
+
   const removeFee = (id) => setFees((prev) => prev.filter((f) => f.id !== id));
 
-  const togglePersonForFee = (feeId, personId) => {
-    setFees((prev) => prev.map((f) => {
-      if (f.id !== feeId) return f;
-      const has = (f.people || []).includes(personId);
-      return { ...f, people: has ? f.people.filter((p) => p !== personId) : [...(f.people || []), personId] };
-    }));
+  const toggleFeePerson = (feeId, personId) => setFees((prev) => prev.map((f) => {
+    if (f.id !== feeId) return f;
+    const on = (f.people || []).includes(personId);
+    return {
+      ...f,
+      people: on ? f.people.filter((p) => p !== personId) : [...(f.people || []), personId],
+    };
+  }));
+
+  const everyoneOnFee = (feeId) => setFees((prev) => prev.map((f) => {
+    if (f.id !== feeId) return f;
+    const all = selected.length > 0 && selected.every((p) => (f.people || []).includes(p));
+    return { ...f, people: all ? [] : [...selected] };
+  }));
+
+  /* ------------------------------------------------------------ movement */
+  const goTo = (next) => {
+    if (next === 3) {
+      setPrinting(!printedOnce.current);
+      printedOnce.current = true;
+    }
+    setStep(next);
+    window.scrollTo({ top: 0 });
   };
 
-  const toggleEveryoneForFee = (feeId) => {
-    setFees((prev) => prev.map((f) => {
-      if (f.id !== feeId) return f;
-      const all = selectedPeople.length > 0 && selectedPeople.every((p) => (f.people || []).includes(p));
-      return { ...f, people: all ? [] : [...selectedPeople] };
-    }));
+  // Step 1's "same as last time". It fills the draft in place rather than
+  // navigating, because the wizard is already the screen you are standing on.
+  const repeatFrom = (billId) => {
+    const source = bills.find((b) => b.id === billId);
+    if (!source) return;
+    const next = draftFrom(source, known);
+    setSplitName(next.title);
+    setSelected(next.crew);
+    setItems(next.items);
+    setFees(next.fees);
+    setTipPct(next.tipPct);
+    setRepeatedFrom({ id: source.id, lostSomeone: next.lostSomeone });
+    setUsualApplied(false);
+    goTo(2);
   };
 
-  // --- Derived totals (shared math) ---
-  const draftBill = { items, fees, participants: selectedPeople };
-  const { dues: calculatedDues, itemsTotal, feesTotal, total: finalTotal } = computeBillDues(draftBill);
+  const back = () => {
+    if (step > 1) goTo(step - 1);
+    else if (dirty) setDiscardOpen(true);
+    else navigate('/');
+  };
 
-  const handleSave = () => {
+  const save = () => {
     const payload = {
-      title: splitName,
-      items,
-      fees,
-      total: finalTotal,
-      participants: selectedPeople,
+      title: splitName, items: realItems, fees: allFees, total, participants: selected,
     };
     if (editId) updateBill(editId, payload);
     else addBill(payload);
-    navigate('/');
+    // Remembered only on a save, so an abandoned draft never moves the
+    // default for the next bill.
+    setLastTipPct(tipPct);
+    setSaved({ dues, participants: selected, title: splitName });
   };
 
-  const personName = (id) => people.find((p) => p.id === id)?.name || '';
+  const saveEvenSplit = (amount) => {
+    const line = {
+      id: uid(), name: splitName.trim() || 'Split evenly', price: amount, people: [...selected],
+    };
+    const bill = {
+      title: splitName, items: [line], fees: [], participants: selected,
+    };
+    const { dues: evenDues, total: evenTotal } = computeBillDues(bill, { meId });
+    addBill({ ...bill, total: evenTotal });
+    setEvenOpen(false);
+    setSaved({ dues: evenDues, participants: selected, title: splitName });
+  };
+
+  const blocked = (step === 1 && selected.length === 0)
+    || (step === 2 && (realItems.length === 0 || unassigned.length > 0));
 
   return (
     <>
-      {/* HEADER */}
-      <header className="app-header">
-        <div className="flex justify-between items-center mb-4">
-          <button
-            className="btn p-2 pressable"
-            style={{ borderRadius: '50%', background: 'var(--glass-bg)' }}
-            onClick={() => (step > 1 ? handleStepChange(step - 1) : navigate('/'))}
-            aria-label="Back"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <div className="flex gap-3 items-center">
-            <button
-              className="btn p-2 text-danger pressable"
-              style={{ background: 'var(--fill-danger-soft)', borderRadius: '50%' }}
-              onClick={() => discardRef.current?.showModal()}
-              aria-label="Discard split"
-            >
-              <Trash2 size={20} />
+      <header className="wizard__head">
+        <div className="column">
+          <div className="wizard__top">
+            <button type="button" className="icon-btn" onClick={back}>
+              <ChevronLeft size={24} strokeWidth={1.5} aria-hidden="true" />
+              <span className="u-sr-only">{step > 1 ? 'Back a step' : 'Leave this split'}</span>
             </button>
-            <div className="text-right">
-              <div className="font-bold tabular-nums">{formatCurrency(finalTotal)}</div>
-              <div className="text-xs text-secondary">total</div>
+            <div className="wizard__running">
+              <span className="figure">{formatCurrency(total)}</span>
+              <span className="u-micro u-ink-3" style={{ display: 'block' }}>
+                Running total
+              </span>
             </div>
           </div>
-        </div>
 
-        <h1 className="text-2xl font-bold mb-1">{stepTitles[step].title}</h1>
-        <p className="text-sm text-secondary mb-3">{stepTitles[step].subtitle}</p>
+          <h1 className="wizard__title">{STEPS[step].title}</h1>
+          <p className="wizard__lede">{STEPS[step].lede}</p>
 
-        <div className="flex gap-1">
-          {[1, 2, 3].map((s) => (
-            <div key={s} style={{ flex: 1, height: '4px', borderRadius: '2px', background: s <= step ? 'var(--accent-color)' : 'var(--glass-bg)' }} />
-          ))}
+          <div className="wizard__ticks" aria-hidden="true">
+            {[1, 2, 3].map((s) => (
+              <span key={s} className={`wizard__tick${s <= step ? ' wizard__tick--done' : ''}`} />
+            ))}
+          </div>
         </div>
       </header>
 
-      <main className="app-main">
-        {/* STEP 1 */}
-        {step === 1 && (
-          <>
-            <div className="card">
-              <div className="text-xs text-secondary font-bold uppercase mb-2 tracking-wider">Split name</div>
-              <input
-                type="text"
-                className="input-ghost text-xl font-bold w-full"
-                value={splitName}
-                onChange={(e) => setSplitName(e.target.value)}
-                placeholder="Friday dinner"
-              />
-            </div>
+      <main className="app__main">
+        <div className="column">
+          {/* Always mounted, so a rescan works once lines exist too. Two
+              inputs because `capture` is what hands straight to the camera,
+              and its absence is what lets the OS offer the photo library. */}
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            ref={cameraRef}
+            onChange={readReceipt}
+            className="u-sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            ref={libraryRef}
+            onChange={readReceipt}
+            className="u-sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
 
-            {groups.length > 0 && (
-              <div className="card">
-                <h3 className="font-bold text-lg mb-1">Your crews</h3>
-                <p className="text-sm text-secondary mb-4">Tap one to bring everyone in.</p>
-                <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-                  {groups.map((g) => (
-                    <button
-                      key={g.id}
-                      className="cursor-pointer pressable text-left"
-                      style={{ background: 'var(--fill-accent-soft)', borderRadius: 'var(--radius-lg)', padding: '1rem', minWidth: '160px', border: 'none' }}
-                      onClick={() => handleGroupSelect(g.id)}
-                    >
-                      <Users size={24} className="text-accent mb-2" />
-                      <h4 className="font-bold">{g.name}</h4>
-                      <p className="text-xs text-secondary mt-1 truncate">
-                        {g.peopleIds.map((id) => personName(id)).filter(Boolean).join(', ')}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          {scanNote && step === 2 && !scanning ? (
+            <p className="notice" role="status">{scanNote}</p>
+          ) : null}
 
-            <div className="card">
-              <h3 className="font-bold text-lg mb-4">People</h3>
+          {/* Says out loud that the figures are last time's, so a price that
+              moved is corrected rather than trusted. */}
+          {repeatSource && step === 2 && !scanning ? (
+            <section className="notice">
+              <h2 className="notice__title">
+                Repeated from {formatRelativeDate(repeatSource.date)}
+              </h2>
+              <p className="notice__body">
+                The lines, the prices and who was on each are last time&rsquo;s.
+                Change the ones that moved — the running total above follows
+                along.
+                {repeatedFrom.lostSomeone
+                  ? ' Someone on that split has been deleted since, so the lines they were on are now on nobody. Put someone on each, or take the line off.'
+                  : ''}
+              </p>
+            </section>
+          ) : null}
 
-              <form onSubmit={handleAddPersonSubmit} className="flex gap-2 mb-4">
-                <div className="flex-1 flex items-center gap-2 border border-glass rounded-lg px-3 py-2">
-                  <UserPlus size={18} className="text-secondary" />
-                  <input type="text" className="input-ghost flex-1" placeholder="Name" value={newPersonName} onChange={(e) => setNewPersonName(e.target.value)} />
-                </div>
-                <button type="submit" className="btn bg-glass px-4 rounded-lg pressable" aria-label="Add person"><Plus size={20} /></button>
-              </form>
+          {step === 1 ? (
+            <RepeatStrip
+              fresh={!dirty}
+              onRepeat={repeatFrom}
+            />
+          ) : null}
 
-              <button
-                className="btn w-full flex items-center gap-2 mb-6 pressable"
-                style={{ background: 'var(--fill-accent-soft)', color: 'var(--text-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)' }}
-                onClick={handleAddMe}
-              >
-                <div className="bg-accent text-on-accent rounded-full p-1"><Plus size={14} /></div>
-                <span className="font-bold">Add me</span>
-              </button>
+          {step === 1 && usualShowing ? (
+            <UsualBanner
+              label={usualCrew.label}
+              count={usualCrew.ids.length}
+              onClear={dropUsual}
+            />
+          ) : null}
 
-              {people.length === 0 ? (
-                <p className="text-sm text-secondary">Add yourself, then everyone else splitting the bill.</p>
-              ) : (
-                <>
-                  <div className="text-xs text-secondary font-bold uppercase mb-2">Tap to add</div>
-                  <div className="flex gap-2 flex-wrap">
-                    {people.map((p) => {
-                      const isSel = selectedPeople.includes(p.id);
-                      return (
-                        <button key={p.id} className={`pill ${isSel ? 'pill-active' : 'pill-inactive'} pressable flex items-center gap-1`} onClick={() => togglePerson(p.id)}>
-                          {isSel ? <Check size={14} /> : <Plus size={14} />} {p.name}{p.id === meId ? ' (you)' : ''}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
+          {step === 1 ? (
+            <StepPeople
+              people={pickerPeople}
+              groups={groups}
+              meId={meId}
+              splitName={splitName}
+              onName={setSplitName}
+              selected={selected}
+              onToggle={togglePerson}
+              onAddGroupPeople={addGroupPeople}
+              onAddPerson={addNewPerson}
+              onAddMe={addMe}
+              onNewGroup={() => setGroupOpen(true)}
+              onEvenSplit={() => setEvenOpen(true)}
+            />
+          ) : null}
 
-        {/* STEP 2 */}
-        {step === 2 && (
-          <>
-            {/* Always mounted so "Rescan" works once items exist, too. */}
-            <input type="file" accept="image/*" capture="environment" ref={cameraInputRef} onChange={handleImageCapture} style={{ display: 'none' }} />
-            <input type="file" accept="image/*" ref={uploadInputRef} onChange={handleImageCapture} style={{ display: 'none' }} />
-            {items.length === 0 && !isProcessing && (
-              <div className="card text-center py-8">
-                <h3 className="font-bold text-xl mb-2">What&apos;d everyone get?</h3>
-                <p className="text-sm text-secondary mb-6">Snap the receipt or pick one from your photos, and we&apos;ll pull out the lines.</p>
-                {/* The two scan routes carry equal weight: shooting a receipt at
-                    the table and splitting one someone already sent you are
-                    equally normal. Typing it out stays available underneath. */}
-                <div className="flex gap-3 justify-center mb-3">
-                  <button
-                    className="btn flex-col items-center pressable"
-                    style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }}
-                    onClick={() => handleScanTap('camera')}
-                  >
-                    <Camera size={28} className="mb-2" />
-                    <span>Take photo</span>
-                  </button>
-                  <button
-                    className="btn flex-col items-center pressable"
-                    style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-bright)', border: '1px solid var(--glass-border)', padding: '1rem', borderRadius: 'var(--radius-lg)', flex: 1 }}
-                    onClick={() => handleScanTap('library')}
-                  >
-                    <ImagePlus size={28} className="mb-2" />
-                    <span>Upload photo</span>
-                  </button>
-                </div>
-                <button className="btn btn-secondary w-full pressable" onClick={() => setItems([newItem(selectedPeople)])}>
-                  <Plus size={18} /> Add them manually
-                </button>
-              </div>
-            )}
+          {step === 2 ? (
+            <StepItems
+              items={items}
+              realCount={realItems.length}
+              participants={selected}
+              nameOf={nameOf}
+              itemsTotal={itemsTotal}
+              assignedCount={assignedCount}
+              scanning={scanning}
+              scanShot={scanShot}
+              scanMessage={scanMessage}
+              scanStep={scanStep}
+              scanCancelling={scanCancelling}
+              scanInfo={scanInfo}
+              onScan={openPicker}
+              onRescan={rescan}
+              onCancelScan={stopScan}
+              onItemField={setItemField}
+              onRemoveItem={(id) => setItems((prev) => prev.filter((it) => it.id !== id))}
+              onAddItem={() => setItems((prev) => [...prev, newLine(selected)])}
+              onToggle={toggleItemPerson}
+              onEveryone={everyoneOnItem}
+              onCopyAssignment={copyAssignment}
+              onPersonColumn={personColumn}
+            />
+          ) : null}
 
-            {isProcessing && (
-              <div className="scanner-overlay animate-slide-in">
-                <h2 className="text-3xl font-black mb-2 text-center text-accent">Reading the receipt</h2>
-                <p className="text-secondary text-center mb-8">Pulling out the line items — one sec.</p>
-                <div className="scanner-laser-container">
-                  <div className="scanner-laser" />
-                  {image
-                    ? <img src={image} className="scanner-image" alt="Receipt being scanned" />
-                    : <div className="w-full h-full bg-glass flex items-center justify-center"><Loader2 size={40} className="animate-spin text-secondary" /></div>}
-                </div>
-                <div className="card border-glass p-4 text-center bg-glass flex flex-col items-center gap-3" style={{ width: '100%', maxWidth: '320px' }}>
-                  <Loader2 size={24} className="animate-spin text-accent" />
-                  <p className="font-bold tracking-wider uppercase text-sm text-primary">{ocrProgress}</p>
-                  {ocrStep && (
-                    <div style={{ width: '100%' }}>
-                      <p className="text-xs text-secondary" style={{ lineHeight: 1.4 }}>
-                        Attempt {ocrStep.attempt} of {ocrStep.total} · trying {ocrStep.trying}
-                      </p>
-                      {/* Progress through the candidate list, so a long scan
-                          reads as deliberate work rather than a hang. */}
-                      <div style={{ marginTop: '0.5rem', height: 4, borderRadius: 2, background: 'var(--glass-bg)', overflow: 'hidden' }}>
-                        <div style={{
-                          width: `${Math.round((ocrStep.attempt / Math.max(1, ocrStep.total)) * 100)}%`,
-                          height: '100%', background: 'var(--gradient-primary)',
-                          transition: 'width 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
-                        }} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {!isProcessing && items.length > 0 && (
-              <div className="flex-col gap-4">
-                <ScanDiagnostics info={scanInfo} />
-                {scanNote && (
-                  <div className="glass-panel p-3 text-sm text-secondary" style={{ borderColor: 'var(--border-warning)' }}>
-                    {scanNote}
-                  </div>
-                )}
-                <div className="flex justify-between items-center mb-2 px-2">
-                  <span className="text-sm text-secondary font-bold uppercase">Subtotal</span>
-                  <div className="flex items-center gap-3">
-                    <button className="text-xs text-accent pressable flex items-center gap-1" onClick={handleRescanTap} aria-label="Rescan receipt">
-                      <RotateCcw size={13} /> Rescan
-                    </button>
-                    <span className="font-bold tabular-nums">{formatCurrency(itemsTotal)}</span>
-                  </div>
-                </div>
-
-                <ul className="SwipeableList">
-                  {items.map((item) => {
-                    const everyone = selectedPeople.length > 0 && selectedPeople.every((p) => item.people.includes(p));
-                    return (
-                      <SwipeableItem key={item.id} onDelete={() => setItems((prev) => prev.filter((i) => i.id !== item.id))}>
-                        <div className="card p-0 overflow-hidden" style={{ padding: 0, marginBottom: 0 }}>
-                          <div className="flex justify-between items-center p-4 border-b border-glass">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="text-success flex-shrink-0"><CheckCircle size={24} /></div>
-                              <input type="text" className="input-ghost text-lg font-bold w-full" placeholder="Item name" value={item.name} onChange={(e) => updateItem(item.id, 'name', e.target.value)} />
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className="text-sm text-secondary font-medium">₱</span>
-                              <input type="number" inputMode="decimal" step="0.01" className="input-ghost text-xl font-bold text-right" style={{ width: '84px' }} value={item.price || ''} onChange={(e) => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)} />
-                            </div>
-                          </div>
-
-                          <div className="p-3 bg-glass">
-                            <div className="text-xs text-secondary font-bold uppercase tracking-wider mb-2 px-1">Shared by</div>
-                            <div className="flex gap-2 overflow-x-auto pb-1 px-1 custom-scrollbar">
-                              <button
-                                className={`pill whitespace-nowrap pressable flex items-center gap-1 flex-shrink-0 ${everyone ? 'pill-active' : 'pill-inactive'}`}
-                                onClick={() => toggleEveryoneForItem(item.id)}
-                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                              >
-                                <Users size={14} /> Everyone
-                              </button>
-                              {selectedPeople.map((pId) => {
-                                const isSel = item.people.includes(pId);
-                                return (
-                                  <button
-                                    key={pId}
-                                    className={`pill whitespace-nowrap pressable flex items-center gap-1 flex-shrink-0 ${isSel ? 'pill-active' : 'pill-inactive'}`}
-                                    onClick={() => togglePersonForItem(item.id, pId)}
-                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                                  >
-                                    {isSel ? <Check size={14} /> : <Plus size={14} />} {personName(pId)}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      </SwipeableItem>
-                    );
-                  })}
-                </ul>
-
-                <button className="card text-center cursor-pointer mb-6 border-dashed pressable" style={{ width: '100%' }} onClick={() => setItems((prev) => [...prev, newItem(selectedPeople)])}>
-                  <Plus size={20} className="inline mr-2" /> Add another item
-                </button>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* STEP 3 */}
-        {step === 3 && (
-          <>
-            <div className="card mb-6 p-0" style={{ padding: 0 }}>
-              <div className="p-4 border-b border-glass flex justify-between items-center cursor-pointer pressable" onClick={addFee}>
-                <div className="flex items-center gap-3">
-                  <div style={{ background: 'var(--fill-accent-soft)', color: 'var(--accent-color)', padding: '0.5rem', borderRadius: '50%' }}><Plus size={20} /></div>
-                  <div>
-                    <h3 className="font-bold text-lg">Fees &amp; tips</h3>
-                    <p className="text-sm text-secondary">Catch service charge or discounts before you send.</p>
-                  </div>
-                </div>
-                <div className="font-bold tabular-nums">{formatCurrency(feesTotal)}</div>
-              </div>
-
-              {fees.length > 0 && (
-                <ul className="SwipeableList p-4">
-                  {fees.map((fee) => (
-                    <SwipeableItem key={fee.id} onDelete={() => removeFee(fee.id)}>
-                      <div className="flex-col gap-3 p-4 bg-glass border border-glass rounded-lg">
-                        <div className="text-xs text-secondary font-bold uppercase tracking-wider">Name</div>
-                        <input type="text" className="input-ghost text-lg font-bold w-full border-b border-glass pb-2" value={fee.name} onChange={(e) => updateFee(fee.id, 'name', e.target.value)} />
-
-                        {/* Sign as an explicit choice, not a typed "-": iOS/Android's
-                            decimal numeric keypad has no minus key, so a fee amount
-                            input alone can never actually go negative on a phone. The
-                            number field below only ever holds the magnitude. */}
-                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Type</div>
-                        <div className="flex gap-2">
-                          {(() => {
-                            const isDiscount = fee.amount < 0 || Object.is(fee.amount, -0);
-                            return (
-                              <>
-                                <button
-                                  type="button"
-                                  className="pill pressable flex-1 flex items-center justify-center gap-1"
-                                  style={!isDiscount
-                                    ? { background: 'var(--fill-success-soft)', color: 'var(--success)', borderColor: 'var(--border-success)' }
-                                    : null}
-                                  onClick={() => updateFee(fee.id, 'amount', Math.abs(fee.amount || 0))}
-                                >
-                                  + Charge
-                                </button>
-                                <button
-                                  type="button"
-                                  className="pill pressable flex-1 flex items-center justify-center gap-1"
-                                  style={isDiscount
-                                    ? { background: 'var(--fill-danger-soft)', color: 'var(--danger)', borderColor: 'var(--border-danger)' }
-                                    : null}
-                                  onClick={() => updateFee(fee.id, 'amount', -Math.abs(fee.amount || 0))}
-                                >
-                                  − Discount
-                                </button>
-                              </>
-                            );
-                          })()}
-                        </div>
-
-                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Amount</div>
-                        <div className="flex gap-2 items-center">
-                          <span className="text-secondary font-medium">
-                            {(fee.amount < 0 || Object.is(fee.amount, -0)) ? '−₱' : '₱'}
-                          </span>
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            step="0.01"
-                            min="0"
-                            className="input-ghost text-xl font-bold flex-1"
-                            value={fee.amount ? Math.abs(fee.amount) : ''}
-                            onChange={(e) => {
-                              const magnitude = parseFloat(e.target.value) || 0;
-                              const isDiscount = fee.amount < 0 || Object.is(fee.amount, -0);
-                              updateFee(fee.id, 'amount', isDiscount ? -magnitude : magnitude);
-                            }}
-                          />
-                        </div>
-
-                        <div className="text-xs text-secondary font-bold uppercase tracking-wider mt-2">Applies to</div>
-                        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                          {(() => {
-                            const everyone = selectedPeople.length > 0 && selectedPeople.every((p) => (fee.people || []).includes(p));
-                            return (
-                              <button
-                                className={`pill whitespace-nowrap pressable flex items-center gap-1 flex-shrink-0 ${everyone ? 'pill-active' : 'pill-inactive'}`}
-                                onClick={() => toggleEveryoneForFee(fee.id)}
-                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                              >
-                                <Users size={14} /> Everyone
-                              </button>
-                            );
-                          })()}
-                          {selectedPeople.map((pId) => {
-                            const isSel = (fee.people || []).includes(pId);
-                            return (
-                              <button
-                                key={pId}
-                                className={`pill whitespace-nowrap pressable flex items-center gap-1 flex-shrink-0 ${isSel ? 'pill-active' : 'pill-inactive'}`}
-                                onClick={() => togglePersonForFee(fee.id, pId)}
-                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                              >
-                                {isSel ? <Check size={14} /> : <Plus size={14} />} {personName(pId)}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </SwipeableItem>
-                  ))}
-                  <button className="btn btn-secondary w-full mt-2 pressable" style={{ borderRadius: 'var(--radius-lg)' }} onClick={addFee}>+ Add another</button>
-                </ul>
-              )}
-            </div>
-
-            <div className="card p-0 overflow-hidden" style={{ padding: 0 }}>
-              <div className="p-4 border-b border-glass">
-                <p className="text-sm text-secondary mb-1">Final total</p>
-                <h2 className="text-4xl font-black break-words">{formatCurrency(finalTotal)}</h2>
-              </div>
-
-              <div className="p-4 border-b border-glass">
-                <div className="flex justify-between text-sm text-secondary mb-2">
-                  <span>Items</span><span className="tabular-nums">{formatCurrency(itemsTotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-secondary">
-                  <span>Adjustments</span><span className="tabular-nums">{formatCurrency(feesTotal)}</span>
-                </div>
-              </div>
-
-              <div className="p-4">
-                <div className="text-xs text-secondary font-bold uppercase tracking-wider mb-3">The split</div>
-                <div className="flex-col gap-2">
-                  {selectedPeople.map((pId) => (
-                    <div key={pId} className="flex justify-between items-center py-2">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="avatar bg-accent flex-shrink-0">{initialsOf(personName(pId))}</div>
-                        <div className="font-bold truncate">{personName(pId)}{pId === meId ? ' (you)' : ''}</div>
-                      </div>
-                      <div className="font-bold text-lg tabular-nums flex-shrink-0">{formatCurrency(calculatedDues[pId] || 0)}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+          {step === 3 ? (
+            <StepReview
+              printing={printing}
+              items={realItems}
+              fees={fees}
+              tipPct={tipPct}
+              tipAmount={tipAmount}
+              participants={selected}
+              nameOf={nameOf}
+              meId={meId}
+              dues={dues}
+              itemsTotal={itemsTotal}
+              total={total}
+              onFeeField={setFeeField}
+              onAddFee={addFee}
+              onRemoveFee={removeFee}
+              onToggleFee={toggleFeePerson}
+              onEveryoneFee={everyoneOnFee}
+              onTipPct={setTipPct}
+            />
+          ) : null}
+        </div>
       </main>
 
-      {/* ACTION BUTTONS */}
-      {/* The wizard's own bottom bar. The tab bar is hidden on this route
-          (see AppLayout), so this is the only chrome down here and it takes
-          the home-indicator inset itself. */}
-      <div
-        className="bg-glass flex gap-4"
-        style={{
-          flexShrink: 0,
-          zIndex: 10,
-          borderTop: '1px solid var(--glass-border)',
-          padding: '1rem',
-          paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
-        }}
-      >
-        {step > 1 && (
-          <button className="btn btn-secondary flex-1 pressable" style={{ borderRadius: 'var(--radius-lg)' }} onClick={() => handleStepChange(step - 1)}>
-            <ChevronLeft size={20} className="inline mr-1" /> Back
-          </button>
-        )}
-        {step < 3 ? (
-          <button
-            className="btn btn-primary pressable"
-            style={{ borderRadius: 'var(--radius-lg)', flex: 2 }}
-            disabled={(step === 1 && selectedPeople.length === 0) || (step === 2 && items.length === 0)}
-            onClick={() => handleStepChange(step + 1)}
-          >
-            {step === 1 ? 'Next: items' : 'Next: review'} <ChevronRight size={20} className="inline ml-1" />
-          </button>
-        ) : (
-          <button className="btn btn-primary pressable" style={{ borderRadius: 'var(--radius-lg)', flex: 2 }} onClick={handleSave}>
-            {editId ? 'Save changes' : 'Save split'} <Check size={20} className="inline ml-1" />
-          </button>
-        )}
+      {/* The gate. An item nobody is on counts toward the total and toward
+          nobody's dues, so the split silently stops adding up — it is named
+          and the step refuses to advance rather than saving quietly wrong. */}
+      <div className="wizard__foot">
+        {step === 2 && unassignedNames.length > 0 ? (
+          <div className="column">
+            <div className="notice wizard__gate" role="status">
+              <p className="notice__title">Nobody is on {unassignedNames.join(', ')}</p>
+              <p className="notice__body">
+                Their money would vanish out of the split. Put someone on each,
+                or take the line off.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="wizard__bar">
+          {step > 1 ? <Button onClick={() => goTo(step - 1)}>Back</Button> : null}
+          {step < 3 ? (
+            <Button variant="solid" disabled={blocked} onClick={() => goTo(step + 1)}>
+              {step === 1 ? 'Next: the lines' : 'Next: check it'}
+            </Button>
+          ) : (
+            <Button variant="solid" onClick={save}>
+              {editId ? 'Save the changes' : 'Save the split'}
+            </Button>
+          )}
+        </div>
       </div>
 
       <ScanResultDialog
         open={scanResultOpen}
         info={scanInfo}
         onClose={() => setScanResultOpen(false)}
-        onRescan={() => { setScanResultOpen(false); handleRescanTap(); }}
+        onRescan={() => { setScanResultOpen(false); rescan(); }}
       />
 
-      {/* Discard confirm */}
-      <dialog ref={discardRef} onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-xl font-bold">Discard this split?</h2>
-          <form method="dialog"><button className="text-secondary pressable" aria-label="Close"><X size={20} /></button></form>
-        </div>
-        <p className="text-sm text-secondary mb-4">Your changes won&apos;t be saved.</p>
-        <div className="flex gap-2 justify-end">
-          <button type="button" className="btn btn-secondary pressable" onClick={() => discardRef.current?.close()}>Keep editing</button>
-          <button type="button" className="btn btn-danger pressable" onClick={() => { discardRef.current?.close(); navigate('/'); }}>Discard</button>
-        </div>
-      </dialog>
+      <EvenSplitSheet
+        open={evenOpen}
+        onClose={() => setEvenOpen(false)}
+        title={splitName}
+        participants={selected}
+        nameOf={nameOf}
+        meId={meId}
+        onSave={saveEvenSplit}
+      />
+
+      <NewGroupForm open={groupOpen} onClose={() => setGroupOpen(false)} />
+
+      <SavedSheet
+        open={!!saved}
+        title={saved?.title || ''}
+        participants={saved?.participants || []}
+        dues={saved?.dues || {}}
+        nameOf={nameOf}
+        meId={meId}
+        onDone={() => navigate('/')}
+      />
+
+      <Sheet
+        open={discardOpen}
+        title="Leave this split?"
+        size="sm"
+        onClose={() => setDiscardOpen(false)}
+        footer={
+          <>
+            <Button onClick={() => setDiscardOpen(false)}>Keep going</Button>
+            <Button variant="danger" onClick={() => navigate('/')}>
+              Throw it away
+            </Button>
+          </>
+        }
+      >
+        <p className="u-ink-2">
+          Nothing here is saved yet, and leaving drops the lines and the people
+          you picked.
+        </p>
+      </Sheet>
     </>
   );
 }

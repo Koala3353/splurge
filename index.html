@@ -6,8 +6,8 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#0A0A0C" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#141310" />
     <meta name="description" content="Splurge — scan receipts, split bills, and track who owes you. A fast, offline-ready PWA." />
 
     <!-- iOS standalone web app -->
@@ -38,12 +38,14 @@
         padding: 0;
       }
       /* Pre-hydration backdrop, so the launch flash matches whichever theme
-         is about to render rather than always being dark. */
-      html { background-color: #0A0A0C; }
+         is about to render rather than always being dark. These two values
+         are --paper in each theme (carbon, then paper) and are the only
+         place in the project a colour is written outside the token file. */
+      html { background-color: #141310; }
       @media (prefers-color-scheme: light) {
-        html:not([data-theme='dark']) { background-color: #FAFAFB; }
+        html:not([data-theme='dark']) { background-color: #F6F3EC; }
       }
-      html[data-theme='light'] { background-color: #FAFAFB; }
+      html[data-theme='light'] { background-color: #F6F3EC; }
     </style>
     <script>
       // Runs before first paint: a saved "force light"/"force dark" choice has
@@ -58,13 +60,33 @@
           var dark = t === 'dark' || (t !== 'light' &&
             window.matchMedia('(prefers-color-scheme: dark)').matches);
           document.querySelector('meta[name="theme-color"]')
-            .setAttribute('content', dark ? '#0A0A0C' : '#FAFAFB');
+            .setAttribute('content', dark ? '#141310' : '#F6F3EC');
         } catch (e) { /* private mode — fall through to the CSS default */ }
       })();
     </script>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Paper has tooth. One fixed, pointer-events:none overlay at ~2.5%,
+         generated here rather than fetched: feTurbulence costs no request,
+         no asset and no cache entry, and it is what keeps the large flat
+         fields of a receipt from reading as sterile vector. One element,
+         whole app — if a second one ever appears, it has become decoration.
+         Styled by .grain in src/styles/base.css. -->
+    <svg class="grain" aria-hidden="true" focusable="false">
+      <filter id="grain-tooth">
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.82"
+          numOctaves="3"
+          stitchTiles="stitch"
+        />
+        <feColorMatrix type="saturate" values="0" />
+      </filter>
+      <rect width="100%" height="100%" filter="url(#grain-tooth)" />
+    </svg>
+
     <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {

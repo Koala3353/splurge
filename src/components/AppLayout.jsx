@@ -1,5 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Navigation from './Navigation';
+import UpdatePrompt from './UpdatePrompt';
+import './shell.css';
 
 // Routes that own the bottom of the screen themselves. The new-bill wizard
 // ends in its own Back / Next bar, and two stacked bars is both a collision
@@ -12,11 +14,12 @@ export default function AppLayout() {
   const showNav = !OWNS_BOTTOM.includes(pathname);
 
   return (
-    // With no tab bar there is nothing to clear, so the clearance token drops
-    // to zero and the page gets that strip of screen back.
-    <div className={`app-shell${showNav ? '' : ' app-shell-no-nav'}`}>
+    // With no tab bar there is nothing to clear, so the clearance drops away
+    // and the page gets that strip of screen back.
+    <div className={`app${showNav ? ' app--tabbed' : ' app-shell--no-tabbar'}`}>
       <Outlet />
       {showNav && <Navigation />}
+      <UpdatePrompt />
     </div>
   );
 }

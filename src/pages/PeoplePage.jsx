@@ -1,28 +1,61 @@
-import { useState, useRef, useMemo, useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../store/AppContext';
-import ShareSheet from '../components/ShareSheet';
-import {
-  formatCurrency,
-  formatRelativeDate,
-  initialsOf,
-} from '../utils/format';
-import {
-  Plus,
-  X,
-  Check,
-  Circle,
-  CheckCircle,
-  ChevronRight,
-  ChevronLeft,
-  Trash2,
-  Share2,
-  Send,
-  Users,
-  Search,
-  Pencil,
-} from 'lucide-react';
+import { isSettled } from '../utils/split';
+import { formatCurrency } from '../utils/format';
+import { nudgeNote } from '../utils/nudges';
+import { useUndoableAction } from '../hooks/useUndoableAction';
+import { useSettleLanding } from '../hooks/useSettleLanding';
+import Button from '../components/ui/Button.jsx';
+import Field from '../components/ui/Field.jsx';
+import Row from '../components/ui/Row.jsx';
+import Sheet from '../components/ui/Sheet.jsx';
+import Stamp from '../components/ui/Stamp.jsx';
 import SwipeableItem from '../components/SwipeableItem';
+import ShareSheet from '../components/ShareSheet';
+import PersonDetail from '../components/people/PersonDetail.jsx';
+import GroupCard from '../components/people/GroupCard.jsx';
+import NewGroupForm from '../components/people/NewGroupForm.jsx';
+import UndoToast from '../components/people/UndoToast.jsx';
+// TODO: swap for the shared SearchField once it exists (see the file header).
+import SearchField from '../components/SearchField.jsx';
+
+const TABS = [
+  { id: 'friends', label: 'Friends' },
+  { id: 'groups', label: 'Groups' },
+];
+
+const tabStyle = (active) => ({
+  flex: 1,
+  minHeight: 'var(--control-min)',
+  border: 0,
+  borderBottom: `var(--stamp-border-width) solid ${active ? 'var(--ink)' : 'var(--rule)'}`,
+  background: 'transparent',
+  color: active ? 'var(--ink)' : 'var(--ink-2)',
+  fontWeight: active ? 'var(--weight-medium)' : 'var(--weight-regular)',
+});
+
+/** One friend's line: name, what they owe, and the stamp when it closes. */
+function FriendRow({ person, balance, reminded, onOpen }) {
+  // Paying more than you owed is not a debt: a negative balance is credit
+  // sitting against their next split, and it closes the row either way.
+  const clear = isSettled(balance) || balance < 0;
+  const ahead = balance < 0 && !isSettled(balance);
+  const landing = useSettleLanding(clear, person.id);
+
+  // A settled friend has no marker to show — it is retired the moment the
+  // balance closes — so the two notes can never contend for the line.
+  return (
+    <Row
+      name={person.name}
+      note={ahead ? `Paid ${formatCurrency(-balance)} ahead` : reminded || undefined}
+      figure={formatCurrency(balance > 0 ? balance : 0)}
+      state={clear ? 'settled' : 'owed'}
+      trailing={clear ? <Stamp status="settled" land={landing} /> : null}
+      onClick={onOpen}
+    />
+  );
+}
 
 export default function PeoplePage() {
   const navigate = useNavigate();
@@ -30,36 +63,31 @@ export default function PeoplePage() {
     people,
     addPerson,
     removePerson,
-    renamePerson,
+    restorePerson,
     groups,
-    addGroup,
     removeGroup,
+    restoreGroup,
     meId,
-    setMeId,
     balances,
-    personBillShares,
-    lifetimePayments,
-    paymentsByPerson,
-    addPayment,
-    removePayment,
-    buildShareText,
     buildGroupReminderText,
+    buildShareText,
+    nudges,
+    recordNudge,
   } = useAppContext();
 
-  const [activeTab, setActiveTab] = useState('friends'); // 'friends' | 'groups'
+  const [activeTab, setActiveTab] = useState('friends');
   const [search, setSearch] = useState('');
   const [detailPersonId, setDetailPersonId] = useState(null);
-  // Which slice of people the group reminder covers, once chosen: { peopleIds, label }.
-  const [remindScope, setRemindScope] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [draftNames, setDraftNames] = useState('');
   // Named in this sitting, so the sheet can show what it just took in.
   const [justAdded, setJustAdded] = useState([]);
+  // Which slice of people the reminder covers: { peopleIds, label } or {}.
+  const [remindScope, setRemindScope] = useState(null);
 
-  const friendDialogRef = useRef(null);
-  const groupDialogRef = useRef(null);
-  const detailDialogRef = useRef(null);
-  const remindDialogRef = useRef(null);
+  const undoable = useUndoableAction();
 
-  // The person who is "you" — never owes themselves, so never listed.
   const me = meId ? people.find((p) => p.id === meId) : null;
 
   // Everyone except you, sorted: still-owing first (by balance desc), settled last.
@@ -68,17 +96,22 @@ export default function PeoplePage() {
     return list.sort((a, b) => {
       const balA = balances[a.id] || 0;
       const balB = balances[b.id] || 0;
-      const owesA = balA > 0.005;
-      const owesB = balB > 0.005;
+      const owesA = !isSettled(balA) && balA > 0;
+      const owesB = !isSettled(balB) && balB > 0;
       if (owesA !== owesB) return owesA ? -1 : 1;
       if (owesA && owesB) return balB - balA;
       return a.name.localeCompare(b.name);
     });
   }, [people, meId, balances]);
 
+  const owes = useCallback(
+    (id) => (balances[id] || 0) > 0 && !isSettled(balances[id] || 0),
+    [balances],
+  );
+
   const owingCount = useMemo(
-    () => friends.filter((p) => (balances[p.id] || 0) > 0.005).length,
-    [friends, balances],
+    () => friends.filter((p) => owes(p.id)).length,
+    [friends, owes],
   );
 
   const visibleFriends = useMemo(() => {
@@ -87,21 +120,57 @@ export default function PeoplePage() {
     return friends.filter((p) => p.name.toLowerCase().includes(q));
   }, [friends, search]);
 
-  const openDetail = (personId) => {
-    setDetailPersonId(personId);
-    detailDialogRef.current?.showModal();
-  };
+  const buildReminderBody = useCallback(
+    (options) => buildGroupReminderText(remindScope || {}, options),
+    [buildGroupReminderText, remindScope],
+  );
 
-  // Adding people was one modal round-trip each, which is the wrong shape for
-  // a thing you nearly always do several of at once (you add a group chat's
-  // worth of friends, not one). The sheet now stays open and accepts a whole
-  // pasted list, so five friends is one visit instead of five.
-  const handleAddFriend = (e) => {
+  // Who the reminder can be aimed at, chosen inside the share sheet rather
+  // than in a chooser dialog in front of it: that dialog made the message
+  // three modals deep for something that is one decision.
+  const remindScopes = useMemo(() => ([
+    { id: '', label: 'Everyone who owes you', count: owingCount, peopleIds: null },
+    ...groups.map((g) => ({
+      id: g.id,
+      label: g.name,
+      count: g.peopleIds.filter((id) => owes(id)).length,
+      peopleIds: g.peopleIds,
+    })),
+  ]), [groups, owingCount, owes]);
+
+  // The same reminder, split per person. A group blob gets forwarded once and
+  // then ignored; a message addressed to one friend, with only their share in
+  // it, is the one that gets paid — which is how a GCash collection actually
+  // runs. Sent from the row's own tap inside the share sheet.
+  const remindRecipients = useMemo(() => {
+    const inScope = remindScope?.peopleIds
+      ? friends.filter((p) => remindScope.peopleIds.includes(p.id))
+      : friends;
+    return inScope
+      .filter((p) => owes(p.id))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        note: nudgeNote(nudges?.[p.id]) || undefined,
+        figure: formatCurrency(balances[p.id] || 0),
+        buildText: (options) => buildShareText(p.id, options),
+      }));
+  }, [friends, remindScope, owes, balances, buildShareText, nudges]);
+
+  // A group reminder names everybody in scope who still owes, so sending it
+  // chases all of them at once and all of them are stamped. The list is the
+  // same one the per-person rows are built from, which is what keeps "who the
+  // message named" and "who got marked" from drifting apart.
+  const remindIds = useMemo(
+    () => remindRecipients.map((p) => p.id),
+    [remindRecipients],
+  );
+
+  // Adding people is nearly always several at once — you add a group chat's
+  // worth of friends, not one. The sheet takes a whole pasted list.
+  const addNames = (e) => {
     e.preventDefault();
-    const raw = e.target.name.value;
-    // Comma, newline or semicolon — whatever separator the list you pasted
-    // happened to use.
-    const names = raw
+    const names = draftNames
       .split(/[,;\n]+/)
       .map((n) => n.trim())
       .filter(Boolean);
@@ -111,487 +180,221 @@ export default function PeoplePage() {
     const added = [];
     for (const name of names) {
       const key = name.toLowerCase();
-      if (existing.has(key)) continue;   // same list pasted twice shouldn't duplicate
+      if (existing.has(key)) continue; // the same list pasted twice shouldn't duplicate
       existing.add(key);
       addPerson(name);
       added.push(name);
     }
     setJustAdded((prev) => [...added, ...prev].slice(0, 12));
-    e.target.reset();
-    e.target.name.focus();
+    setDraftNames('');
   };
 
-  // One combined nudge for everyone still owing (optionally scoped to one
-  // saved group) — meant to be posted once into a group chat, not sent 1:1
-  // like the per-person "Send request". Picking a scope hands off to the share
-  // sheet, where the message gets shaped and read before it goes out.
-  const shareReminder = (scope = {}) => {
-    remindDialogRef.current?.close();
-    setRemindScope(scope);
+  // Both deletions take a balance history with them, so both go through the
+  // undo window. A confirm dialog in front of every swipe would tax the
+  // common case to guard the rare one; this taxes nothing.
+  const removeFriend = (person) => {
+    undoable.run({
+      label: `Removed ${person.name}`,
+      act: () => removePerson(person.id),
+      undo: (snapshot) => restorePerson(snapshot),
+    });
+    if (detailPersonId === person.id) setDetailPersonId(null);
   };
 
-  const buildReminderBody = useCallback(
-    (options) => buildGroupReminderText(remindScope || {}, options),
-    [buildGroupReminderText, remindScope],
-  );
-
-  // Tapping "Remind" goes straight to everyone if there's nothing to filter
-  // by; with saved groups, it opens a quick chooser first.
-  const handleRemindTap = () => {
-    if (groups.length === 0) {
-      shareReminder();
-    } else {
-      remindDialogRef.current?.showModal();
-    }
+  const dropGroup = (group) => {
+    undoable.run({
+      label: `Removed ${group.name}`,
+      act: () => removeGroup(group.id),
+      undo: (snapshot) => restoreGroup(snapshot),
+    });
   };
 
   return (
     <>
-      <main className="app-main" style={{ paddingBottom: '6rem' }}>
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">People</h1>
-          {me && (
-            <span
-              className="pill pill-inactive flex items-center gap-1 text-xs"
-              title="This is you"
-            >
-              <Users size={12} /> You: {me.name}
-            </span>
-          )}
-        </div>
+      <main className="app__main">
+        <div className="column u-stack-loose">
+          <header className="u-between">
+            <h1>People</h1>
+            {me ? <span className="u-micro u-ink-2">You: {me.name}</span> : null}
+          </header>
 
-        {/* Tabs */}
-        <div
-          className="flex gap-2 mb-6"
-          style={{
-            background: 'var(--glass-bg)',
-            padding: '4px',
-            borderRadius: 'var(--radius-lg)',
-          }}
-        >
-          <button
-            className="btn pressable"
-            style={{
-              flex: 1,
-              border: 'none',
-              background:
-                activeTab === 'friends' ? 'var(--gradient-primary)' : 'transparent',
-              color: activeTab === 'friends' ? 'var(--on-accent)' : 'var(--text-secondary)',
-              padding: '0.5rem',
-            }}
-            onClick={() => setActiveTab('friends')}
-          >
-            Friends
-          </button>
-          <button
-            className="btn pressable"
-            style={{
-              flex: 1,
-              border: 'none',
-              background:
-                activeTab === 'groups' ? 'var(--gradient-primary)' : 'transparent',
-              color: activeTab === 'groups' ? 'var(--on-accent)' : 'var(--text-secondary)',
-              padding: '0.5rem',
-            }}
-            onClick={() => setActiveTab('groups')}
-          >
-            Groups
-          </button>
-        </div>
-
-        {activeTab === 'friends' && (
-          <>
-            <div className="flex justify-between items-center mb-4">
-              <span className="lab">Who&apos;s paid?</span>
-              <div className="flex items-center gap-3">
-                {owingCount > 0 && (
-                  <button
-                    type="button"
-                    className="text-accent text-xs font-medium flex items-center gap-1 pressable"
-                    onClick={handleRemindTap}
-                    aria-label="Remind people who still owe you, in one message"
-                  >
-                    <Send size={13} /> Remind
-                  </button>
-                )}
-                <span className="text-secondary text-sm">
-                  {owingCount} {owingCount === 1 ? 'owes you' : 'owe you'}
-                </span>
-              </div>
-            </div>
-
-            {friends.length >= 5 && (
-              <div
-                className="flex items-center gap-2 mb-4 glass-panel"
-                style={{ padding: '0.5rem 0.85rem' }}
+          <div role="tablist" aria-label="People and groups" style={{ display: 'flex' }}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                id={`tab-${tab.id}`}
+                aria-selected={activeTab === tab.id}
+                aria-controls={`panel-${tab.id}`}
+                style={tabStyle(activeTab === tab.id)}
+                onClick={() => setActiveTab(tab.id)}
               >
-                <Search size={16} className="text-secondary flex-shrink-0" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search friends"
-                  aria-label="Search friends"
-                  className="input-ghost flex-1 min-w-0"
-                />
-                {search && (
-                  <button
-                    type="button"
-                    aria-label="Clear search"
-                    className="text-secondary flex-shrink-0 pressable"
-                    onClick={() => setSearch('')}
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
-            )}
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-            {friends.length === 0 ? (
-              <div className="empty-state">
-                <Users size={32} className="mx-auto mb-3 text-secondary" />
-                <h3 className="font-bold text-lg text-primary">No one here yet</h3>
-                <p className="text-sm mt-1">Add the people you splurge with.</p>
-              </div>
-            ) : visibleFriends.length === 0 ? (
-              <div className="empty-state">
-                <p className="text-sm">No friends match &ldquo;{search}&rdquo;.</p>
-              </div>
-            ) : (
-              <ul className="SwipeableList list-dense">
-                {visibleFriends.map((person) => {
-                  const balance = balances[person.id] || 0;
-                  const isSettled = balance <= 0.005;
+          {activeTab === 'friends' ? (
+            <section id="panel-friends" role="tabpanel" aria-labelledby="tab-friends">
+              <h2 className="u-sr-only">Friends</h2>
 
-                  return (
+              <div className="u-between" style={{ marginBlockEnd: 'var(--space-3)' }}>
+                <span className="u-micro u-ink-2">
+                  {owingCount === 1 ? '1 still owes you' : `${owingCount} still owe you`}
+                </span>
+                {owingCount > 0 ? (
+                  <Button onClick={() => setRemindScope({})}>Remind them</Button>
+                ) : null}
+              </div>
+
+              <div className="u-row" style={{ gap: 'var(--space-2)' }}>
+                <Button
+                  variant="solid"
+                  block
+                  onClick={() => { setJustAdded([]); setAddOpen(true); }}
+                >
+                  Add friends
+                </Button>
+                <Button block onClick={() => setGroupOpen(true)}>
+                  New group
+                </Button>
+              </div>
+
+              {friends.length >= 5 ? (
+                <div style={{ marginBlockStart: 'var(--space-5)' }}>
+                  <SearchField
+                    value={search}
+                    onChange={setSearch}
+                    label="Search friends"
+                    placeholder="Search friends"
+                  />
+                </div>
+              ) : null}
+
+              {friends.length === 0 ? (
+                <p className="u-ink-2" style={{ marginBlockStart: 'var(--space-5)' }}>
+                  No one here yet. Add the people you split with, and every bill
+                  you put against them keeps a running balance on this page.
+                </p>
+              ) : visibleFriends.length === 0 ? (
+                <p className="u-ink-2" style={{ marginBlockStart: 'var(--space-5)' }}>
+                  No friends match “{search}”.
+                </p>
+              ) : (
+                <ul style={{ marginBlockStart: 'var(--space-5)' }}>
+                  {visibleFriends.map((person) => (
                     <SwipeableItem
                       key={person.id}
-                      onDelete={() => removePerson(person.id)}
+                      actionLabel={`Remove ${person.name}`}
+                      onDelete={() => removeFriend(person)}
                     >
-                      <div
-                        className="overflow-hidden"
-                        style={{ padding: 0, marginBottom: 0, background: 'var(--bg-color)' }}
+                      <FriendRow
+                        person={person}
+                        balance={balances[person.id] || 0}
+                        reminded={nudgeNote(nudges?.[person.id])}
+                        onOpen={() => setDetailPersonId(person.id)}
+                      />
+                    </SwipeableItem>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : (
+            <section id="panel-groups" role="tabpanel" aria-labelledby="tab-groups">
+              <h2 className="u-sr-only">Groups</h2>
+
+              <Button variant="solid" block onClick={() => setGroupOpen(true)}>
+                New group
+              </Button>
+
+              {groups.length === 0 ? (
+                <p className="u-ink-2" style={{ marginBlockStart: 'var(--space-5)' }}>
+                  No groups yet. A group is a crew you split with often — name it
+                  once and the next bill opens with everyone already on it.
+                </p>
+              ) : (
+                <ul style={{ marginBlockStart: 'var(--space-5)' }}>
+                  {groups.map((group) => {
+                    const members = group.peopleIds
+                      .map((id) => people.find((p) => p.id === id))
+                      .filter(Boolean);
+                    // You are a member of your own groups but never someone who
+                    // owes yourself, so your share is out of both counts.
+                    const others = members.filter((p) => p.id !== meId);
+                    const outstanding = others.reduce(
+                      (sum, p) => sum + Math.max(0, balances[p.id] || 0),
+                      0,
+                    );
+                    const owing = others.filter((p) => owes(p.id)).length;
+
+                    return (
+                      <SwipeableItem
+                        key={group.id}
+                        actionLabel={`Remove ${group.name}`}
+                        onDelete={() => dropGroup(group)}
                       >
-                        <div
-                          className="flex justify-between items-center cursor-pointer pressable"
-                          style={{ opacity: isSettled ? 0.55 : 1, padding: '0.625rem 0' }}
-                          onClick={() => openDetail(person.id)}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div
-                              className="avatar bg-accent flex-shrink-0"
-                              style={{ width: 30, height: 30, borderRadius: 'var(--radius-sm)', fontSize: '0.7rem' }}
-                            >
-                              {initialsOf(person.name)}
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="font-medium leading-tight truncate" style={{ fontSize: '0.92rem' }}>
-                                {person.name}
-                              </h3>
-                              <div
-                                className="flex items-center gap-1 mt-1 lab"
-                                style={{
-                                  color: isSettled
-                                    ? 'var(--success)'
-                                    : 'var(--text-tertiary)',
-                                }}
-                              >
-                                {isSettled ? (
-                                  <CheckCircle size={12} />
-                                ) : (
-                                  <Circle size={12} />
-                                )}
-                                {isSettled ? 'Settled' : 'Owes you'}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <div
-                              className="font-semibold leading-tight tabular-nums"
-                              style={{
-                                fontSize: '0.92rem',
-                                color: isSettled
-                                  ? 'var(--text-tertiary)'
-                                  : 'var(--text-primary)',
-                              }}
-                            >
-                              {formatCurrency(balance > 0 ? balance : 0)}
-                            </div>
-                            <ChevronRight size={15} className="text-tertiary" />
-                          </div>
-                        </div>
-                      </div>
-                    </SwipeableItem>
-                  );
-                })}
-              </ul>
-            )}
-          </>
-        )}
-
-        {activeTab === 'groups' && (
-          <>
-            {groups.length === 0 ? (
-              <div className="empty-state">
-                <Users size={32} className="mx-auto mb-3 text-secondary" />
-                <h3 className="font-bold text-lg text-primary">No groups yet</h3>
-                <p className="text-sm mt-1">Make a crew you split with often.</p>
-              </div>
-            ) : (
-              <ul className="SwipeableList">
-                {groups.map((group) => {
-                  const members = group.peopleIds
-                    .map((id) => people.find((p) => p.id === id))
-                    .filter(Boolean);
-                  // What the group is actually for: how much of it is still
-                  // outstanding, and who has not settled. You are a member of
-                  // your own groups but never someone who owes yourself, so
-                  // your share is excluded from both counts.
-                  const others = members.filter((p) => p.id !== meId);
-                  const outstanding = others.reduce(
-                    (sum, p) => sum + Math.max(0, balances[p.id] || 0),
-                    0,
-                  );
-                  const owing = others.filter((p) => (balances[p.id] || 0) > 0.005).length;
-                  return (
-                    <SwipeableItem
-                      key={group.id}
-                      onDelete={() => removeGroup(group.id)}
-                    >
-                      <div className="glass-panel group-card" style={{ marginBottom: 0 }}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="text-lg font-bold truncate">{group.name}</h3>
-                            <p className="text-xs text-secondary mt-0.5">
-                              {members.length
-                                ? `${members.length} ${members.length === 1 ? 'person' : 'people'}`
-                                : 'No members yet'}
-                              {owing > 0 && ` · ${owing} still ${owing === 1 ? 'owes' : 'owe'} you`}
-                            </p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div
-                              className="text-lg font-bold tabular-nums leading-tight"
-                              style={{ color: outstanding > 0.005 ? 'var(--text-primary)' : 'var(--success)' }}
-                            >
-                              {outstanding > 0.005 ? formatCurrency(outstanding) : 'Settled'}
-                            </div>
-                          </div>
-                        </div>
-
-                        {members.length > 0 && (
-                          <div className="flex items-center" style={{ marginTop: '0.75rem' }}>
-                            {members.slice(0, 6).map((p, i) => (
-                              <span
-                                key={p.id}
-                                className="avatar bg-accent stacked-avatar"
-                                title={p.name}
-                                style={{ zIndex: 6 - i }}
-                              >
-                                {initialsOf(p.name)}
-                              </span>
-                            ))}
-                            {members.length > 6 && (
-                              <span className="avatar stacked-avatar bg-glass text-secondary">
-                                +{members.length - 6}
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* A group that can't do anything is just a label. These
-                            two are the only things anyone opens one to do. */}
-                        <div className="flex gap-2" style={{ marginTop: '0.875rem' }}>
-                          <button
-                            type="button"
-                            className="btn btn-secondary flex-1 pressable"
-                            style={{ borderRadius: 'var(--radius-full)', padding: '0.55rem' }}
-                            disabled={members.length === 0}
-                            onClick={() => navigate('/new-bill', {
-                              state: { peopleIds: group.peopleIds, presetName: group.name },
-                            })}
-                          >
-                            <Plus size={15} /> Split
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary flex-1 pressable"
-                            style={{
-                              borderRadius: 'var(--radius-full)',
-                              padding: '0.55rem',
-                              ...(owing === 0 ? { opacity: 0.45 } : null),
-                            }}
-                            disabled={owing === 0}
-                            onClick={() => setRemindScope({
-                              peopleIds: group.peopleIds, label: group.name,
-                            })}
-                          >
-                            <Send size={15} /> Remind
-                          </button>
-                        </div>
-                      </div>
-                    </SwipeableItem>
-                  );
-                })}
-              </ul>
-            )}
-          </>
-        )}
+                        <GroupCard
+                          group={group}
+                          members={members}
+                          outstanding={outstanding}
+                          owing={owing}
+                          onSplit={() => navigate('/new-bill', {
+                            state: { peopleIds: group.peopleIds, presetName: group.name },
+                          })}
+                          onRemind={() => setRemindScope({
+                            peopleIds: group.peopleIds,
+                            label: group.name,
+                            scopeId: group.id,
+                          })}
+                        />
+                      </SwipeableItem>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+          )}
+        </div>
       </main>
 
-      {/* Floating Action Button */}
-      <button
-        className="fab"
-        aria-label={activeTab === 'friends' ? 'Add friend' : 'New group'}
-        style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
-        onClick={() => {
-          if (activeTab === 'friends') { setJustAdded([]); friendDialogRef.current?.showModal(); }
-          else groupDialogRef.current?.showModal();
-        }}
-      >
-        <Plus size={24} />
-      </button>
+      <UndoToast
+        pending={undoable.pending}
+        onUndo={undoable.undo}
+        onDismiss={undoable.dismiss}
+      />
 
-      {/* Person detail */}
-      <dialog
-        ref={detailDialogRef}
-        onClose={() => setDetailPersonId(null)}
-        onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
-        style={{ width: '95vw', maxWidth: '500px', padding: 0, overflow: 'hidden' }}
+      <Sheet
+        open={addOpen}
+        title="Add friends"
+        onClose={() => { setAddOpen(false); setDraftNames(''); }}
+        footer={
+          <Button variant="solid" onClick={addNames} disabled={draftNames.trim().length === 0}>
+            Add them
+          </Button>
+        }
       >
-        <PersonDetail
-          personId={detailPersonId}
-          people={people}
-          meId={meId}
-          setMeId={setMeId}
-          balances={balances}
-          personBillShares={personBillShares}
-          lifetimePayments={lifetimePayments}
-          paymentsByPerson={paymentsByPerson}
-          addPayment={addPayment}
-          removePayment={removePayment}
-          renamePerson={renamePerson}
-          buildShareText={buildShareText}
-          onClose={() => detailDialogRef.current?.close()}
-        />
-      </dialog>
-
-      {/* Remind chooser — only opened when there's at least one saved group
-          to filter by; otherwise "Remind" goes straight to everyone. */}
-      <dialog ref={remindDialogRef} onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Remind who?</h2>
-          <form method="dialog">
-            <button className="text-secondary pressable" aria-label="Close">
-              <X size={20} />
-            </button>
-          </form>
-        </div>
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            className="btn btn-secondary w-full pressable"
-            style={{ justifyContent: 'space-between' }}
-            onClick={() => shareReminder()}
-          >
-            <span className="flex items-center gap-2">
-              <Users size={16} /> Everyone who owes you
-            </span>
-            <span className="text-xs text-secondary">{owingCount}</span>
-          </button>
-          {groups.map((g) => {
-            const groupOwingCount = g.peopleIds.filter(
-              (id) => (balances[id] || 0) > 0.005,
-            ).length;
-            return (
-              <button
-                key={g.id}
-                type="button"
-                className="btn btn-secondary w-full pressable"
-                style={{ justifyContent: 'space-between' }}
-                disabled={groupOwingCount === 0}
-                onClick={() => shareReminder({ peopleIds: g.peopleIds, label: g.name })}
-              >
-                <span className="flex items-center gap-2 min-w-0 truncate">
-                  <Users size={16} /> {g.name}
-                </span>
-                <span className="text-xs text-secondary flex-shrink-0 ml-2">
-                  {groupOwingCount === 0 ? 'settled' : groupOwingCount}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </dialog>
-
-      {/* Add friends — stays open so a group's worth goes in one visit */}
-      <dialog
-        ref={friendDialogRef}
-        className="sheet"
-        onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
-      >
-        <div className="flex justify-between items-center mb-1">
-          <h2 className="text-xl font-bold">Add friends</h2>
-          <form method="dialog">
-            <button className="text-secondary pressable" aria-label="Close">
-              <X size={20} />
-            </button>
-          </form>
-        </div>
-        <p className="text-sm text-secondary mb-4">
-          One at a time, or paste a list separated by commas.
-        </p>
-        <form onSubmit={handleAddFriend} className="flex gap-2">
-          <input
-            name="name"
-            type="text"
+        <form onSubmit={addNames} className="u-stack">
+          <Field
+            label="Names"
+            value={draftNames}
+            onChange={setDraftNames}
             placeholder="Mika, Rafael, Tina"
-            required
             autoComplete="off"
             autoFocus
-            className="flex-1 min-w-0"
-            style={{ borderRadius: 'var(--radius-full)' }}
+            hint="One at a time, or paste a list separated by commas."
           />
-          <button
-            type="submit"
-            className="btn btn-primary flex-shrink-0 pressable"
-            style={{ borderRadius: 'var(--radius-full)' }}
-          >
-            <Plus size={18} />
-          </button>
+          {justAdded.length > 0 ? (
+            <p className="u-micro u-ink-2">
+              Added: {justAdded.join(', ')}
+            </p>
+          ) : null}
         </form>
+      </Sheet>
 
-        {justAdded.length > 0 && (
-          <>
-            <div className="added-chips">
-              {justAdded.map((name) => (
-                <span key={name} className="added-chip">
-                  <Check size={12} />
-                  {name}
-                </span>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="btn btn-secondary w-full pressable"
-              style={{ borderRadius: 'var(--radius-full)', marginTop: '1rem' }}
-              onClick={() => friendDialogRef.current?.close()}
-            >
-              Done — {justAdded.length} added
-            </button>
-          </>
-        )}
-      </dialog>
+      <NewGroupForm open={groupOpen} onClose={() => setGroupOpen(false)} />
 
-      {/* New group */}
-      <dialog ref={groupDialogRef} onClose={() => setSearch('')} onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
-        <NewGroupForm
-          people={people}
-          meId={meId}
-          addGroup={addGroup}
-          onClose={() => groupDialogRef.current?.close()}
-        />
-      </dialog>
+      <PersonDetail personId={detailPersonId} onClose={() => setDetailPersonId(null)} />
 
       <ShareSheet
         open={!!remindScope}
@@ -599,475 +402,20 @@ export default function PeoplePage() {
         actionLabel="Post reminder"
         buildText={buildReminderBody}
         fields={['showPaid', 'showPayInfo']}
+        scopes={remindScopes}
+        recipients={remindRecipients}
+        // No `receipt`: this message spans every unpaid split these people
+        // are on, so a picture of one of them would be the wrong object.
+        nudgeIds={remindIds}
+        onSent={recordNudge}
+        activeScopeId={remindScope?.peopleIds ? remindScope.scopeId : ''}
+        onScope={(scope) => setRemindScope(
+          scope.peopleIds
+            ? { peopleIds: scope.peopleIds, label: scope.label, scopeId: scope.id }
+            : {},
+        )}
         onClose={() => setRemindScope(null)}
       />
     </>
-  );
-}
-
-function NewGroupForm({ people, meId, addGroup, onClose }) {
-  const [name, setName] = useState('');
-  const [selected, setSelected] = useState([]);
-
-  const candidates = people.filter((p) => p.id !== meId);
-
-  const toggle = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  };
-
-  const trimmed = name.trim();
-  const canCreate = trimmed.length > 0 && selected.length > 0;
-
-  const reset = () => {
-    setName('');
-    setSelected([]);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!canCreate) return;
-    addGroup(trimmed, selected);
-    reset();
-    onClose();
-  };
-
-  return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">New group</h2>
-        <form method="dialog">
-          <button
-            type="button"
-            className="text-secondary pressable"
-            aria-label="Close"
-            onClick={() => {
-              reset();
-              onClose();
-            }}
-          >
-            <X size={20} />
-          </button>
-        </form>
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Barkada, Officemates…"
-          autoComplete="off"
-        />
-
-        <div>
-          <p className="text-sm text-secondary mb-2">Who&apos;s in?</p>
-          {candidates.length === 0 ? (
-            <p className="text-sm text-secondary">
-              Add some friends first, then group them.
-            </p>
-          ) : (
-            <div className="flex gap-2 flex-wrap">
-              {candidates.map((p) => {
-                const isSel = selected.includes(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className={`pill ${isSel ? 'pill-active' : 'pill-inactive'} pressable flex items-center gap-1`}
-                    onClick={() => toggle(p.id)}
-                  >
-                    {isSel ? <Check size={14} /> : <Plus size={14} />} {p.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            className="btn btn-secondary pressable"
-            onClick={() => {
-              reset();
-              onClose();
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn btn-primary pressable"
-            style={canCreate ? null : { opacity: 0.45 }}
-            disabled={!canCreate}
-          >
-            Create group
-          </button>
-        </div>
-      </form>
-    </>
-  );
-}
-
-const PAGE_SIZE = 8;
-
-// Keeps a long list browsable: slices it, and rewinds if the list shrinks
-// under us (a payment undone, a split settled).
-function usePage(total) {
-  const [page, setPage] = useState(0);
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const safe = Math.min(page, pageCount - 1);
-  if (safe !== page) setPage(safe);
-  const start = safe * PAGE_SIZE;
-  return {
-    page: safe,
-    pageCount,
-    start,
-    end: Math.min(start + PAGE_SIZE, total),
-    setPage,
-  };
-}
-
-function Pager({ label, total, state }) {
-  if (state.pageCount < 2) return null;
-  const { page, pageCount, start, end, setPage } = state;
-  return (
-    <div className="pager">
-      <button
-        type="button"
-        className="pager-btn pressable"
-        aria-label={`Previous page of ${label}`}
-        disabled={page === 0}
-        onClick={() => setPage(page - 1)}
-      >
-        <ChevronLeft size={16} />
-      </button>
-      <span className="pager-count">
-        {start + 1}–{end} of {total}
-      </span>
-      <button
-        type="button"
-        className="pager-btn pressable"
-        aria-label={`Next page of ${label}`}
-        disabled={page >= pageCount - 1}
-        onClick={() => setPage(page + 1)}
-      >
-        <ChevronRight size={16} />
-      </button>
-    </div>
-  );
-}
-
-function PersonDetail({
-  personId,
-  people,
-  meId,
-  setMeId,
-  balances,
-  personBillShares,
-  lifetimePayments,
-  paymentsByPerson,
-  addPayment,
-  removePayment,
-  renamePerson,
-  buildShareText,
-  onClose,
-}) {
-  const [editingName, setEditingName] = useState(false);
-  const [draftName, setDraftName] = useState('');
-  const [customAmount, setCustomAmount] = useState('');
-  const [shareOpen, setShareOpen] = useState(false);
-
-  const buildRequestBody = useCallback(
-    (options) => buildShareText(personId, options),
-    [buildShareText, personId],
-  );
-
-  const person = people.find((p) => p.id === personId);
-
-  // Newest first — the split you just made is the one you came here to look at.
-  const shares = useMemo(
-    () => [...(personBillShares[personId] || [])].sort(
-      (a, b) => new Date(b.bill.date) - new Date(a.bill.date),
-    ),
-    [personBillShares, personId],
-  );
-  const payments = useMemo(
-    () => [...(paymentsByPerson[personId] || [])].sort(
-      (a, b) => new Date(b.date) - new Date(a.date),
-    ),
-    [paymentsByPerson, personId],
-  );
-  const sharePage = usePage(shares.length);
-  const paymentPage = usePage(payments.length);
-
-  if (!person) return null;
-
-  const balance = balances[person.id] || 0;
-  const owed = balance > 0 ? balance : 0;
-  const lifetime = lifetimePayments[person.id] || 0;
-  const isMe = person.id === meId;
-  const canPayQuick = owed > 0.005;
-  const customValid = parseFloat(customAmount) > 0;
-  const dimStyle = (off) => (off ? { opacity: 0.45 } : null);
-
-  const startEdit = () => {
-    setDraftName(person.name);
-    setEditingName(true);
-  };
-
-  const saveName = (e) => {
-    e.preventDefault();
-    const next = draftName.trim();
-    if (next) renamePerson(person.id, next);
-    setEditingName(false);
-  };
-
-  const logCustom = (e) => {
-    e.preventDefault();
-    const amt = parseFloat(customAmount);
-    if (amt > 0) {
-      addPayment(person.id, amt);
-      setCustomAmount('');
-    }
-  };
-
-  // The message gets shaped and reviewed in the share sheet before it leaves.
-  const sendRequest = () => setShareOpen(true);
-
-  return (
-    <div className="flex flex-col" style={{ maxHeight: '85vh' }}>
-      {/* Header */}
-      <div
-        className="p-4 border-b border-glass flex justify-between items-center bg-glass"
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-          backdropFilter: 'blur(12px)',
-        }}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="avatar bg-accent flex-shrink-0">
-            {initialsOf(person.name)}
-          </div>
-          {editingName ? (
-            <form onSubmit={saveName} className="flex items-center gap-2 min-w-0">
-              <input
-                type="text"
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                aria-label="Edit name"
-                autoFocus
-                className="text-lg font-bold min-w-0"
-                style={{ padding: '0.35rem 0.6rem' }}
-              />
-              <button
-                type="submit"
-                className="text-success flex-shrink-0 pressable"
-                aria-label="Save name"
-              >
-                <Check size={20} />
-              </button>
-            </form>
-          ) : (
-            <div className="flex items-center gap-2 min-w-0">
-              <h2 className="text-xl font-bold truncate">{person.name}</h2>
-              <button
-                type="button"
-                onClick={startEdit}
-                className="text-secondary flex-shrink-0 pressable"
-                aria-label="Rename"
-              >
-                <Pencil size={16} />
-              </button>
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          className="bg-glass p-2 rounded-full flex-shrink-0 pressable"
-          aria-label="Close"
-          onClick={onClose}
-        >
-          <X size={20} />
-        </button>
-      </div>
-
-      <div className="p-4 overflow-y-auto custom-scrollbar" style={{ flex: 1 }}>
-        {/* Stat tiles */}
-        <div className="flex gap-3 mb-6">
-          <div className="glass-panel flex-1 text-center" style={{ padding: '0.85rem' }}>
-            <p className="text-xs text-secondary uppercase tracking-wider mb-1">
-              Owes you now
-            </p>
-            <p
-              className="text-xl font-bold"
-              style={{ color: owed > 0 ? 'var(--danger)' : 'var(--success)' }}
-            >
-              {formatCurrency(owed)}
-            </p>
-          </div>
-          <div className="glass-panel flex-1 text-center" style={{ padding: '0.85rem' }}>
-            <p className="text-xs text-secondary uppercase tracking-wider mb-1">
-              Paid back
-            </p>
-            <p className="text-xl font-bold text-success">
-              {formatCurrency(lifetime)}
-            </p>
-          </div>
-        </div>
-
-        {/* Log a payment */}
-        <span className="lab" style={{ display: 'block', marginBottom: '0.6rem' }}>Log a payment</span>
-        <div className="flex gap-2 mb-3">
-          <button
-            type="button"
-            className="btn btn-secondary flex-1 pressable"
-            style={{ borderRadius: 'var(--radius-full)', ...dimStyle(!canPayQuick) }}
-            disabled={!canPayQuick}
-            onClick={() => addPayment(person.id, owed / 2)}
-          >
-            Half
-          </button>
-          <button
-            type="button"
-            className="btn btn-success flex-1 pressable"
-            style={{ borderRadius: 'var(--radius-full)', ...dimStyle(!canPayQuick) }}
-            disabled={!canPayQuick}
-            onClick={() => addPayment(person.id, owed)}
-          >
-            All paid
-          </button>
-        </div>
-        <form onSubmit={logCustom} className="flex gap-2 mb-6">
-          <input
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0"
-            value={customAmount}
-            onChange={(e) => setCustomAmount(e.target.value)}
-            placeholder="Other amount"
-            aria-label="Other amount"
-            className="flex-1 min-w-0"
-            style={{ borderRadius: 'var(--radius-full)' }}
-          />
-          <button
-            type="submit"
-            className="btn btn-secondary flex-shrink-0 pressable"
-            style={{ borderRadius: 'var(--radius-full)', ...dimStyle(!customValid) }}
-            disabled={!customValid}
-          >
-            Log
-          </button>
-        </form>
-
-        {/* Their splits */}
-        <div className="section-head">
-          <span className="lab">Their splits</span>
-          <Pager label="splits" total={shares.length} state={sharePage} />
-        </div>
-        {shares.length === 0 ? (
-          <p className="text-secondary text-sm text-center py-4 glass-panel">
-            No splits yet.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2 mb-6">
-            {shares.slice(sharePage.start, sharePage.end).map((share, idx) => (
-              <div
-                key={`${share.bill.id}-${idx}`}
-                className="flex justify-between items-center glass-panel"
-                style={{ padding: '0.75rem' }}
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">{share.bill.title}</p>
-                  <p className="text-xs text-secondary">
-                    {formatRelativeDate(share.bill.date)}
-                  </p>
-                </div>
-                <div className="font-bold text-accent flex-shrink-0 ml-2">
-                  {formatCurrency(share.amount)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Payment history */}
-        {payments.length > 0 && (
-          <>
-            <div className="section-head">
-              <span className="lab">Payments</span>
-              <Pager label="payments" total={payments.length} state={paymentPage} />
-            </div>
-            <div className="flex flex-col gap-2 mb-6">
-              {payments.slice(paymentPage.start, paymentPage.end).map((pm) => (
-                <div
-                  key={pm.id}
-                  className="flex justify-between items-center glass-panel"
-                  style={{ padding: '0.6rem 0.75rem' }}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="bg-success rounded-full p-1 flex-shrink-0">
-                      <Check size={12} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold">{formatCurrency(pm.amount)}</p>
-                      <p className="text-xs text-secondary">
-                        {formatRelativeDate(pm.date)}
-                        {pm.note ? ` · ${pm.note}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-secondary flex-shrink-0 p-2 pressable"
-                    aria-label="Undo payment"
-                    onClick={() => removePayment(pm.id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Send request */}
-        <button
-          type="button"
-          className="btn btn-primary w-full pressable"
-          style={{ borderRadius: 'var(--radius-full)' }}
-          onClick={sendRequest}
-        >
-          <Share2 size={18} />
-          Send request
-        </button>
-
-        {/* Subtle self toggle */}
-        {!isMe && (
-          <button
-            type="button"
-            className="text-xs text-secondary mt-4 mx-auto block pressable"
-            onClick={() => setMeId(person.id)}
-          >
-            This is me
-          </button>
-        )}
-      </div>
-
-      <ShareSheet
-        open={shareOpen}
-        title={`Ask ${person.name}`}
-        actionLabel="Send request"
-        buildText={buildRequestBody}
-        levels={['summary', 'bills', 'items']}
-        fields={['greeting', 'showDates', 'showSharers', 'showPaid', 'showHistory', 'showPayInfo']}
-        onClose={() => setShareOpen(false)}
-      />
-    </div>
   );
 }

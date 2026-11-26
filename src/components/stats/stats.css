@@ -1,0 +1,87 @@
+/* The statement's charts — what makes a column readable.
+ *
+ * Everything structural (the chart row, the bar, the scale, the ledger rows
+ * under it) comes from shell.css and styles/ and is untouched. What is here
+ * is only what turning a column into a control requires: the button reset,
+ * the hit area, the three input states and the readout line.
+ *
+ * No raw value appears below; every colour, size and space is a token.
+ */
+@layer components {
+  /* The readout above the chart. A fixed two-line block, so selecting a
+     column changes the figures and never the layout under your thumb. */
+  .chart__readout {
+    min-height: var(--space-7);
+    margin-block-end: var(--space-4);
+    border-bottom: var(--hairline) solid var(--rule);
+    padding-block-end: var(--space-2);
+  }
+
+  .chart__readout-note {
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    text-transform: uppercase;
+  }
+
+  /* A column is a button now. The visual bar is unchanged; the reset only
+     removes what the browser adds. */
+  .chart__col {
+    position: relative;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* A 37px column at 375px is under the 44px floor, and widening the bar
+     would be a chart drawn to suit its hit area. The target is extended by
+     half the gap on each side instead — exactly the dead space between two
+     columns, so no column can steal its neighbour's tap. The bar itself is
+     7rem tall, so the vertical axis already clears 44px. */
+  .chart__col::after {
+    position: absolute;
+    content: '';
+    inset-block: 0;
+    inset-inline: calc(var(--space-2) / -2);
+  }
+
+  /* --- the three states -------------------------------------------------
+     Hover, focus and selected all mark the same thing and all resolve to the
+     same ink, so a selected column that is also hovered cannot land on a
+     different value than a hovered one. The explicit (0,3,0) pair at the end
+     is the lesson from `.chip:hover:not(:disabled)`, which out-specified
+     `.chip[aria-pressed='true']` and blanked the text of a selected chip:
+     every combination of the two is written down rather than left to the
+     cascade. */
+  .chart__col:focus-visible .chart__bar,
+  .chart__col[aria-pressed='true'] .chart__bar {
+    background: var(--ink);
+  }
+
+  @media (hover: hover) {
+    /* Only where a pointer can actually leave again. */
+    .chart__col:hover .chart__bar {
+      background: var(--ink);
+    }
+
+    .chart__col[aria-pressed='true']:hover .chart__bar,
+    .chart__col:focus-visible:hover .chart__bar {
+      background: var(--ink);
+    }
+  }
+
+  /* Colour only — the bar's height is a `scale`, and nothing here animates
+     a layout property. */
+  .chart__bar {
+    transition: background-color var(--dur-state) ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chart__bar {
+      transition: none;
+    }
+  }
+}

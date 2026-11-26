@@ -1,0 +1,313 @@
+/* The new-bill wizard — the only styles that belong to this surface.
+ *
+ * Everything structural (the column, the sheet of paper, rows, leaders,
+ * figures, chips, the fold) comes from styles/ and shell.css. What is here is
+ * what the wizard alone has: the step header, the bottom bar, the assignment
+ * strip and the scan overlay. No raw value appears below; every colour, size,
+ * space and radius resolves through a token.
+ */
+@layer components {
+  /* ================================================================== *
+   * The step header — a torn-off header band, ruled under.
+   * ================================================================== */
+  .wizard__head {
+    border-bottom: var(--hairline) solid var(--rule);
+    padding-block: var(--space-4) var(--space-3);
+  }
+
+  .wizard__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .wizard__running {
+    text-align: right;
+  }
+
+  .wizard__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .wizard__lede {
+    margin-block-start: var(--space-1);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+
+  /* Three ticks, printed. The one you are on is ink; the ones behind it are
+     ink too — a receipt does not fade what it has already printed. */
+  .wizard__ticks {
+    display: flex;
+    gap: var(--space-1);
+    margin-block-start: var(--space-3);
+  }
+
+  .wizard__tick {
+    flex: 1 1 0;
+    height: var(--space-1);
+    background: var(--rule);
+  }
+
+  .wizard__tick--done {
+    background: var(--ink);
+  }
+
+  /* ================================================================== *
+   * The bottom bar. The tab bar is hidden on this route, so this is the
+   * only chrome down here and it takes the home-indicator inset itself.
+   * ================================================================== */
+  /* The gate and the bar travel together: a disabled Next button with its
+     reason scrolled off the page is just a dead control. */
+  .wizard__foot {
+    position: sticky;
+    z-index: 10;
+    bottom: 0;
+    flex-shrink: 0;
+    background: var(--paper);
+  }
+
+  .wizard__gate {
+    margin-block: 0;
+    border-block: 0;
+    border-top: var(--hairline) solid var(--rule-strong);
+    padding-block: var(--space-3);
+  }
+
+  .wizard__bar {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-3);
+    border-top: var(--hairline) solid var(--rule);
+    background: var(--paper);
+    padding: var(--space-3) var(--space-4)
+      calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .wizard__bar .btn {
+    flex: 1 1 0;
+  }
+
+  .wizard__bar .btn--solid {
+    flex: 2 1 0;
+  }
+
+  /* ================================================================== *
+   * One editable line of the bill: name, price, and who is on it.
+   * ================================================================== */
+  .line + .line {
+    border-top: var(--hairline) solid var(--rule);
+  }
+
+  .line {
+    padding-block: var(--space-3);
+  }
+
+  .line__edit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .line__name {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .line__money {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .line__peso {
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  .line__price {
+    width: var(--space-8);
+  }
+
+  /* The assignment strip. Every cell carries the person's initials, so it
+     needs no column header to be read — which is also why it can wrap
+     instead of scrolling sideways at a phone width. */
+  .who {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-block-start: var(--space-2);
+    /* Horizontal drag paints across a line; vertical still scrolls the page. */
+    touch-action: pan-y;
+  }
+
+  .who__cell {
+    display: inline-flex;
+    min-width: var(--control-min);
+    min-height: var(--control-min);
+    align-items: center;
+    justify-content: center;
+    padding-inline: var(--space-2);
+    border: var(--hairline) solid var(--ink-3);
+    border-radius: var(--radius-press);
+    background: transparent;
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: var(--track-loose);
+    text-transform: uppercase;
+    transition:
+      background-color var(--dur-state) var(--ease-out),
+      border-color var(--dur-state) var(--ease-out),
+      color var(--dur-state) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .who__cell:hover:not(:disabled) {
+      background: var(--paper-sunk);
+    }
+
+    /* Same trap as .chip in shell.css: this selector is (0,3,0) and
+       out-specifies `.who__cell[aria-pressed='true']` at (0,2,0), so hovering
+       an ALREADY-ASSIGNED cell reset its fill while `color` stayed --paper —
+       invisible text. An assigned cell stays inverted on hover. */
+    .who__cell[aria-pressed='true']:hover:not(:disabled) {
+      border-color: var(--ink-2);
+      background: var(--ink-2);
+      color: var(--paper);
+    }
+  }
+
+  .who__cell:active:not(:disabled) {
+    translate: 0 1px;
+  }
+
+  .who__cell[aria-pressed='true'] {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .who__cell--all {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  /* The quiet repeat: "same as the line above". */
+  .who__copy {
+    display: inline-flex;
+    min-height: var(--control-min);
+    align-items: center;
+    padding-inline: var(--space-3);
+    border: var(--hairline) dashed var(--rule-strong);
+    border-radius: var(--radius-press);
+    background: transparent;
+    color: var(--ink-2);
+    font-size: var(--text-micro);
+  }
+
+  @media (hover: hover) {
+    .who__copy:hover {
+      border-color: var(--ink-3);
+      color: var(--ink);
+    }
+  }
+
+  /* ================================================================== *
+   * Scan progress. The overlay that used to have no exit.
+   * ================================================================== */
+  .scanning {
+    border-block: var(--hairline) solid var(--rule-strong);
+    padding-block: var(--space-5);
+  }
+
+  .scanning__shot {
+    display: block;
+    width: 100%;
+    max-height: var(--space-8);
+    border: var(--hairline) solid var(--rule);
+    margin-block-end: var(--space-4);
+    object-fit: cover;
+    object-position: top;
+  }
+
+  .scanning__line {
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  .scanning__detail {
+    margin-block-start: var(--space-1);
+    color: var(--ink-3);
+    font-size: var(--text-micro);
+  }
+
+  /* A real measure of how far through the candidate list the scan is — the
+     overlay it replaces showed an indeterminate spinner for up to 45s. */
+  .scanning__track {
+    height: var(--space-2);
+    margin-block: var(--space-3);
+    border: var(--hairline) solid var(--rule-strong);
+    background: var(--paper-sunk);
+  }
+
+  /* Drawn at full width and scaled on the X axis. Animating `width` would
+     lay out the page on every frame of a scan, which is exactly when the main
+     thread is busiest. */
+  .scanning__fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--ink-3);
+    transform-origin: left center;
+    transition: transform var(--dur-state) var(--ease-out);
+  }
+
+  .scanning__cancel {
+    margin-block-start: var(--space-4);
+  }
+
+  /* ================================================================== *
+   * The scan's own preview, shared by the result sheet and diagnostics.
+   * ================================================================== */
+  .shot {
+    display: block;
+    width: 100%;
+    border: var(--hairline) solid var(--rule);
+  }
+
+  .shot--thumb {
+    width: var(--space-7);
+    height: var(--space-8);
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  .raw {
+    max-height: var(--space-8);
+    margin: 0;
+    overflow: auto;
+    border: var(--hairline) solid var(--rule);
+    background: var(--paper-sunk);
+    padding: var(--space-3);
+    color: var(--ink-2);
+    font-size: var(--text-micro);
+    line-height: var(--leading-snug);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
+@layer utilities {
+  @media (prefers-reduced-motion: reduce) {
+    .scanning__fill {
+      transition: none;
+    }
+  }
+}

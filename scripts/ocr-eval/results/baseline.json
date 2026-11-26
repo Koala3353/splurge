@@ -1,0 +1,2612 @@
+{
+  "summary": {
+    "receipts": 60,
+    "truthItems": 152,
+    "parsedItems": 67,
+    "itemRecall": 0.125,
+    "itemPrecision": 0.2835820895522388,
+    "itemF1": 0.1735159817351598,
+    "priceAttachment": 0.6842105263157895,
+    "strictRecall": 0.08552631578947369,
+    "strictPrecision": 0.19402985074626866,
+    "strictF1": 0.11872146118721462,
+    "leakedSummaryRows": 7,
+    "zeroItemReceipts": 11,
+    "totalAgreeRate": 0.016666666666666666,
+    "serviceRecall": 0,
+    "serviceExpected": 8,
+    "discountRecall": 0,
+    "discountExpected": 2,
+    "meanMs": 7064.062041033334,
+    "medianMs": 6784.597375000012,
+    "p90Ms": 11750.165625000009,
+    "label": "baseline",
+    "tuning": "legacy",
+    "tuningValues": {
+      "plausibleQuadOnly": false,
+      "perspectiveMinStrength": 0.06,
+      "racePlainCropFirst": false,
+      "columnFallback": true
+    },
+    "when": "2026-11-26T01:39:48.967Z",
+    "dataset": "CORD-v2 (naver-clova-ix/cord-v2), CC BY 4.0",
+    "calibration": [
+      {
+        "band": "poor  <58",
+        "n": 54,
+        "strictF1": 0.10891089108910888
+      },
+      {
+        "band": "fair 58-77",
+        "n": 4,
+        "strictF1": 0.1818181818181818
+      },
+      {
+        "band": "good  >=78",
+        "n": 2,
+        "strictF1": 0.33333333333333337
+      }
+    ]
+  },
+  "rows": [
+    {
+      "id": "test-0000.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 50,
+      "truthTotal": 60000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "-TICKET CP"
+      ],
+      "spurious": [
+        "EDC CIN NIAGR No xaT730=50"
+      ],
+      "ms": 1272.256916,
+      "error": null,
+      "confidence": 39,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0001.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 3,
+      "truthTotal": 91000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "J.STB PROMO",
+        "Y.B.BAT",
+        "Y.BASO PROM"
+      ],
+      "spurious": [
+        "1 Si 3 & rs=3"
+      ],
+      "ms": 1722.5659999999998,
+      "error": null,
+      "confidence": 41,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0002.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 1014,
+      "truthTotal": 28000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "JASMINE MT ( L )"
+      ],
+      "spurious": [
+        "sug=1014"
+      ],
+      "ms": 7202.450542,
+      "error": null,
+      "confidence": 50,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0003.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 900,
+      "truthTotal": 11000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "DONAT GULA"
+      ],
+      "spurious": [
+        "Grud=900"
+      ],
+      "ms": 7665.452541999999,
+      "error": null,
+      "confidence": 54,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 9
+    },
+    {
+      "id": "test-0004.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 50,
+      "truthTotal": 174600,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "ICE BLACKCOFFE",
+        "AVOCADO COFFEE",
+        "CHIKEN KATSU FF"
+      ],
+      "spurious": [
+        "OA AIRE ATSUFES=50"
+      ],
+      "ms": 1687.7193340000013,
+      "error": null,
+      "confidence": 31,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0005.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 182,
+      "truthTotal": 31000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "TRAD KY TOAST CARTE"
+      ],
+      "spurious": [
+        "ITENS 0g=182"
+      ],
+      "ms": 7099.434625000002,
+      "error": null,
+      "confidence": 40,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0006.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 3885,
+      "truthTotal": 46000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "EGG TART",
+        "CHOCO CUS ARD PASTRY",
+        "REDBEAN BREAD"
+      ],
+      "spurious": [
+        "E gt I=3885"
+      ],
+      "ms": 5841.895709,
+      "error": null,
+      "confidence": 31,
+      "variant": "contrast",
+      "source": "full",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 7
+    },
+    {
+      "id": "test-0007.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 15,
+      "truthTotal": 111000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 11805.794583000003,
+      "error": null,
+      "confidence": 55,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0008.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 41,
+      "truthTotal": 50000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "[REG] BLACK SAKURA"
+      ],
+      "spurious": [
+        "gp O g ani=41"
+      ],
+      "ms": 6157.512541999997,
+      "error": null,
+      "confidence": 31,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 9
+    },
+    {
+      "id": "test-0009.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 1000,
+      "truthTotal": null,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Bumbu Kaldu Ayam 1"
+      ],
+      "spurious": [
+        "Kembalian=1000"
+      ],
+      "ms": 6287.737417000004,
+      "error": null,
+      "confidence": 42,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0010.jpg",
+      "truthItems": 1,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 17000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "CINNAMON SUGAR"
+      ],
+      "spurious": [],
+      "ms": 6533.714667,
+      "error": null,
+      "confidence": 48,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0011.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 73,
+      "truthTotal": 230000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "BANABERRY FRESH CREAM CAK"
+      ],
+      "spurious": [
+        "SLY eee SF /=73"
+      ],
+      "ms": 7364.396084,
+      "error": null,
+      "confidence": 27,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 9
+    },
+    {
+      "id": "test-0012.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 120000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "BLUS WANITA",
+        "SHOPPING BAG"
+      ],
+      "spurious": [],
+      "ms": 5120.427041999996,
+      "error": null,
+      "confidence": 35,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0013.jpg",
+      "truthItems": 2,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.5,
+      "itemPrecision": 0.5,
+      "itemF1": 0.5,
+      "priceAttachment": 1,
+      "strictRecall": 0.5,
+      "strictPrecision": 0.5,
+      "strictF1": 0.5,
+      "totalAgrees": false,
+      "parsedSum": 3001.63,
+      "truthTotal": 51300,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "BASO KUAH"
+      ],
+      "spurious": [
+        "THX=1.63"
+      ],
+      "ms": 4763.545041999998,
+      "error": null,
+      "confidence": 30,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 4
+    },
+    {
+      "id": "test-0014.jpg",
+      "truthItems": 6,
+      "parsedItems": 2,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 437,
+      "truthTotal": 281435,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "RedVelvet Cheese Slc",
+        "Chicken Baked Rice",
+        "Fish n Chips",
+        "Mushroom Soup",
+        "Chamomile",
+        "Iced Tea"
+      ],
+      "spurious": [
+        "Cheese S1c=2",
+        "REE=435"
+      ],
+      "ms": 2732.889249999993,
+      "error": null,
+      "confidence": 32,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 2
+    },
+    {
+      "id": "test-0015.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 63000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Lemon Tea (L)",
+        "Caramel Small"
+      ],
+      "spurious": [],
+      "ms": 2644.136624999999,
+      "error": null,
+      "confidence": 73,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 9
+    },
+    {
+      "id": "test-0016.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.5,
+      "itemPrecision": 1,
+      "itemF1": 0.6666666666666666,
+      "priceAttachment": 1,
+      "strictRecall": 0.5,
+      "strictPrecision": 1,
+      "strictF1": 0.6666666666666666,
+      "totalAgrees": false,
+      "parsedSum": 4545,
+      "truthTotal": 70000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "[LG] BLACK SAKURA"
+      ],
+      "spurious": [],
+      "ms": 11750.165625000009,
+      "error": null,
+      "confidence": 75,
+      "variant": "original",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0017.jpg",
+      "truthItems": 6,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 1.02,
+      "truthTotal": 91000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Goblin's Mace",
+        "Mozarella Hot Dog",
+        "Chili Pepper Croquette",
+        "Cheese Croquette",
+        "Plastik Amook",
+        "Plastik Putih Take Away"
+      ],
+      "spurious": [
+        "ee aoa ad=1.02"
+      ],
+      "ms": 3363.861124999996,
+      "error": null,
+      "confidence": 25,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 5
+    },
+    {
+      "id": "test-0018.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 24,
+      "truthTotal": 156000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Propolis Cair"
+      ],
+      "spurious": [
+        "hia=24"
+      ],
+      "ms": 5351.091249999998,
+      "error": null,
+      "confidence": 40,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 9
+    },
+    {
+      "id": "test-0019.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 176000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "AMBUSH DBL CHS",
+        "AMBUSH CHS BUR"
+      ],
+      "spurious": [],
+      "ms": 4215.331667000006,
+      "error": null,
+      "confidence": 37,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0020.jpg",
+      "truthItems": 5,
+      "parsedItems": 2,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 517,
+      "truthTotal": 377859,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "cashew nuts chkn",
+        "garlic pepper beef",
+        "red curry beef",
+        "phad thai",
+        "steamed rice"
+      ],
+      "spurious": [
+        "he Baht Toro f i=13",
+        "IoLg=504"
+      ],
+      "ms": 12794.898040999993,
+      "error": null,
+      "confidence": 41,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0021.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 38000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "NASI GOR SFD TLR",
+        "ES TEH TAWAR"
+      ],
+      "spurious": [],
+      "ms": 9122.450542000006,
+      "error": null,
+      "confidence": 45,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0022.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 11,
+      "truthTotal": 40000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "[MD] SOFT STEAMED CHEESEC",
+        "[MD] SOFT STEAMED CHOCOCA"
+      ],
+      "spurious": [
+        "Dead=11"
+      ],
+      "ms": 6585.539832999988,
+      "error": null,
+      "confidence": 27,
+      "variant": "contrast",
+      "source": "full",
+      "orientation": 90,
+      "relaid": true,
+      "attempts": 8
+    },
+    {
+      "id": "test-0023.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.5,
+      "itemPrecision": 1,
+      "itemF1": 0.6666666666666666,
+      "priceAttachment": 1,
+      "strictRecall": 0.5,
+      "strictPrecision": 1,
+      "strictF1": 0.6666666666666666,
+      "totalAgrees": false,
+      "parsedSum": 9000,
+      "truthTotal": 63000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "TWIST DONUT"
+      ],
+      "spurious": [],
+      "ms": 8696.782999999996,
+      "error": null,
+      "confidence": 87,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0024.jpg",
+      "truthItems": 3,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 118000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "5001-Corn Flakes Cookies",
+        "5003-Chokoreto Cookies",
+        "6002-Plastic Bag Medium"
+      ],
+      "spurious": [],
+      "ms": 9063.979499999987,
+      "error": null,
+      "confidence": 36,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0025.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 15,
+      "truthTotal": 43000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "TWIST STRAWBERRY DONUT",
+        "TLJ CROQUETTE",
+        "POTATO PEPPER BAGEL"
+      ],
+      "spurious": [
+        "LAFF 7 87 AW=15"
+      ],
+      "ms": 1714.8049159999937,
+      "error": null,
+      "confidence": 32,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0026.jpg",
+      "truthItems": 3,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 138000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Nasi Cap Cay Porsi B esar",
+        "Teh Tawar",
+        "Fu Yung Hai"
+      ],
+      "spurious": [],
+      "ms": 6289.061124999978,
+      "error": null,
+      "confidence": 95,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0027.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 61600,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "PKT AYAM",
+        "GULAI OTAK"
+      ],
+      "spurious": [],
+      "ms": 6784.597375000012,
+      "error": null,
+      "confidence": 40,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0028.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 8450,
+      "truthTotal": 426195,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "SAMGYOPSAL",
+        "SUL LUNG TANG",
+        "MAKOLI"
+      ],
+      "spurious": [
+        "Service=8450"
+      ],
+      "ms": 7495.869500000001,
+      "error": null,
+      "confidence": 53,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0029.jpg",
+      "truthItems": 6,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.16666666666666666,
+      "itemPrecision": 1,
+      "itemF1": 0.2857142857142857,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 13.63,
+      "truthTotal": 145900,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "COLD OCHA",
+        "BCA PROMO",
+        "SKEWERED SHUMAI",
+        "EBI TEMPURA",
+        "KITSUNE UDON (KIDS)"
+      ],
+      "spurious": [],
+      "ms": 7069.016040999995,
+      "error": null,
+      "confidence": 45,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 7
+    },
+    {
+      "id": "test-0030.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 2864,
+      "truthTotal": 31500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Kupon 3"
+      ],
+      "spurious": [
+        "Fet 1072y Co=2864"
+      ],
+      "ms": 9741.026458999986,
+      "error": null,
+      "confidence": 36,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0031.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 33,
+      "truthTotal": 113886,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "SALMON PESTO",
+        "SALMON PESTO"
+      ],
+      "spurious": [
+        "H il=33"
+      ],
+      "ms": 14077.911292000004,
+      "error": null,
+      "confidence": 45,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0032.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 38,
+      "truthTotal": 24000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "THAI ICED GREEN TEA"
+      ],
+      "spurious": [
+        "MIX=38"
+      ],
+      "ms": 7524.566958999989,
+      "error": null,
+      "confidence": 55,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0033.jpg",
+      "truthItems": 3,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.3333333333333333,
+      "itemPrecision": 0.5,
+      "itemF1": 0.4,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 44.6,
+      "truthTotal": 148127,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "HOT TUNA",
+        "HOT TUNA"
+      ],
+      "spurious": [
+        "ee Bey &=44"
+      ],
+      "ms": 1338.5003330000036,
+      "error": null,
+      "confidence": 40,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0034.jpg",
+      "truthItems": 2,
+      "parsedItems": 3,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 2,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 23.5,
+      "truthTotal": 93500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Ash Chick Sambal Matah",
+        "Jamur Goreng"
+      ],
+      "spurious": [
+        "8jak=8.5",
+        "sta=8.5",
+        "he el=6.5"
+      ],
+      "ms": 474.5486669999955,
+      "error": null,
+      "confidence": 36,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1
+    },
+    {
+      "id": "test-0035.jpg",
+      "truthItems": 4,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 1800,
+      "truthTotal": 54000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "TWIST DONUT",
+        "BANANA DONUT",
+        "CREAMCHEESE BREAD",
+        "FRANKFRUT SAUSAGE ROLL"
+      ],
+      "spurious": [
+        "T2mistowr=1800"
+      ],
+      "ms": 6940.096290999994,
+      "error": null,
+      "confidence": 42,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0036.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 18,
+      "truthTotal": 40000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "XXL Crispy Chicken"
+      ],
+      "spurious": [
+        "TSAR SA 1 2 iL ye=18"
+      ],
+      "ms": 11688.195416000002,
+      "error": null,
+      "confidence": 26,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0037.jpg",
+      "truthItems": 1,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": null,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Popcorn Salt (S)"
+      ],
+      "spurious": [],
+      "ms": 5165.121666999999,
+      "error": null,
+      "confidence": 49,
+      "variant": "threshold",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0038.jpg",
+      "truthItems": 9,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.1111111111111111,
+      "itemPrecision": 1,
+      "itemF1": 0.19999999999999998,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 18,
+      "truthTotal": 664329,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "XLB Org Pork 10x",
+        "Sicito Babi",
+        "Hotplate Tahu",
+        "DF Fish Fillet Garlc",
+        "LM Pork Belly",
+        "Siew Mai",
+        "Kwan Yin Cup",
+        "Onde-Onde"
+      ],
+      "spurious": [],
+      "ms": 2188.9121250000026,
+      "error": null,
+      "confidence": 30,
+      "variant": "contrast",
+      "source": "crop",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0039.jpg",
+      "truthItems": 3,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 51,
+      "truthTotal": null,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "LUNCH BOX 3P SET W/RED BAG & SP00 N.",
+        "RICE CASE 7L W/CUP",
+        "LUNCH BOX 3P SET W/BLACK BAG & SP OON"
+      ],
+      "spurious": [
+        "of 5 ee RT=51"
+      ],
+      "ms": 11690.823333000008,
+      "error": null,
+      "confidence": 26,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0040.jpg",
+      "truthItems": 2,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 68000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Snack Lestari All",
+        "Bakery Aneka Sisir Banana,Pizza,yoko,Mar mer,Daging,abon,keju,cokelat,dll"
+      ],
+      "spurious": [],
+      "ms": 13477.589500000002,
+      "error": null,
+      "confidence": 39,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0041.jpg",
+      "truthItems": 10,
+      "parsedItems": 8,
+      "matched": 8,
+      "pricedCorrect": 7,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.8,
+      "itemPrecision": 1,
+      "itemF1": 0.888888888888889,
+      "priceAttachment": 0.875,
+      "strictRecall": 0.7,
+      "strictPrecision": 0.875,
+      "strictF1": 0.7777777777777777,
+      "totalAgrees": false,
+      "parsedSum": 231069.88,
+      "truthTotal": 36500000,
+      "service": {
+        "expected": true,
+        "found": true,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Naga Lychee Juice",
+        "Hot Chocolate Marshmallo"
+      ],
+      "spurious": [],
+      "ms": 1207.609999999986,
+      "error": null,
+      "confidence": 55,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 1
+    },
+    {
+      "id": "test-0042.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 70,
+      "truthTotal": 16500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Chicken HCC. 1Pcs"
+      ],
+      "spurious": [
+        "rns=70"
+      ],
+      "ms": 7040.6088750000345,
+      "error": null,
+      "confidence": 56,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0043.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 1,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 1,
+      "itemPrecision": 1,
+      "itemF1": 1,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 165,
+      "truthTotal": 16500000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [],
+      "spurious": [],
+      "ms": 11539.869958999974,
+      "error": null,
+      "confidence": 63,
+      "variant": "original",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0044.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 23,
+      "truthTotal": 30000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Combo 1"
+      ],
+      "spurious": [
+        "Lol=23"
+      ],
+      "ms": 8242.742417000001,
+      "error": null,
+      "confidence": 47,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0045.jpg",
+      "truthItems": 4,
+      "parsedItems": 0,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 0,
+      "truthTotal": 88000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Lemon Tea (L).",
+        "Mike & Ike Original",
+        "Mike & Berry",
+        "Roti Keju Manis."
+      ],
+      "spurious": [],
+      "ms": 7815.461125000031,
+      "error": null,
+      "confidence": 75,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0046.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 25.57,
+      "truthTotal": 40000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "S-Bubble Milk Tea",
+        "S-Caramel Milk Tea"
+      ],
+      "spurious": [
+        "Shia Wik Ton=25.57"
+      ],
+      "ms": 3126.801833000034,
+      "error": null,
+      "confidence": 37,
+      "variant": "original",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 3
+    },
+    {
+      "id": "test-0047.jpg",
+      "truthItems": 3,
+      "parsedItems": 2,
+      "matched": 2,
+      "pricedCorrect": 2,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0.6666666666666666,
+      "itemPrecision": 1,
+      "itemF1": 0.8,
+      "priceAttachment": 1,
+      "strictRecall": 0.6666666666666666,
+      "strictPrecision": 1,
+      "strictF1": 0.8,
+      "totalAgrees": true,
+      "parsedSum": 63000,
+      "truthTotal": 6300000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "PLASTIC BAG RED CENTRAL SI"
+      ],
+      "spurious": [],
+      "ms": 1958.529749999987,
+      "error": null,
+      "confidence": 48,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0048.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 22,
+      "truthTotal": 25000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "S-Hazelnut KOI Cafe"
+      ],
+      "spurious": [
+        "BN rf mS=22"
+      ],
+      "ms": 6933.415374999982,
+      "error": null,
+      "confidence": 31,
+      "variant": "contrast",
+      "source": "crop",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 9
+    },
+    {
+      "id": "test-0049.jpg",
+      "truthItems": 2,
+      "parsedItems": 2,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 402.09,
+      "truthTotal": 23000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Ptgs Eggtart",
+        "Choco Melt"
+      ],
+      "spurious": [
+        "2 Et pr nr=2.09",
+        "ged cn hw=400"
+      ],
+      "ms": 2539.376749999996,
+      "error": null,
+      "confidence": 24,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0050.jpg",
+      "truthItems": 1,
+      "parsedItems": 2,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 2,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 1796.77,
+      "truthTotal": 19500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Superice Cauburry"
+      ],
+      "spurious": [
+        "SubTulals=17.77",
+        "fois=1779"
+      ],
+      "ms": 5709.200707999989,
+      "error": null,
+      "confidence": 38,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 8
+    },
+    {
+      "id": "test-0051.jpg",
+      "truthItems": 4,
+      "parsedItems": 2,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 70.36,
+      "truthTotal": 334000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "(TA) NASI GRG TERI MEDAN",
+        "(TA) BIHUN GORENG SEAFOOD",
+        "(TA) KWETIAW SEAFOOD SIRAM",
+        "(TA) NASI GORENG"
+      ],
+      "spurious": [
+        "oo Peay oN a ie Wh=40",
+        "el TA NAST GOR=30.36"
+      ],
+      "ms": 6341.464666999993,
+      "error": null,
+      "confidence": 25,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 4
+    },
+    {
+      "id": "test-0052.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 2000,
+      "truthTotal": 40000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "THAI ICED TEA",
+        "THAI ICED TEA"
+      ],
+      "spurious": [
+        "Body=2000"
+      ],
+      "ms": 9505.65062500001,
+      "error": null,
+      "confidence": 37,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": 0,
+      "relaid": true,
+      "attempts": 10
+    },
+    {
+      "id": "test-0053.jpg",
+      "truthItems": 3,
+      "parsedItems": 2,
+      "matched": 1,
+      "pricedCorrect": 1,
+      "leakedSummaryRows": 1,
+      "itemRecall": 0.3333333333333333,
+      "itemPrecision": 0.5,
+      "itemF1": 0.4,
+      "priceAttachment": 1,
+      "strictRecall": 0.3333333333333333,
+      "strictPrecision": 0.5,
+      "strictF1": 0.4,
+      "totalAgrees": false,
+      "parsedSum": 53.230000000000004,
+      "truthTotal": 123585,
+      "service": {
+        "expected": true,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "SOTO KUDUS",
+        "Mineral Water"
+      ],
+      "spurious": [
+        "Pajak Rest=11.23"
+      ],
+      "ms": 2167.0714579999913,
+      "error": null,
+      "confidence": 48,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 2
+    },
+    {
+      "id": "test-0054.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 204,
+      "truthTotal": 10000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "KACANG MERAH"
+      ],
+      "spurious": [
+        "CL. e=204"
+      ],
+      "ms": 7250.069084000017,
+      "error": null,
+      "confidence": 25,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 8
+    },
+    {
+      "id": "test-0055.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 13,
+      "truthTotal": 54000,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "APPLE CINNAMON PASTRY",
+        "ROYAL CHEESE TART"
+      ],
+      "spurious": [
+        "i PE that=13"
+      ],
+      "ms": 7968.303041999985,
+      "error": null,
+      "confidence": 36,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 9
+    },
+    {
+      "id": "test-0056.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 181,
+      "truthTotal": 8999,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "AIR MINERAL"
+      ],
+      "spurious": [
+        "JBTOT AL i ger=181"
+      ],
+      "ms": 11293.303875000041,
+      "error": null,
+      "confidence": 33,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 0,
+      "relaid": false,
+      "attempts": 10
+    },
+    {
+      "id": "test-0057.jpg",
+      "truthItems": 2,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 74,
+      "truthTotal": null,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "ICED TT",
+        "ICED GT"
+      ],
+      "spurious": [
+        "f N ve0=74"
+      ],
+      "ms": 3343.1909999999916,
+      "error": null,
+      "confidence": 41,
+      "variant": "threshold",
+      "source": "full",
+      "orientation": -90,
+      "relaid": false,
+      "attempts": 8
+    },
+    {
+      "id": "test-0058.jpg",
+      "truthItems": 1,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 232,
+      "truthTotal": 60500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "PHO BO TAI"
+      ],
+      "spurious": [
+        "Lamm=232"
+      ],
+      "ms": 5777.477249999996,
+      "error": null,
+      "confidence": 33,
+      "variant": "threshold",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 9
+    },
+    {
+      "id": "test-0059.jpg",
+      "truthItems": 9,
+      "parsedItems": 1,
+      "matched": 0,
+      "pricedCorrect": 0,
+      "leakedSummaryRows": 0,
+      "itemRecall": 0,
+      "itemPrecision": 0,
+      "itemF1": 0,
+      "priceAttachment": 0,
+      "strictRecall": 0,
+      "strictPrecision": 0,
+      "strictF1": 0,
+      "totalAgrees": false,
+      "parsedSum": 28,
+      "truthTotal": 680500,
+      "service": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "discount": {
+        "expected": false,
+        "found": false,
+        "correct": false
+      },
+      "missed": [
+        "Tahu Isi",
+        "Tea",
+        "Kepiting 7-8.4ons - Chilly 0.7 1",
+        "Udang Telur Asin - Regular",
+        "Kailan 2 Rasa",
+        "Mantau - 2 pcs",
+        "Sweet Tea",
+        "Nasi Putih"
+      ],
+      "spurious": [
+        "FRR ase Le LAS TR gL es dey Re sy=28"
+      ],
+      "ms": 43576.90416700003,
+      "error": null,
+      "confidence": 22,
+      "variant": "contrast",
+      "source": "flat",
+      "orientation": 90,
+      "relaid": false,
+      "attempts": 10
+    }
+  ]
+}

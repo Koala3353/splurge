@@ -1,0 +1,264 @@
+/* Tokens — three layers, strictly one-directional.
+ *
+ *   primitive  (--c-*, --size-*, --t-*)  raw values, no meaning
+ *   semantic   (--paper, --ink, --stamp) meaning, declared twice: carbon, paper
+ *   component  (--btn-*, --field-*, ...) what one part uses
+ *
+ * A component may read component tokens and semantic tokens. It may never
+ * read a primitive, and it may never know which theme is active.
+ */
+@layer tokens {
+  :root {
+    /* ---- primitive: carbon ink ------------------------------------- */
+    --c-carbon-900: #0e0d0b;
+    --c-carbon-800: #141310;
+    --c-carbon-700: #1d1b16;
+    --c-carbon-600: #332f28;
+    --c-carbon-500: #4a443a;
+    --c-carbon-300: #8e8778;
+    --c-carbon-200: #b5aea2;
+    --c-carbon-100: #ede8dd;
+
+    /* ---- primitive: paper ink -------------------------------------- */
+    --c-paper-050: #fcfaf5;
+    --c-paper-100: #f6f3ec;
+    --c-paper-200: #ede8dd;
+    --c-paper-300: #ddd6c9;
+    --c-paper-400: #c4bbaa;
+    --c-paper-600: #6a645c;
+    --c-paper-700: #57534e;
+    --c-paper-900: #1c1917;
+
+    /* ---- primitive: the one accent, both scenes --------------------- */
+    --c-stamp-carbon: #e0695c;
+    --c-stamp-paper: #a32e25;
+    --c-ledger-carbon: #7fa98b;
+    --c-ledger-paper: #3a6349;
+
+    /* ---- primitive: shadow ink (warm, never neutral) ---------------- */
+    --c-shade-warm: 60 48 32;
+    --c-shade-deep: 0 0 0;
+
+    /* ---- primitive: spacing, 4px base, eight steps ------------------ */
+    --space-1: 0.25rem; /*  4 */
+    --space-2: 0.5rem; /*  8 */
+    --space-3: 0.75rem; /* 12 */
+    --space-4: 1rem; /* 16 */
+    --space-5: 1.5rem; /* 24 */
+    --space-6: 2rem; /* 32 */
+    --space-7: 3rem; /* 48 */
+    --space-8: 4rem; /* 64 */
+
+    /* ---- primitive: radius, three values. Receipts are cut. --------- */
+    --radius-cut: 0;
+    --radius-press: 2px;
+    --radius-avatar: 999px;
+
+    /* ---- primitive: type ------------------------------------------- */
+    --font-ui: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', 'Menlo', monospace;
+
+    --text-micro: 0.8125rem; /* 13 — the floor. There is no 11px. */
+    --text-sm: 0.9375rem; /* 15 */
+    --text-base: 1.0625rem; /* 17 */
+    --text-md: 1.25rem; /* 20 */
+    --text-lg: 1.5rem; /* 24 */
+    --text-xl: 2rem; /* 32 */
+    --text-display: 2.75rem; /* 44 */
+
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+
+    --track-tight: -0.02em; /* --text-xl and above */
+    --track-loose: 0.08em; /* mono micro-labels: receipts print loose */
+
+    --leading-tight: 1.1;
+    --leading-snug: 1.35;
+    --leading-body: 1.55;
+
+    /* ---- primitive: motion ----------------------------------------- */
+    --dur-state: 180ms;
+    --dur-stamp: 220ms;
+    --dur-print: 380ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* ---- primitive: measure ---------------------------------------- */
+    --measure: 68ch;
+    --column: 27rem; /* the narrow receipt column */
+
+    /* ================================================================ *
+     * SEMANTIC — carbon (dark). The primary scene: a restaurant table,
+     * at night, a phone held one-handed while four people watch.
+     * ================================================================ */
+    --paper: var(--c-carbon-800);
+    --paper-raised: var(--c-carbon-700);
+    /* The dark line under a raised key. Darker than the key face in both
+       themes, which is what makes it read as an edge and not a highlight. */
+    /* On carbon a dark bottom edge is invisible against a dark field, so the
+       keycap is lit from above instead: a faint top highlight does the work
+       the shadow does on paper, and the darker bottom still closes it off. */
+    --key-edge: inset 0 1px 0 rgb(237 232 221 / 9%), inset 0 -2px 0 rgb(0 0 0 / 55%);
+    --paper-sunk: var(--c-carbon-900);
+    --ink: var(--c-carbon-100);
+    --ink-2: var(--c-carbon-200);
+    --ink-3: var(--c-carbon-300);
+    --rule: var(--c-carbon-600);
+    --rule-strong: var(--c-carbon-500);
+    --stamp: var(--c-stamp-carbon);
+    --ledger: var(--c-ledger-carbon);
+
+    /* Receipts rest on a surface; they do not float. Offset down, warm,
+       never a zero-offset halo. In carbon the shade is near-black and the
+       edge is carried by --rule instead. */
+    --shadow-sheet: 0 1px 2px rgb(var(--c-shade-deep) / 0.5),
+      0 8px 24px -12px rgb(var(--c-shade-deep) / 0.6);
+    --shadow-lift: 0 2px 4px rgb(var(--c-shade-deep) / 0.55),
+      0 16px 40px -16px rgb(var(--c-shade-deep) / 0.7);
+
+    --grain-opacity: 0.025;
+    --scrim: rgb(var(--c-shade-deep) / 0.62);
+  }
+
+  /* ================================================================== *
+   * SEMANTIC — paper (light). The morning-after scene: settling up at a
+   * desk. Not a tinted inversion; its own set of decisions.
+   * ================================================================== */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) {
+      --paper: var(--c-paper-100);
+      --paper-raised: var(--c-paper-050);
+      --key-edge: inset 0 -2px 0 var(--c-paper-400);
+      --paper-sunk: var(--c-paper-200);
+      --ink: var(--c-paper-900);
+      --ink-2: var(--c-paper-700);
+      --ink-3: var(--c-paper-600);
+      --rule: var(--c-paper-300);
+      --rule-strong: var(--c-paper-400);
+      --stamp: var(--c-stamp-paper);
+      --ledger: var(--c-ledger-paper);
+
+      --shadow-sheet: 0 1px 2px rgb(var(--c-shade-warm) / 0.08),
+        0 8px 24px -12px rgb(var(--c-shade-warm) / 0.18);
+      --shadow-lift: 0 2px 4px rgb(var(--c-shade-warm) / 0.1),
+        0 16px 40px -16px rgb(var(--c-shade-warm) / 0.24);
+
+      --scrim: rgb(var(--c-shade-warm) / 0.32);
+    }
+  }
+
+  :root[data-theme='light'] {
+    --paper: var(--c-paper-100);
+    --paper-raised: var(--c-paper-050);
+    --key-edge: inset 0 -2px 0 var(--c-paper-400);
+    --paper-sunk: var(--c-paper-200);
+    --ink: var(--c-paper-900);
+    --ink-2: var(--c-paper-700);
+    --ink-3: var(--c-paper-600);
+    --rule: var(--c-paper-300);
+    --rule-strong: var(--c-paper-400);
+    --stamp: var(--c-stamp-paper);
+    --ledger: var(--c-ledger-paper);
+
+    --shadow-sheet: 0 1px 2px rgb(var(--c-shade-warm) / 0.08),
+      0 8px 24px -12px rgb(var(--c-shade-warm) / 0.18);
+    --shadow-lift: 0 2px 4px rgb(var(--c-shade-warm) / 0.1),
+      0 16px 40px -16px rgb(var(--c-shade-warm) / 0.24);
+
+    --scrim: rgb(var(--c-shade-warm) / 0.32);
+  }
+
+  /* ================================================================== *
+   * COMPONENT — theme-blind by construction. Every one of these resolves
+   * through a semantic token, so no component can hardcode a foreground
+   * (which is exactly how 2.69:1 white-on-rose shipped last time).
+   * ================================================================== */
+  :root {
+    /* control geometry: the 44px tap floor lives here, once */
+    --control-min: 44px;
+    --focus-width: 2px;
+    --focus-offset: 2px;
+    --focus-color: var(--ink); /* ink, not accent — accent means money */
+    --hairline: 1px;
+
+    /* button */
+    --btn-height: var(--control-min);
+    --btn-pad-x: var(--space-5);
+    --btn-radius: var(--radius-press);
+    --btn-text: var(--text-base);
+    --btn-weight: var(--weight-medium);
+
+    --btn-solid-bg: var(--ink);
+    --btn-solid-bg-hover: var(--ink-2);
+    --btn-solid-fg: var(--paper);
+    --btn-solid-border: var(--ink);
+
+    /* A quiet button has a real fill, not `transparent`.
+       `quiet` is the DEFAULT variant, so every secondary action in the product
+       wore a bare 1px outline on a flat paper surface and read as a printed
+       label rather than something you could press. On a receipt world the
+       right object is a register key: a fill, an edge you can see, and a press
+       that flattens it. --paper-raised sits above the page; the key-edge below
+       does the rest. */
+    --btn-quiet-bg: var(--paper-raised);
+    --btn-quiet-bg-hover: var(--paper-sunk);
+    --btn-quiet-fg: var(--ink);
+    /* A control's edge is what identifies it as a control, so it is held to
+       3:1 — which --rule-strong, a hairline meant to separate rows, cannot
+       carry (1.88:1 measured). Controls get a heavier line than paper does. */
+    --btn-quiet-border: var(--ink-3);
+
+    --btn-danger-bg: var(--paper-sunk);
+    --btn-danger-bg-hover: var(--paper-sunk);
+    --btn-danger-fg: var(--ink);
+    --btn-danger-border: var(--ink);
+
+    --btn-disabled-fg: var(--ink-3);
+    --btn-disabled-bg: var(--paper-sunk);
+    --btn-disabled-border: var(--rule);
+
+    /* field */
+    --field-height: var(--control-min);
+    --field-bg: var(--paper-sunk);
+    --field-fg: var(--ink);
+    --field-placeholder: var(--ink-3);
+    --field-border: var(--ink-3); /* same 3:1 rule as a button's edge */
+    --field-border-focus: var(--ink);
+    --field-label: var(--ink-2);
+    --field-hint: var(--ink-3);
+    --field-radius: var(--radius-press);
+
+    /* sheet / dialog */
+    --sheet-bg: var(--paper-raised);
+    --sheet-fg: var(--ink);
+    --sheet-border: var(--rule);
+    --sheet-w-sm: 22.5rem; /* 360 */
+    --sheet-w-md: 27.5rem; /* 440 */
+    --sheet-w-lg: 35rem; /*  560 */
+    --sheet-max-h: 85vh; /* one value, not 85/86 */
+    --sheet-pad: var(--space-5);
+
+    /* the receipt row and its leader */
+    --row-min-h: var(--control-min);
+    --leader-color: var(--rule-strong);
+    --leader-gap: var(--space-2);
+    --figure-color: var(--ink);
+    --figure-owed: var(--stamp);
+    --figure-settled: var(--ledger);
+
+    /* the stamp */
+    --stamp-settled: var(--ledger);
+    /* DESIGN.md asks for --ink-3 here. The stamp also ships at 85% opacity,
+       and the two together measure 3.75:1 on a bill sheet for 13px type.
+       The pressed look is the point, so the opacity stays and the ink steps
+       up one level rather than the threshold stepping down. */
+    --stamp-partial: var(--ink-2);
+    --stamp-border-width: 1.5px;
+    --stamp-rotate: -4deg;
+    --stamp-opacity: 0.85;
+
+    /* the bill sheet and its perforation */
+    --sheet-paper: var(--paper-raised);
+    --perf-size: 10px;
+  }
+}
