@@ -38,6 +38,11 @@ export default function WhoStrip({
   // The value being painted for the duration of one drag: true puts people
   // on, false takes them off. Null when no drag is in flight.
   const paint = useRef(null);
+  // Whether the pointer path already handled this interaction, so the click
+  // that follows a tap does not toggle the same cell a second time. It is a
+  // safety net, not bookkeeping: if anything in the pointer path fails, this
+  // stays false and the click does the work instead of the cell going dead.
+  const handledByPointer = useRef(false);
   // Who this drag has already set, so crossing a cell twice — or a render
   // that has not caught up yet — cannot flip it back.
   const touched = useRef(new Set());
@@ -53,8 +58,22 @@ export default function WhoStrip({
   const startPaint = (personId) => (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     // Pointer capture would retarget every later move to this one cell, which
-    // is the opposite of what a paint gesture needs.
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    // is the opposite of what a paint gesture needs. Releasing it THROWS
+    // NotFoundError when this element holds no capture for that pointer, and
+    // `?.` guards a missing method, not a throw — so the throw escaped, killed
+    // this handler before it toggled anything, and left the cell dead while
+    // the click below was keyboard-only and could not cover for it. Touch sets
+    // implicit capture on the node it lands on, so the first tap released it
+    // fine and every tap after a re-render did not. Hence the guard.
+    const el = e.currentTarget;
+    if (el.hasPointerCapture?.(e.pointerId)) {
+      try {
+        el.releasePointerCapture(e.pointerId);
+      } catch {
+        /* capture went away between the check and the release */
+      }
+    }
+    handledByPointer.current = true;
     paint.current = !item.people.includes(personId);
     touched.current = new Set();
     paintPerson(personId);
@@ -70,10 +89,16 @@ export default function WhoStrip({
     paint.current = null;
   };
 
-  // A pointer has already done the work on pointerdown. This runs for keyboard
-  // activation, where there was no pointer sequence at all.
-  const clickPerson = (personId) => (e) => {
-    if (e.detail !== 0) return;
+  // Normally the pointer path has already done the work and this just clears
+  // the flag. It is deliberately NOT gated on `e.detail === 0` any more: that
+  // made it keyboard-only, so when the pointer path threw there was nothing
+  // left to toggle the cell. Keyboard activation fires no pointerdown, so the
+  // flag is false and this toggles — same branch, one less way to fail.
+  const clickPerson = (personId) => () => {
+    if (handledByPointer.current) {
+      handledByPointer.current = false;
+      return;
+    }
     onToggle(item.id, personId);
   };
 
